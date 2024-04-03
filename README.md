@@ -49,7 +49,9 @@ The original version of the game is preserved by having the difficulty levels us
 - Entirely new caves can be created using this method if required. It is also possible to mix caves which use the pseudo-random method with those that do not.
 
 Below is original cave B, one example with just the pseudo-random objects, and the other with the extra 'fixed' elements to complete the cave with.
+
 ![Pseudo-random before fixed tiles](./docs/pseudo-random-before.png)
+
 ![With fixed tiles](./docs/pseudo-random-after.png)
 
 ### Code and build
