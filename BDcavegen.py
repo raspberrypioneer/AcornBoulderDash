@@ -1,0 +1,516 @@
+################################################################################
+# BDcavegen.py - For the Acorn Electron Boulder Dash game
+#   Python program to read BDCFF files and convert into playable cave files. 
+#
+#   Each cave file is self-contained and just needs the Boulder Dash game 'engine'
+#   to be played. It holds the cave parameters (48 bytes) and map (400 bytes).
+#
+#   A cave definition JSON file is also created in this process which is a more 
+#   structured and readable BD file.
+#   BDCFF files can be found online here: https://www.boulder-dash.nl/
+#
+#   Notes:
+#   There are 2 types of BD files supported by this program.
+#   - Original-type where caves are created using pseudo-random generation of tiles (boulders, diamonds etc).
+#     These usually also have a set of base tiles (often walls) which are defined with object instructions
+#     e.g. "FillRect=8 8 11 11 DIRT SPACE"
+#   - Map-type where caves are defined by characters which map to tiles, e.g. 'd' for diamond, 'r' for rock.
+#     The pseudo-random generation of tiles is not used, which means different skill levels have the same map layout,
+#     only the parameters like number of diamonds needed, cave time may be different for each level
+#
+#   There are 3 definable colour groups applied to each cave used to paint the elements (black is always present).
+#   -  Group 1 for most of titanium walls, rocks, amoeba; part of rockford, diamonds
+#   -  Group 2 earth
+#   -  Group 3 most of walls, rockford; part of rocks, diamonds
+#   The butterflies and fireflies contain a bit of each.
+#
+
+### Imports
+import os
+from os import path
+import json
+import numpy as np
+from distutils.dir_util import copy_tree
+import image
+
+SPRITES_FILE = ""
+#SPRITES_FILE = "Bubble_Bobble_sprites.bin"
+#SPRITES_FILE = "Pacman_sprites.bin"
+#SPRITES_FILE = "Easter_sprites.bin"
+TIDY_OUTPUT_FOLDER = True
+
+################################################################################
+#region Helper functions
+
+def safe_byte(value):
+
+    if value < 0:
+        return 0
+    elif value > 255:
+        return 255
+    else:
+        return value
+
+def get_map_value(object_element):
+    if object_element in object_version_element_map:
+        value = int(object_version_element_map[object_element]['value'])
+    else:
+        print(f"No mapping found for {object_element}")
+        value = 99
+    return value
+
+def get_object_map_value(object_element, mapped_elements):
+    if object_element in object_version_element_map:
+        element = object_version_element_map[object_element]['element']
+        symbol = object_version_element_map[object_element]['symbol']
+        value = object_version_element_map[object_element]['value']
+        
+        #Add to list of mapped elements for use later
+        if value not in mapped_elements:
+            mapped_elements[value] = symbol
+
+        value_int = int(value)
+    else:
+        print(f"No mapping found for {object_element}")
+        element = object_element
+        value_int = 99
+    return element, value_int
+
+def plot_diagonal_line(object_cave_map, row1, col1, row2, col2, value):
+
+    #Plot repeated points from start to end of diagonal line
+    y = 1  #Assume step from top row to bottom
+    if row1 > row2:
+        y = -1  #Step from bottom row to top
+
+    x = 1  #Assume step from left col to right
+    if col1 > col2:
+        x = -1  #Step from right col to left
+    
+    while row1 != row2:
+        while col1 != col2:
+            object_cave_map[row1:row1+1,col1:col1+1] = value  #Draw single point
+            col1 += x
+            row1 += y
+    object_cave_map[row1:row1+1,col1:col1+1] = value  #Draw single point for last point, values are equal
+
+def add_cave_parameter(output_cave_json, output_cave_params, param_name, value):
+    output_cave_json[param_name] = value
+
+    i = addresses.get(param_name)
+    if type(value) == bool:
+        #Convert boolean parameter to 1 (true), or 0 (false)
+        output_cave_params[i] = 1 if value == True else 0
+    elif type(value) == list:
+        for j in range(len(value)):
+            output_cave_params[i] = value[j]
+            i += 1
+    else:
+        output_cave_params[i] = value
+
+def add_cave_map_row(cave_count, cave_line_count, line, output_cave_json, output_cave_params, output_cave_map_bytes, unsupported_elements):
+
+    last_value = 0
+    char_count = 0
+    for c in line.strip():
+
+        e = 0
+        if c in element_map:
+
+            if c == "P":  #Special element "P" Rockford starting point, needs to be a cave parameter
+                add_cave_parameter(output_cave_json, output_cave_params, "RockfordStart", [cave_line_count - 1, char_count])  #Is -1 because output caves don't need the top and botton lines
+            elif c == "X":  #Special element "X" Rockford exit, needs to be a cave parameter
+                add_cave_parameter(output_cave_json, output_cave_params, "RockfordExit", [cave_line_count - 1, char_count])  #Is -1 because output caves don't need the top and botton lines
+            else:
+                e = element_map[c]['value']
+
+            char_count += 1
+            if char_count % 2 == 0:  #New two mapped values (both nibbles) to combine into a single byte
+                output_cave_map_bytes.append(((last_value<<4) | e).to_bytes(1, byteorder='big'))
+            last_value = e
+        else:
+            if c not in unsupported_elements:  #Add to unsupported elements for the cave
+                unsupported_elements.append(c)
+
+            if c in element_no_map:  #Use the substitute element if possible
+                s = element_no_map[c]['substitute']
+                e = element_map[s]['value']
+                char_count += 1
+                if char_count % 2 == 0:  #New two mapped values (both nibbles) to combine into a single byte
+                    output_cave_map_bytes.append(((last_value<<4) | e).to_bytes(1, byteorder='big'))
+                last_value = e
+            else:
+                print(f"mapping for element {c} in cave {cave_count} not found, using space instead")
+
+
+def create_ssd(disk_title, ssd_filepath, tracks, boot_option):
+    #boot_option 0=None, 1=Load, 2=Run, 3=Exec
+    disk_type = 0  # 0=Acorn DFS or Watford DFS <= 256K
+    num_sectors = tracks * 10  # 40 or 80 tracks, 10 sectors per track
+    split_title = [disk_title[0:8],disk_title[8:12]]
+
+    # Add the first 8 characters of the title, then pad to 256 bytes
+    ssd_bytes = bytearray(split_title[0], 'Latin-1')
+    for i in range(len(split_title[0]), 0x100):
+        ssd_bytes.append(0)
+
+    # Add the next 4 (max) characters of the title, then pad to 262 bytes
+    ssd_bytes.extend(bytearray(split_title[1], 'Latin-1'))
+    for i in range(len(ssd_bytes), 0x106):
+        ssd_bytes.append(0)
+
+    # Add the boot and related information, then pad to 512 bytes
+    ssd_bytes.append((boot_option * 16) + (disk_type * 4) + (num_sectors // 256))
+    ssd_bytes.append(num_sectors & 255)
+    for i in range(0x108, 0x200):
+        ssd_bytes.append(0)
+
+    # Write the empty ssd file
+    with open(ssd_filepath, 'wb') as f:
+        f.write(ssd_bytes)
+
+#endregion
+
+################################################################################
+#region Generate caves from BD definition
+
+def generate_caves(all_input_lines, output_subfolder):
+
+    #Every fifth cave has to be an intermission / bonus cave, with cave letters Q, R, S, T
+    cave_letters = ['A','B','C','D','Q','E','F','G','H','R','I','J','K','L','S','M','N','O','P','T']
+    output_all_caves_json = []
+    output_cave_map_bytes = []
+
+    within_cave = False
+    within_map = False
+    within_objects = False
+    intermission_cave = False
+    cave_count = 0
+    for line in all_input_lines:
+
+        #Start of a cave
+        if line == "[cave]\n":
+            cave_count += 1
+            within_cave = True
+            within_map = False
+            within_objects = False
+            intermission_cave = False
+
+            output_cave_json = {}
+            output_cave_json["CaveNumber"] = cave_count
+            output_cave_json["Map"] = []
+
+            output_cave_params = []
+            output_cave_map_bytes = []
+            unsupported_elements = []
+
+            #Initialise the cave parameter bytes
+            for i in range(48):
+                output_cave_params.append(0)
+
+            #Set the initial fill tile to earth, this maybe changed in some caves
+            output_cave_params[addresses.get("InitialFill")] = 1
+
+        #End of a cave
+        elif line == "[/cave]\n":
+            within_cave = False
+            within_map = False
+            within_objects = False
+
+            #Check if any unsupported elements found and report them
+            if len(unsupported_elements) > 0:
+                print(f"*** Unsupported elements found for cave {cave_count} ({cave_letters[cave_count-1]})")
+                for e in [u for u in unsupported_elements if u in element_no_map]:
+                    sub_element = element_no_map[e]['substitute']
+                    print(f"    '{e}' {element_no_map[e]['element']} becomes '{sub_element}' {element_map[sub_element]['element']}")
+                for e in [u for u in unsupported_elements if u not in element_no_map]:
+                    print(f"    Remaining {unsupported_elements} become ' ' space")
+
+            #Write cave contents file
+            output_file_name = path.join(output_subfolder, cave_letters[cave_count-1])
+            output_file = open(output_file_name, "wb")
+
+            #Write cave parameters
+            for value in output_cave_params:
+                output_file.write(value.to_bytes(1, byteorder='big'))
+
+            #Write cave map
+            if intermission_cave:
+                skip_bytes = 9  #9 because intermissions are 20 tiles with each tile being one nibble, and zero based counting
+                for i, byte in enumerate(output_cave_map_bytes):
+                    if i % 10 == 0 and i > 10:
+                        output_file.write(b" " * 10)  #Write out padding at the end of a line (every 10th byte)
+                    if i > skip_bytes:
+                        output_file.write(byte)
+                output_file.write(b" " * 10)
+                for i in range(0,9):
+                    output_file.write(b" " * 20)  #Write out padding lines (20 bytes)
+
+            else:  #standard cave
+                skip_bytes = 19  #19 because there are 40 tiles with each tile being one nibble, and zero based counting
+                for i, byte in enumerate(output_cave_map_bytes):
+                    if i > skip_bytes and i < len(output_cave_map_bytes) - skip_bytes -1:
+                        output_file.write(byte)
+
+            output_file.close()
+
+            #Add cave definition json to master list
+            output_all_caves_json.append(output_cave_json)
+
+        #Start of the map section within a cave
+        elif line == "[map]\n":
+            cave_line_count = 0
+            within_map = True
+
+        #End of the map section within a cave
+        elif line == "[/map]\n":
+            within_map = False
+
+        #Start of the objects section within a cave
+        elif line == "[objects]\n":
+            within_objects = True
+
+            mapped_elements = {}
+            fill_element, fill_value = get_object_map_value("STEEL", mapped_elements)  #Assume cave has titanium / steel outer walls
+            fill_element, fill_value = get_object_map_value("DIRT", mapped_elements)  #Assume cave likely to contain dirt
+            fill_element, fill_value = get_object_map_value("NULL", mapped_elements)  #Object caves are base caves for the pseudo-random routine, so they are filled with nulls
+
+            if intermission_cave:
+                object_cave_map = np.full((12, 20), 3)  #3 is the titanium / steel wall
+                object_cave_map[1:11,1:19] = fill_value  #fill value from default or "InitialFill" parameter
+            else:
+                object_cave_map = np.full((22, 40), 3)  #3 is the titanium / steel wall
+                object_cave_map[1:21,1:39] = fill_value  #fill value from default or "InitialFill" parameter
+
+        #End of the objects section within a cave
+        elif line == "[/objects]\n":
+            within_objects = False
+
+            #Map numpy array integers to character equivalents and write an output cave line and also append JSON Map
+            cave_line_count = 0
+            for l in object_cave_map:
+                map_line = ""
+                for v in l:
+                    if int(v) in mapped_elements:
+                        map_line += mapped_elements[int(v)]
+                    else:
+                        map_line += "?"
+
+                cave_line_count += 1
+                add_cave_map_row(cave_count, cave_line_count, map_line, output_cave_json, output_cave_params, output_cave_map_bytes, unsupported_elements)
+                output_cave_json["Map"].append(map_line)  #Add line to json file
+
+        #Within the cave parameters section, but not the map or objects sections
+        elif within_cave and not within_map and not within_objects:
+            if "=" in line:
+                line_param = line.strip().split("=")  #e.g. CaveTime=120
+                if line_param[0] in config_settings["valid_parameters"]:
+
+                    #DiamondValue may have 2 values, DiamondValue and DiamondExtraValue, space delimited
+                    if line_param[0] == "DiamondValue":
+                        line_values = line_param[1].strip().split(" ")
+                        add_cave_parameter(output_cave_json, output_cave_params, "DiamondValue", safe_byte(int(line_values[0])))  #DiamondValue
+                        if len(line_values) > 1:
+                            add_cave_parameter(output_cave_json, output_cave_params, "DiamondExtraValue", safe_byte(int(line_values[1])))  #Use the extra value
+                        else:
+                            add_cave_parameter(output_cave_json, output_cave_params, "DiamondExtraValue", safe_byte(int(line_values[0])))  #No extra value, use DiamondValue
+
+                    #These parameters may have up to 5 values for each level, space delimited
+                    elif line_param[0] in ["DiamondsRequired", "CaveTime", "RandSeed"]:
+                        line_values = [safe_byte(int(x)) for x in line_param[1].strip().split(" ")]
+                        add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", line_values)
+
+                    #AmoebaTime and MagicWallTime are optionally present, if there use it, single value per cave
+                    elif line_param[0] in ["AmoebaTime","MagicWallTime"]:
+                        add_cave_parameter(output_cave_json, output_cave_params, "MagicWallAmoebaTime", safe_byte(int(line_param[1])))
+
+                    elif line_param[0] == "Intermission":
+                        intermission_cave = True if line_param[1].upper() == "TRUE" else False
+                        add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", intermission_cave)
+
+                    #Decode Initial fill element if present
+                    elif line_param[0] == "InitialFill":
+                        add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", get_map_value(line_param[1]))
+
+                    elif line_param[0] == "Colors":
+                        cave_colours = []
+                        for text_colour in line_param[1].split(" "):
+                            if colour_map.get(text_colour.lower()) != None:  #Attempt to map the text values in Colors
+                                cave_colours.append(colour_map[text_colour.lower()])
+                        if len(cave_colours) == 3:  #If exactly 3 mapped results, used the mapped scheme
+                            add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", cave_colours)
+                        else:  #Use the scheme from the config for the cave
+                            add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", colour_schemes[str(cave_count)]['colours'])
+
+                    #Decode RandomFill with 1 to 4 pairs of values, e.g. SPACE 60 BOULDER 50 DIAMOND 9 FIREFLYl 2
+                    elif line_param[0] == "RandomFill":
+                        
+                        TileForProbability = []
+                        TileProbability = []
+
+                        line_values = line_param[1].strip().split(" ")
+                        for i in range(len(line_values)):
+                            if i % 2 == 0:  #Even values are elements to decode
+                                TileForProbability.append(get_map_value(line_values[i]))
+                            elif i > 0:  #Odd values are random integer values
+                                TileProbability.append(int(line_values[i]))
+
+                        add_cave_parameter(output_cave_json, output_cave_params, "TileForProbability", TileForProbability)
+                        add_cave_parameter(output_cave_json, output_cave_params, "TileProbability", TileProbability)
+
+                    else:
+                        add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", safe_byte(int(line_param[1])))
+
+        #Within the map section
+        elif within_map:
+
+            map_line = line.strip()
+            cave_line_count += 1
+            add_cave_map_row(cave_count, cave_line_count, map_line, output_cave_json, output_cave_params, output_cave_map_bytes, unsupported_elements)
+            output_cave_json["Map"].append(map_line)  #Add line to json file
+
+        #Within the objects section
+        elif within_objects:
+            #Note array co-ordinates are specified: object_cave_map[row1:row2,col1,col2]
+            pl = line.replace("="," ").strip().split(" ")
+            if pl[0] == "Point":
+                element, value = get_object_map_value(pl[3], mapped_elements)
+                #print("Draw point of {} in row {}, col {}".format(element,pl[2],pl[1]))
+                object_cave_map[int(pl[2]):int(pl[2])+1,int(pl[1]):int(pl[1])+1] = value  #Draw single point
+            elif pl[0] == "Line":
+                element, value = get_object_map_value(pl[5], mapped_elements)
+                if pl[1] == pl[3] or pl[2] == pl[4]:
+                    #print("Draw straight line of {} from row {}, col {} to row {}, col {}".format(element,pl[2],pl[1],pl[4],pl[3]))
+                    object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = value  #Draw single line
+                else:
+                    #print("Draw diagonal line of {} from row {}, col {} to row {}, col {}".format(element,pl[2],pl[1],pl[4],pl[3]))
+                    plot_diagonal_line(object_cave_map, int(pl[2]),int(pl[1]),int(pl[4]),int(pl[3]), value)
+            elif pl[0] == "FillRect":
+                if len(pl) > 6:
+                    element, value = get_object_map_value(pl[5], mapped_elements)
+                    fill_element, fill_value = get_object_map_value(pl[6], mapped_elements)
+                    #print("Draw rectangle of {}, filled with {} from row {}, col {} to row {}, col {}".format(element,fill_element,pl[2],pl[1],pl[4],pl[3]))
+                    object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = value  #Draw outer filled rectangle
+                    object_cave_map[int(pl[2])+1:int(pl[4]),int(pl[1])+1:int(pl[3])] = fill_value  #Draw inner filled rectangle
+                else:
+                    element, value = get_object_map_value(pl[5], mapped_elements)
+                    #print("Draw rectangle filled with {} from row {}, col {} to row {}, col {}".format(element,pl[2],pl[1],pl[4],pl[3]))
+                    object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = value  #Draw filled rectangle
+            elif pl[0] == "Rectangle":
+                element, value = get_object_map_value(pl[5], mapped_elements)
+                #print("Draw rectangle of {} from row {}, col {} to row {}, col {}".format(element,pl[2],pl[1],pl[4],pl[3]))
+                object_cave_map[int(pl[2]):int(pl[2])+1,int(pl[1]):int(pl[3])+1] = value  #Top line
+                object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[1])+1] = value  #Left line
+                object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[3]):int(pl[3])+1] = value  #Right line
+                object_cave_map[int(pl[4]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = value  #Bottom line
+
+    #Write all caves to json file
+    output_file_name = path.join(output_subfolder, "cavedef.json")
+    with open(output_file_name, "w") as outfile: 
+        json.dump(output_all_caves_json, outfile, indent=4, sort_keys=True)
+
+#endregion
+################################################################################
+
+def poke_source_code_sprites(bd_sprites_file, sprites_address, output_subfolder):
+
+    #Open the source code file and poke the values into the required addresses
+    input_source_file = open(path.join(output_subfolder, "BDSH3"), "r+b")  #Open the file as binary
+
+    with open(bd_sprites_file, "rb") as input_sprites_file:  #Open sprites file as binary and read contents
+        prog_bytes = input_sprites_file.read()
+
+    input_source_file.seek(sprites_address)  #Navigate to the start address
+    input_source_file.write(prog_bytes)  #Replace the bytes from this position with the list of values
+
+    input_source_file.close()
+
+################################################################################
+# Main Routine
+if __name__ == '__main__':
+
+    ### Config and file paths
+    base_path = path.dirname(path.abspath(__file__))
+    config_file = open(path.join(base_path, "config/config.json"))
+    config_settings = json.load(config_file)
+    element_map = config_settings["element_map"]
+    element_no_map = config_settings["unsupported_element_map"]
+    object_version_element_map = config_settings["object_version_element_map"]
+    colour_schemes = config_settings["colour_schemes"]
+    colour_map = config_settings["colour_map"]
+    addresses = config_settings["addresses"]
+    ssd_file_settings = config_settings["ssd_file_settings"]
+    config_file.close()
+
+    BD_code_folder = path.join(base_path, "BDcode")
+    BD_files_folder = path.join(base_path, "BDconvert")
+
+    ### Process each BD file in the conversion folder
+    for filename in os.listdir(BD_files_folder):
+
+        if path.isfile(path.join(BD_files_folder, filename)) and filename[-2:].upper() == "BD":
+
+            BD_filename = filename.split('.')[0]  #e.g. ArnoDash01 without the ".bd" extension
+            output_subfolder = path.join(base_path, "output", BD_filename)
+            if not os.path.exists(output_subfolder):
+                print(f"Creating output subfolder {output_subfolder}")
+                os.mkdir(output_subfolder)
+
+            #Read the BD file contents
+            input_file_name = path.join(base_path, BD_files_folder, filename)
+            input_file = open(input_file_name, "r")
+            all_input_lines = input_file.readlines()
+            input_file.close()
+
+            #Use the BD file contents to generate caves
+            print(f"Generating caves for {BD_filename}")
+            generate_caves(all_input_lines, output_subfolder)
+
+            #Copy the source code for updating sprites and creation of SSD file
+            copy_tree(BD_code_folder, output_subfolder)
+
+            #Replace sprites if required
+            if SPRITES_FILE != "":
+                print(f"Updating sprites for {BD_filename} using {SPRITES_FILE}")
+                #Note sprites are defined at the start of the file (position 0)
+                bd_sprites_file = path.join(base_path, "BDsprites", SPRITES_FILE)
+                poke_source_code_sprites(bd_sprites_file, 0, output_subfolder)
+
+            #Move BD file and cave definition json file to completed folder
+            print(f"Completing definitions for {BD_filename}")
+            BD_files_complete_folder = path.join(BD_files_folder, "done")
+            os.replace(input_file_name, path.join(BD_files_complete_folder, BD_filename + ".bd"))
+            os.replace(path.join(output_subfolder, "cavedef.json"), path.join(BD_files_complete_folder, "json", BD_filename + ".json"))
+
+            #Create SSD file
+            print(f"Creating SSD for {BD_filename}")
+            ssd_filepath = path.join(base_path, "output", "ssd", BD_filename + ".ssd")
+            create_ssd(BD_filename, ssd_filepath, 40, 3)  #SSD with file name as title, 40 tracks and bootable
+            output_subfolder_relpath = path.join("output", BD_filename)
+            os.chdir(output_subfolder_relpath)
+
+            #Create INF files for each source file using config data (INF files needed for inserting into SSD)
+            for file in ssd_file_settings:
+                if path.exists(file):
+                    values = ssd_file_settings[file]
+                    with open(file + ".inf", 'w') as f:
+                        f.write("$.{: <9} {:0>8} {:0>8} L {:0>8}".format(file, values['load'], values['exec'], values['size']))
+
+            #Insert each file into the SSD in order per the config file
+            #This sequence is essential for the SSD to be editable using the Boulder Dash Editor
+            disk_image = image.DiskImage()
+            disk_image.set_disk(ssd_filepath)
+
+            for file in ssd_file_settings:
+                if path.exists(file):
+                    print(f"  Inserting {file}")
+                    disk_image.insert(file)
+
+            os.chdir("../../")
+            if TIDY_OUTPUT_FOLDER:
+                print(f"Tidying up output files for {BD_filename}")
+                for file in os.listdir(output_subfolder_relpath):
+                    os.remove(path.join(output_subfolder_relpath,file))
+                os.removedirs(output_subfolder_relpath)
+            
+            print(f"Completed {BD_filename}")
