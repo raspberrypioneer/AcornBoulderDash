@@ -41,7 +41,7 @@ See [Stardot: More Boulder Dash!](https://stardot.org.uk/forums/viewtopic.php?t=
 ### Original game difficulty levels
 The original version of the game is preserved by having the difficulty levels use the 'standard' pseudo-random method of plotting boulders, diamonds, etc in a cave (same method used by the original Boulder Dash developer, Peter Liepa).
 
-- This is a compact approach for creating the original caves and replaces the method used by the original Boulder Dash developer, Andrew Bennett.
+- This is a compact approach for creating the original caves and replaces the method used by the coder of the Acorn conversion, Andrew Bennett.
 - A pseudo-random value is calculated by a function using the seed value for the cave difficulty level. It is compared with each of the 4 tile probability values to determine whether to draw those tiles or not.
 - The parameters needed for the pseudo-random function are held in cave files. The map data is used for the non-random 'fixed' tiles (often walls).
 - If the cave uses this method of creating the layout, the pseudo-random tiles are applied first, followed by the non-random tiles required to complete the map.
