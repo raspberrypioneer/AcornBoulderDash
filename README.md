@@ -3,6 +3,8 @@
 This repository includes the following:
 - Enhanced version of the Boulder Dash game (6502 assembler and build programs) which allows new caves to be played. The caves and difficulty levels from the original game are also supported.
 - Cave file generator which creates caves from Boulder Dash cave format files (BDCFFs) developed by fans of the game.
+- Cave editor to load and edit caves or create completely new ones
+- Sprite editor to change the game sprites and tiles
 - Sprite set decoder for converting bytes into their sprite tiles and displaying the results.
 
 More information about this project can be found at: [Stardot: More Boulder Dash!](https://stardot.org.uk/forums/viewtopic.php?t=28372)
@@ -36,8 +38,6 @@ Caves are no longer held within the main program, instead they are defined as in
 
 In the map layout of 400 bytes, each tile (dirt, boulder, diamond etc) is a nibble, so a single byte represents two tiles. There are 800 tiles for the interior of the cave (20 rows by 40 columns), excluding the top and bottom steel walls which are plotted by the game engine.
 
-See [Stardot: More Boulder Dash!](https://stardot.org.uk/forums/viewtopic.php?t=28372) for details about the cave editors which allow new caves to be created or existing ones tweaked (usually to make them a bit easier)!
-
 ### Original game difficulty levels
 The original version of the game is preserved by having the difficulty levels use the 'standard' pseudo-random method of plotting boulders, diamonds, etc in a cave (same method used by the original Boulder Dash developer, Peter Liepa).
 
@@ -64,8 +64,8 @@ The output from this process is kept in sub-folders.
 - [Build output includes file BDSH3 compiled from main.asm](./output/build/)
 - [SSD output contains the complete game](./output/ssd)
 
-
 ## Cave file generator
+
 This is a Python program for creating playable caves from Boulder Dash cave format files (BDCFFs) which can be found online. A substantial collection can be found at [Arno's Boulder Dash fansite](https://www.boulder-dash.nl/).
 
 ### Boulder Dash cave format files
@@ -92,26 +92,92 @@ The butterflies and fireflies contain a bit of each colour.
 
 ### Usage
 - The game engine and related startup code used in this build is taken from the [BDcode folder](./BDcode/).
-- If there is a new assembled program which should be used for cave generation, replace [BDSH3](./BDcode/BDSH3) with the compiled version from the [build output folder](./output/build/)
+- If there is a new assembled program which should be used for cave generation, replace [BDSH3](./BDcode/BDSH3) with the compiled version from the [build output folder](./output/build/).
 - Copy one or more BDCFFs into the [BDconvert folder](./BDconvert/).
 - Optionally replace the original sprites with a custom set by amending the SPRITES_FILE value in the [BDcavegen.py python script](./BDcavegen.py) to point to a sprite file in [sample sprites folder](./BDsprites/). 
 - Run the script.
-- The resulting SSDs are located in [SSD output](./output/ssd). Converted BDCFFs are moved to the [done sub-folder](./BDconvert/done/)
+- The resulting SSDs are located in [SSD output](./output/ssd). Converted BDCFFs are moved to the [done sub-folder](./BDconvert/done/).
 
+## Cave editor
+An easy way to create or edit a cave is to use the [cave editor](./BDeditor/). The editor includes a help page which lists the main functions and the keys needed to use them.
 
-## Sprite set decoder
-This is a Python program for displaying the sprites used in the game. It decodes the bytes for each sprite and outputs the result in text format showing the colours and their codes.
+![Cave editor help screen](./docs/cave-editor-help.png)
+
+Press a key to close the help screen then choose a cave to edit (A-P are the main caves, Q-T are the intermission / bonus caves). There are two main sections in the editor, the cave map at the top and the parameters at the bottom.
+
+![Cave editor main screen](./docs/cave-editor-main.png)
+
+The map in the top section represents what the cave will be like when the game is played.
+
+The parameter section is divided into sub-sections.
+- The first line includes a count of the number of diamonds on the cave, the cave letter, name, and colour selection.
+- The next section is where the diamond and bonus value, amoeba / magic wall milling time, total diamonds required, and time allowed are edited. The latter two parameters may be different per level 1 to 5.
+- The section following is where the 'random' parameters are set for the caves that are designed to use them (optional). There is a random seed value for each level. Four different tiles with their probabilities can be edited.
+- The final section is where the tiles / elements are selected.
+
+### Editing the map and parameters
+- Select a cave to edit, either from the initial prompt or with `SHIFT + L` to load one.
+- Choose the tile / element to plot with the `Z X` keys or use their shortcut keys.
+- Navigate across the map with the cursor keys and press `SPACE` to plot a tile. `DELETE` will remove it.
+- Draw multiple tiles quickly by holding down `CTRL` and navigating.
+- Press `E` to edit the parameters (toggles between map / parameters).
+- Use the left / right keys to navigate to a parameter and up / down to amend its value.
+- When complete, choose `SHIFT + S` to save.
+
+### Keys used in the editor
+| Status | Meaning |
+| ------ | ------- |
+| `Q W P L` or cursor keys | Navigation keys for left, right, up, down. Used in map and parameter edit modes |
+| `SPACE` or `CTRL` | Draws the selected tile on the map. Hold down `CTRL` with the navigation keys to plot a line of tiles |
+| `0 to 9 and R F N` | Selects tiles for space, earth, wall, steel wall, diamond, boulder, firefly, amoeba, butterfly, magic wall, Rockford-start, finish, null-tile |
+| `Z X` | Select tiles by cycling through them |
+| `F1 F2 F3` | Change the cave colours, 3 different colours can be chosen |
+| `E` | Toggles between map and parameter edit mode |
+| `SHIFT + S` | Saves all edits on the cave |
+| `SHIFT + L` | Load a new cave |
+| `DELETE` | Remove tile which becomes a space |
+| `SHIFT + DELETE` | Clears a cave with spaces. Holding down `CTRL` with these keys clears the cave with the currently selected tile |
+| `M` | Make a new cave with generated tiles using the level 1 'random' parameters. The cave should have null tiles which will be replaced with generated tiles. This provides a shortcut method of producing a new cave which can be further edited |
+| `SHIFT 1 to 5` | View what a cave will look like across levels 1 to 5 when the 'random' generated tiles are used. The level 1 to 5 'random' parameters provide the values used to decide whether to plot a particular tile or not. The base cave should include null tiles which is where generated tiles will appear, but unlike the above, these are preserved in the cave map. After viewing, press a key to resume editing |
+| `T` | Toggles view of start (Rockford) and exit tiles |
+| `C` | Change cave name |
+| `H` | View help page |
+
+## Sprite editor
+The [sprite editor](./BDeditor/) allows new sprites to be created and used in the game. Like the cave editor, it includes a help page, reached by pressing `H`, which shows the main functions and keys used.
+
+![Sprite editor help screen](./docs/sprite-editor-help.png)
+
+The full sprite set is displayed on the bottom of the screen and sprites are selected from there. A selected sprite is edited on the top part of the screen.
+
+![Sprite editor main screen](./docs/sprite-editor-main.png)
+
+- Edit an existing spriteset by first loading it with `SHIFT + L`.
+- Use the cursor keys to navigate to a sprite and press `E` to begin changing it. 
+- Here the cursor keys are used with `1 2 3` to change a pixel colour and `SPACE` to plot it. `DELETE` will unplot.
+- When done, press `E` and select the next sprite to edit.
+- Repeat for all sprites and save the spriteset with `SHIFT + S`.
+- Enter the file name to save to. Entering a new file name allows a new spriteset to easily be created from an existing one.
+
+There are many useful functions included in the editor. Highlights include the `A` animation function (e.g. select Rockford and press `A` to see this subset animate); the essential copy / paste functions; and the shift sprite up / down / left / right function. The help page `H` shows the functions available.
+
+To play with a different spriteset, choose the option to change the sprites when the game is started via the menu, then enter the name of the spriteset file to play with. Below are a couple of examples.
+
+![Bubble Bobble inspired spriteset](./docs/bubbob-spriteset.png)
+
+![Robotic theme spriteset](./docs/robo-spriteset.png)
+
+Unrelated to the sprite editor, there is a sprite decoder utility program for displaying the sprites used in the game. It decodes the bytes for each sprite and outputs the result in text format showing the colours and their codes.
 
 ![Sample sprite output](./docs/sample-sprite.png)
 
 Although largely replaced with a full sprite editor now, this program will accept a csv file with sprite byte values to display and output to a sprite set file. See [DecodeTiles.py](./DecodeTiles.py) for more information.
-
-See [Stardot: More Boulder Dash!](https://stardot.org.uk/forums/viewtopic.php?t=28372) for details about the sprite editor.
-
 
 ## Acknowledgements
 The information and code shared by the following developers and sources is gratefully acknowledged:
 
 - [Disassembly of the original game](https://github.com/TobyLobster/Boulderdash), by TobyLobster
 - [Getting the cave-load method to work](https://stardot.org.uk/forums/viewtopic.php?t=28372), by billcarr2005
+- [Cave editor / construction set](https://stardot.org.uk/forums/viewtopic.php?t=28372), by Cybershark
+- [Sprite editor to change the game characters / tiles](https://stardot.org.uk/forums/viewtopic.php?t=28372), by Cybershark
 - [Arno's Boulder Dash fansite](https://www.boulder-dash.nl/)
