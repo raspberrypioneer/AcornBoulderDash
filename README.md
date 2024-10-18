@@ -2,6 +2,7 @@
 
 This repository includes the following:
 - Enhanced version of the Boulder Dash game (6502 assembler and build programs) which allows new caves to be played. The caves and difficulty levels from the original game are also supported.
+- Addition of the new Boulder Dash 2 elements, slime and growing wall to support that version of the game
 - Cave file generator which creates caves from Boulder Dash cave format files (BDCFFs) developed by fans of the game.
 - Cave editor to load and edit caves or create completely new ones
 - Sprite editor to change the game sprites and tiles
@@ -33,7 +34,8 @@ Caves are no longer held within the main program, instead they are defined as in
 3 bytes Cave colour scheme x3 colours
 2 bytes Rockford start row and column
 2 bytes Rockford exit row and column
-13 bytes Unused / future use / cave labels
+1 byte Slime permeability (Introduced in Boulder Dash 2)
+12 bytes Unused / future use / cave labels
 ```
 
 In the map layout of 400 bytes, each tile (dirt, boulder, diamond etc) is a nibble, so a single byte represents two tiles. There are 800 tiles for the interior of the cave (20 rows by 40 columns), excluding the top and bottom steel walls which are plotted by the game engine.
@@ -42,23 +44,20 @@ In the map layout of 400 bytes, each tile (dirt, boulder, diamond etc) is a nibb
 The original version of the game is preserved by having the difficulty levels use the 'standard' pseudo-random method of plotting boulders, diamonds, etc in a cave (same method used by the original Boulder Dash developer, Peter Liepa).
 
 - This is a compact approach for creating the original caves and replaces the method used by the coder of the Acorn conversion, Andrew Bennett.
+- If the cave uses this method to create the layout, the non-random 'fixed' tiles are applied first, followed by pseudo-random generated tiles which are plotted over any of the non-fixed or 'null' tiles.
 - A pseudo-random value is calculated by a function using the seed value for the cave difficulty level. It is compared with each of the 4 tile probability values to determine whether to draw those tiles or not.
-- The parameters needed for the pseudo-random function are held in cave files. The map data is used for the non-random 'fixed' tiles (often walls).
-- If the cave uses this method of creating the layout, the pseudo-random tiles are applied first, followed by the non-random tiles required to complete the map.
-- The non-random tiles are plotted over those produced by the pseudo random method. To support this, 'null' tiles are used in the map data which means preserve the (pseudo-random) tile already drawn.
+- The parameters needed for the pseudo-random function are held in cave files. The map data is used for the non-random 'fixed' tiles (e.g. walls).
 - Entirely new caves can be created using this method if required. It is also possible to mix caves which use the pseudo-random method with those that do not.
 
-Below is original cave B, one example with just the pseudo-random objects, and the other with the extra 'fixed' elements to complete the cave with.
-
-![Pseudo-random before fixed tiles](./docs/pseudo-random-before.png)
-
-![With fixed tiles](./docs/pseudo-random-after.png)
+Below is original cave B. The fixed tiles are the walls and passage-ways of spaces. All the other tiles are plotted using the pseudo-random method. Where no random tile is determined in a tile position, a default is used usually the dirt tile.
+![Original cave B](./docs/cave-b-example.png)
 
 ### Code and build
-The assembler code is compiled using ACME and an SSD file including the original caves is produced by a Python build script. The caves can be replaced with others if needed.
+The assembler code is compiled using ACME and an SSD file including the caves is produced by a Python build script. Amend the `SSD_NAME` value in this script to switch between producing Boulder Dash 1 and 2.
 - [main.asm is the game engine assembler code](./asm/main.asm)
 - [BDcompileasm.py is the Python SSD file build script](./BDcompileasm.py)
-- [BDoriginalcaves folder has the cave files used in the SSD](./BDoriginalcaves/)
+- [BDoriginalcaves folder has the cave files for Boulder Dash](./BDoriginalcaves/)
+- [BD2originalcaves folder has the cave files for Boulder Dash 2](./BD2originalcaves/)
 
 The output from this process is kept in sub-folders.
 - [Build output includes file BDSH3 compiled from main.asm](./output/build/)

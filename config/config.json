@@ -1,5 +1,5 @@
 {
-    "valid_parameters": ["DiamondValue", "DiamondsRequired", "CaveTime", "AmoebaTime", "MagicWallTime", "Intermission", "Colors", "InitialFill", "RandSeed", "RandomFill"],
+    "valid_parameters": ["DiamondValue", "DiamondsRequired", "CaveTime", "AmoebaTime", "MagicWallTime", "Intermission", "Colors", "InitialFill", "RandSeed", "RandomFill", "SlimePermeability"],
     "element_map": {
         " ": {"value": 0, "element": "space"},
         ".": {"value": 1, "element": "earth"},
@@ -9,15 +9,15 @@
         "r": {"value": 5, "element": "rock"},
         "q": {"value": 6, "element": "firefly"},
         "a": {"value": 7, "element": "amoeba"},
+        "s": {"value": 9, "element": "slime"},
         "P": {"value": 10, "element": "start point"},
         "X": {"value": 11, "element": "exit"},
+        "x": {"value": 12, "element": "expanding wall"},
         "M": {"value": 13, "element": "magic wall"},
         "c": {"value": 14, "element": "butterfly"},
         "-": {"value": 15, "element": "null"}
     },
     "unsupported_element_map": {
-        "s": {"element": "slime", "substitute": "."},
-        "x": {"element": "expanding wall", "substitute": "w"},
         "F": {"element": "dummy Rockford", "substitute": "r"},
         "H": {"element": "hidden exit", "substitute": "X"},
         "b": {"element": "butterfly up", "substitute": "c"},
@@ -30,17 +30,21 @@
         "SPACE": {"value": 0, "element": "space", "symbol": " "},
         "DIRT": {"value": 1, "element": "earth", "symbol": "."},
         "WALL": {"value": 2, "element": "wall", "symbol": "w"},
-        "STEEL": {"value": 3, "element": "titanium wall", "symbol": "W"},
+        "STEELWALL": {"value": 3, "element": "titanium wall", "symbol": "W"},
         "DIAMOND": {"value": 4, "element": "diamond", "symbol": "d"},
         "BOULDER": {"value": 5, "element": "rock", "symbol": "r"},
         "FIREFLYl": {"value": 6, "element": "firefly", "symbol": "q"},
         "FIREFLYr": {"value": 6, "element": "firefly", "symbol": "q"},
         "AMOEBA": {"value": 7, "element": "amoeba", "symbol": "a"},
+        "SLIME": {"value": 9, "element": "slime", "symbol": "s"},
         "INBOX": {"value": 10, "element": "start point", "symbol": "P"},
         "OUTBOX": {"value": 11, "element": "exit", "symbol": "X"},
+        "HEXPANDINGWALL": {"value": 12, "element": "expanding wall", "symbol": "x"},
         "MAGICWALL": {"value": 13, "element": "magic wall", "symbol": "M"},
         "BUTTERFLYl": {"value": 14, "element": "butterfly", "symbol": "c"},
         "BUTTERFLYr": {"value": 14, "element": "butterfly", "symbol": "c"},
+        "BUTTERFLYu": {"value": 14, "element": "butterfly", "symbol": "c"},
+        "BUTTERFLYd": {"value": 14, "element": "butterfly", "symbol": "c"},
         "NULL": {"value": 15, "element": "null", "symbol": "-"}
     },
     "dimensions": {
@@ -91,7 +95,9 @@
         "Intermission": 27,
         "Colors": 28,
         "RockfordStart": 31,
-        "RockfordExit": 33
+        "RockfordExit": 33,
+        "SlimePermeability": 35,
+        "RandomFillBelow": 36
     },
     "ssd_file_settings": {
         "BDSH1": {"load": "1900", "exec": "0", "size": "300"},

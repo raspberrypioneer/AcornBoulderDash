@@ -197,12 +197,15 @@ def generate_caves(all_input_lines, output_subfolder):
             intermission_cave = False
 
             output_cave_json = {}
+            output_cave_json["CaveLetter"] = cave_letters[cave_count-1]
             output_cave_json["CaveNumber"] = cave_count
             output_cave_json["Map"] = []
 
             output_cave_params = []
             output_cave_map_bytes = []
             unsupported_elements = []
+
+            last_tile_for_probability = []
 
             #Initialise the cave parameter bytes
             for i in range(48):
@@ -271,7 +274,7 @@ def generate_caves(all_input_lines, output_subfolder):
             within_objects = True
 
             mapped_elements = {}
-            fill_element, fill_value = get_object_map_value("STEEL", mapped_elements)  #Assume cave has titanium / steel outer walls
+            fill_element, fill_value = get_object_map_value("STEELWALL", mapped_elements)  #Assume cave has titanium / steel outer walls
             fill_element, fill_value = get_object_map_value("DIRT", mapped_elements)  #Assume cave likely to contain dirt
             fill_element, fill_value = get_object_map_value("NULL", mapped_elements)  #Object caves are base caves for the pseudo-random routine, so they are filled with nulls
 
@@ -355,8 +358,13 @@ def generate_caves(all_input_lines, output_subfolder):
                             elif i > 0:  #Odd values are random integer values
                                 TileProbability.append(int(line_values[i]))
 
+                        last_tile_for_probability = TileForProbability  #Potentially used later
+
                         add_cave_parameter(output_cave_json, output_cave_params, "TileForProbability", TileForProbability)
                         add_cave_parameter(output_cave_json, output_cave_params, "TileProbability", TileProbability)
+
+                    elif line_param[0] == "SlimePermeability":
+                        add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", safe_byte(int(float(line_param[1]))))
 
                     else:
                         add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", safe_byte(int(line_param[1])))
@@ -403,6 +411,28 @@ def generate_caves(all_input_lines, output_subfolder):
                 object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[1])+1] = value  #Left line
                 object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[3]):int(pl[3])+1] = value  #Right line
                 object_cave_map[int(pl[4]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = value  #Bottom line
+            elif pl[0] == "Raster":
+                element, value = get_object_map_value(pl[7], mapped_elements)
+                #print("Draw raster of {} from row {}, col {}, number of rows {}, cols {}, gap between rows {}, cols {}".format(element,pl[2],pl[1],pl[4],pl[3],pl[6],pl[5]))
+                plot_row = int(pl[2])
+                for r in range(int(pl[4])):
+                    plot_col = int(pl[1])
+                    for c in range(int(pl[3])):
+                        object_cave_map[plot_row:plot_row+1,plot_col:plot_col+1] = value  #Draw single point
+                        plot_col += int(pl[5])
+                    plot_row += int(pl[6])
+            elif pl[0] == "Add":
+                #Only seen in BoulderDash02.bd twice with values:
+                #  Add=0 1 FIREFLYl BOULDER   #means add BOULDER on row below FIREFLYl
+                #  Add=0 1 DIAMOND MAGICWALL  #means add MAGICWALL on row below DIAMOND
+                #These become cave parameters (max 4 values), with e.g. BOULDER element value (5) occupying parameter 3
+                #because FIREFLYl is the 3rd randomly generated tile. All other parameters are 0
+                find_element, find_value = get_object_map_value(pl[3], mapped_elements)  #e.g. FIREFLYl as above
+                apply_element, apply_value = get_object_map_value(pl[4], mapped_elements)  #e.g. BOULDER as above
+                RandomFillBelow = [0,0,0,0]
+                i = last_tile_for_probability.index(find_value)
+                RandomFillBelow[i] = apply_value
+                add_cave_parameter(output_cave_json, output_cave_params, "RandomFillBelow", RandomFillBelow)
 
     #Write all caves to json file
     output_file_name = path.join(output_subfolder, "cavedef.json")

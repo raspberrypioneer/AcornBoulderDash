@@ -1,5 +1,6 @@
 [
     {
+        "CaveLetter": "A",
         "CaveNumber": 1,
         "CaveTime": [
             150,
@@ -73,6 +74,7 @@
         ]
     },
     {
+        "CaveLetter": "B",
         "CaveNumber": 2,
         "CaveTime": [
             150,
@@ -148,6 +150,7 @@
         ]
     },
     {
+        "CaveLetter": "C",
         "CaveNumber": 3,
         "CaveTime": [
             150,
@@ -221,6 +224,7 @@
         ]
     },
     {
+        "CaveLetter": "D",
         "CaveNumber": 4,
         "CaveTime": [
             120,
@@ -290,6 +294,7 @@
         ]
     },
     {
+        "CaveLetter": "Q",
         "CaveNumber": 5,
         "CaveTime": [
             10,
@@ -338,6 +343,7 @@
         ]
     },
     {
+        "CaveLetter": "E",
         "CaveNumber": 6,
         "CaveTime": [
             150,
@@ -394,6 +400,7 @@
         ]
     },
     {
+        "CaveLetter": "F",
         "CaveNumber": 7,
         "CaveTime": [
             150,
@@ -463,6 +470,7 @@
         ]
     },
     {
+        "CaveLetter": "G",
         "CaveNumber": 8,
         "CaveTime": [
             120,
@@ -537,6 +545,7 @@
         ]
     },
     {
+        "CaveLetter": "H",
         "CaveNumber": 9,
         "CaveTime": [
             120,
@@ -611,6 +620,7 @@
         ]
     },
     {
+        "CaveLetter": "R",
         "CaveNumber": 10,
         "CaveTime": [
             15,
@@ -658,6 +668,7 @@
         ]
     },
     {
+        "CaveLetter": "I",
         "CaveNumber": 11,
         "CaveTime": [
             150,
@@ -729,6 +740,7 @@
         ]
     },
     {
+        "CaveLetter": "J",
         "CaveNumber": 12,
         "CaveTime": [
             150,
@@ -785,6 +797,7 @@
         ]
     },
     {
+        "CaveLetter": "K",
         "CaveNumber": 13,
         "CaveTime": [
             120,
@@ -858,6 +871,7 @@
         ]
     },
     {
+        "CaveLetter": "L",
         "CaveNumber": 14,
         "CaveTime": [
             180,
@@ -931,6 +945,7 @@
         ]
     },
     {
+        "CaveLetter": "S",
         "CaveNumber": 15,
         "CaveTime": [
             20,
@@ -979,6 +994,7 @@
         ]
     },
     {
+        "CaveLetter": "M",
         "CaveNumber": 16,
         "CaveTime": [
             160,
@@ -1049,6 +1065,7 @@
         ]
     },
     {
+        "CaveLetter": "N",
         "CaveNumber": 17,
         "CaveTime": [
             150,
@@ -1105,6 +1122,7 @@
         ]
     },
     {
+        "CaveLetter": "O",
         "CaveNumber": 18,
         "CaveTime": [
             120,
@@ -1179,6 +1197,7 @@
         ]
     },
     {
+        "CaveLetter": "P",
         "CaveNumber": 19,
         "CaveTime": [
             150,
@@ -1249,6 +1268,7 @@
         ]
     },
     {
+        "CaveLetter": "T",
         "CaveNumber": 20,
         "CaveTime": [
             20,

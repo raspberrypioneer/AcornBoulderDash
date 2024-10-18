@@ -1,5 +1,5 @@
-; Original Boulder Dash caves for the Acorn Electron version of the game
-; There are a few minor differences in this version to the original Peter Liepa version
+; Boulder Dash 1 caves for the Acorn Electron version of the game
+; There are a few minor differences in this version compared to the original Peter Liepa version
 ; Dirt tiles in cave A at 6 8 and 28 12, not a boulder (pseudo-random generated) - affects demo mode
 ; Amoeba / Magic Walls times in caves G, H, M, O, P, T
 ; Firefly in a box starting positions in caves E, L, P

@@ -4,30 +4,47 @@
 ; This version enhances the disassembly of Boulderdash, by TobyLobster 2024
 ; See https://github.com/TobyLobster/Boulderdash for the original version
 ;
-; It includes the following two main features:
+; It includes the following three main features:
 ; Loading caves from files
-;   - Cave parameters (diamonds needed, cave time etc) and the map layout are loaded 
-;     from individual cave files, one for each of the caves A-T
-;     (credit to billcarr2005 for the map load).
-;   - Each cave file contains everything needed to use that cave with the game 
-;     engine (no need to 'poke' the program to get a cave to work).
-;   - The cave definition has the structure described below.
+;   - Cave parameters (diamonds needed, cave time etc) and the map layout are loaded from 
+;     individual cave files, one for each of the caves A-T (credit to billcarr2005 for this)
+;   - Each cave file contains everything needed to use that cave with the game engine. The  
+;     cave definition has the structure described below
 ;   - This approach allows new caves to be developed and used with the main game engine, 
 ;     including caves developed by Boulder Dash fans, see https://www.boulder-dash.nl/
 ;
 ; Preservation of the original version of the game
-;   - The original version is preserved by having the difficulty levels use the 
-;     'standard' pseudo-random method of plotting boulders, diamonds, etc in a cave 
-;     (same method used by the original Boulder Dash developer, Peter Liepa).
-;   - This is a compact approach for creating the original caves. Cave files are still
-;     used for the basic essential tiles needed to form the map. These tiles are drawn
-;     'on top' of the tiles produced by the pseudo random method, which happens first.
-;   - These caves files are slightly special as they use 'null' tiles. Anything that is
-;     not a null tile replaces the tile produced by the pseudo-random plotting method.
-;   - Entirely new caves can be created using this method.
+;   - The original version is preserved by having the difficulty levels use the 'standard' 
+;     pseudo-random method of plotting boulders, diamonds, etc in a cave (same method used 
+;     by the original Boulder Dash developer, Peter Liepa)
+;   - Cave files are used for the basic essential tiles needed to form the map and are drawn 
+;     first. They include 'null' tiles which are replaced by the tiles produced by the random 
+;     plotting method which happens next
+;
+; Additions to support the Boulder Dash 2 game
+;   - New elements introduced, slime and growing wall
+;   - Slime allows rocks and diamonds to pass through it but nothing else. It requires a new 
+;     slime permeability cave parameter to control how quickly those elements permeate. 
+;     Used in caves E (random delay) and M (no pass-through delay)
+;   - Growing wall allows a wall to extend horizontally if the item beside it is empty space. 
+;     Used in cave O only
+;   - Caves G and K require two tiles to be plotted using the pseudo-random method instead 
+;     of just one. These tiles may differ, and the second one is plotted below the first one. 
+;     The cave parameters include the 4 tiles needed to populate the second tile
+;   - Cave tiles are now plotted by applying the basic essential tiles from the cave file 
+;     first, followed by random ones if allowed by use of the 'null' tile 
+;     (previously the other way around). Needed to support the two-tile random plot above
+;   - The starting position of butterflies and fireflies in some caves has needed slight 
+;     adjustment. Those elements can sometimes attempt to travel in a different default 
+;     direction in the original game (e.g. right instead of left). Support for an extra 3 
+;     versions of butterflies and fireflies would be required to replicate this, however 
+;     setting different starting positions is a great substitute. This affects caves 
+;     A, F, H which still play in much the same way as the original game
+;   - None of this affects the original Boulder Dash game
 ;
 ; As a result of these changes there are many unused bytes which could be removed if 
 ; necessary.
+;
 ;
 ; Cave file structure
 ; -------------------
@@ -78,10 +95,10 @@
 ;   $06 = map_firefly             (with animation states $06, $16, $26, $36)
 ;   $07 = map_amoeba              (states $07, $17, $27, $37, $47, $57, $67, and $77 as the amoeba grows)
 ;   $08 = map_rockford_appearing_or_end_position
-;   $09 = map_firefly_in_earth_box
+;   $09 = map_slime
 ;   $0a = map_explosion
-;   $0b = map_vertical_strip      (in preprocessing: value above is filled down to the next $0b)
-;   $0c = map_horizontal_strip    (in preprocessing: value is copied to the end of the row)
+;   $0b = map_vertical_strip      (not used in Boulder Dash version 2)
+;   $0c = map_growing_wall
 ;   $0d = map_magic_wall
 ;   $0e = map_butterfly           (with animation states $0e, $1e, $2e, $3e)
 ;   $0f = map_rockford            ($0f=waiting, $1f=walking left, $2f=walking right)
@@ -133,9 +150,9 @@ map_diamond                              = 4
 map_earth                                = 1
 map_explosion                            = 10
 map_firefly                              = 6
-map_firefly_in_earth_box                 = 9
+map_slime                                = 9
 map_amoeba                               = 7
-map_horizontal_strip                     = 12
+map_growing_wall                         = 12
 map_large_explosion_state1               = 19
 map_large_explosion_state2               = 35
 map_large_explosion_state3               = 51
@@ -912,8 +929,10 @@ cell_type_to_sprite
 amoeba_animated_sprite0
     !byte sprite_amoeba1                                                                ; 1f87: 14          .              ; cell type $07 = map_amoeba
     !byte sprite_earth2                                                                 ; 1f88: 1e          .              ; cell type $08 = map_rockford_appearing_or_end_position
-    !byte sprite_titanium_wall1                                                         ; 1f89: 07          .              ; cell type $09 = map_firefly_in_earth_box
-    !text "LDA"                                                                         ; 1f8a: 4c 44 41    LDA            ; cell type $0A = map_explosion; cell type $0B = map_vertical_strip; cell type $0C = map_horizontal_strip
+slime_animated_sprite0
+    !byte sprite_amoeba1                                                                ; 1f89: 07          .              ; cell type $09 = map_slime
+    !text "LD"                                                                          ; 1f8a: 4c 44       LD             ; cell type $0A = map_explosion; cell type $0B = map_vertical_strip
+    !byte sprite_magic_wall1                                                            ;                                  ; cell type $0C = map_growing_wall
     !byte sprite_wall2                                                                  ; 1f8d: 0b          .              ; cell type $0D = map_magic_wall
     !byte sprite_butterfly1                                                             ; 1f8e: 16          .              ; cell type $0E = map_butterfly
 rockford_sprite
@@ -928,10 +947,10 @@ rockford_sprite
     !byte sprite_firefly4                                                               ; 1f96: 1c          .              ; cell type $16 = map_firefly | map_anim_state1
     !byte sprite_amoeba1                                                                ; 1f97: 14          .              ; cell type $17 = map_amoeba | map_anim_state1
     !byte sprite_box                                                                    ; 1f98: 09          .              ; cell type $18 = map_active_exit
-    !byte sprite_slash                                                                  ; 1f99: 3e          >              ; cell type $19 = map_firefly_in_earth_box | map_anim_state1
+    !byte sprite_amoeba1                                                                ; 1f99: 3e          >              ; cell type $19 = map_slime | map_anim_state1
     !byte sprite_firefly4                                                               ; 1f9a: 1c          .              ; cell type $1A = map_explosion | map_anim_state1
     !byte sprite_butterfly2                                                             ; 1f9b: 17          .              ; cell type $1B = map_vertical_strip | map_anim_state1
-    !byte sprite_amoeba1                                                                ; 1f9c: 14          .              ; cell type $1C = map_horizontal_strip | map_anim_state1
+    !byte sprite_magic_wall1                                                            ; 1f9c: 14          .              ; cell type $1C = map_growing_wall | map_anim_state1
     !byte sprite_magic_wall1                                                            ; 1f9d: 10          .              ; cell type $1D = map_magic_wall | map_anim_state1
     !byte sprite_butterfly1                                                             ; 1f9e: 16          .              ; cell type $1E = map_butterfly | map_anim_state1
     !byte sprite_rockford_moving_left3                                                  ; 1f9f: 2c          ,              ; cell type $1F = map_rockford | map_anim_state1
@@ -945,10 +964,10 @@ rockford_sprite
     !byte sprite_firefly4                                                               ; 1fa6: 1c          .              ; cell type $26 = map_firefly | map_anim_state2
     !byte sprite_amoeba2                                                                ; 1fa7: 15          .              ; cell type $27 = map_amoeba | map_anim_state2
     !byte sprite_firefly2                                                               ; 1fa8: 1a          .              ; cell type $28 = map_rockford_appearing_or_end_position | map_anim_state2
-    !byte $61                                                                           ; 1fa9: 61          a              ; cell type $29 = map_firefly_in_earth_box | map_anim_state2
+    !byte sprite_amoeba2                                                                ; 1fa9: 61          a              ; cell type $29 = map_slime | map_anim_state2
     !byte sprite_firefly4                                                               ; 1faa: 1c          .              ; cell type $2A = map_explosion | map_anim_state2
     !byte sprite_butterfly2                                                             ; 1fab: 17          .              ; cell type $2B = map_vertical_strip | map_anim_state2
-    !byte sprite_amoeba1                                                                ; 1fac: 14          .              ; cell type $2C = map_horizontal_strip | map_anim_state2
+    !byte sprite_magic_wall1                                                            ; 1fac: 14          .              ; cell type $2C = map_growing_wall | map_anim_state2
     !byte sprite_wall2                                                                  ; 1fad: 0b          .              ; cell type $2D = map_magic_wall | map_anim_state2
     !byte sprite_butterfly1                                                             ; 1fae: 16          .              ; cell type $2E = map_butterfly | map_anim_state2
     !byte sprite_rockford_moving_right4                                                 ; 1faf: 31          1              ; cell type $2F = map_rockford | map_anim_state2
@@ -962,10 +981,10 @@ rockford_sprite
     !byte sprite_firefly4                                                               ; 1fb6: 1c          .              ; cell type $36 = map_firefly | map_anim_state3
     !byte sprite_amoeba2                                                                ; 1fb7: 15          .              ; cell type $37 = map_amoeba | map_anim_state3
     !byte sprite_firefly2                                                               ; 1fb8: 1a          .              ; cell type $38 = map_rockford_appearing_or_end_position | map_anim_state3
-    !byte sprite_wall2                                                                  ; 1fb9: 0b          .              ; cell type $39 = map_firefly_in_earth_box | map_anim_state3
+    !byte sprite_amoeba2                                                                ; 1fb9: 0b          .              ; cell type $39 = map_slime | map_anim_state3
     !byte sprite_firefly4                                                               ; 1fba: 1c          .              ; cell type $3A = map_explosion | map_anim_state3
     !byte sprite_butterfly2                                                             ; 1fbb: 17          .              ; cell type $3B = map_vertical_strip | map_anim_state3
-    !byte sprite_amoeba1                                                                ; 1fbc: 14          .              ; cell type $3C = map_horizontal_strip | map_anim_state3
+    !byte sprite_magic_wall1                                                            ; 1fbc: 14          .              ; cell type $3C = map_growing_wall | map_anim_state3
     !byte sprite_wall2                                                                  ; 1fbd: 0b          .              ; cell type $3D = map_magic_wall | map_anim_state3
     !byte sprite_butterfly1                                                             ; 1fbe: 16          .              ; cell type $3E = map_butterfly | map_anim_state3
     !byte sprite_rockford_tapping_foot4                                                 ; 1fbf: 28          (              ; cell type $3F = map_rockford | map_anim_state3
@@ -980,10 +999,12 @@ rockford_sprite
 amoeba_animated_sprites4
     !byte sprite_amoeba2                                                                ; 1fc7: 15          .              ; cell type $47 = map_amoeba | map_anim_state4
     !byte sprite_rockford_moving_right4                                                 ; 1fc8: 31          1              ; cell type $48 = map_rockford_appearing_or_end_position | map_anim_state4
-    !byte sprite_rockford_blinking1                                                     ; 1fc9: 20                         ; cell type $49 = map_firefly_in_earth_box | map_anim_state4
+slime_animated_sprite1
+    !byte sprite_amoeba2                                                                ; 1fc9: 20                         ; cell type $49 = map_slime | map_anim_state4
     !byte sprite_firefly4                                                               ; 1fca: 1c          .              ; cell type $4A = map_explosion | map_anim_state4
     !byte sprite_butterfly2                                                             ; 1fcb: 17          .              ; cell type $4B = map_vertical_strip | map_anim_state4
-    !text "KB"                                                                          ; 1fcc: 4b 42       KB             ; cell type $4C = map_horizontal_strip | map_anim_state4; cell type $4D = map_magic_wall | map_anim_state4
+    !byte sprite_magic_wall1                                                            ;                                  ; cell type $4D = map_growing_wall | map_anim_state4
+    !text "A"                                                                           ; 1fcc: 4b 42       A              ; cell type $4C = map_magic_wall | map_anim_state4
     !byte sprite_butterfly2                                                             ; 1fce: 17          .              ; cell type $4E = map_butterfly | map_anim_state4
     !byte sprite_rockford_moving_right3                                                 ; 1fcf: 30          0              ; cell type $4F = map_rockford | map_anim_state4
 
@@ -996,10 +1017,10 @@ amoeba_animated_sprites4
     !byte sprite_firefly2                                                               ; 1fd6: 1a          .              ; cell type $56 = map_firefly | map_anim_state5
     !byte sprite_amoeba1                                                                ; 1fd7: 14          .              ; cell type $57 = map_amoeba | map_anim_state5
     !byte sprite_rockford_moving_right4                                                 ; 1fd8: 31          1              ; cell type $58 = map_rockford_appearing_or_end_position | map_anim_state5
-    !byte sprite_slash                                                                  ; 1fd9: 3e          >              ; cell type $59 = map_firefly_in_earth_box | map_anim_state5
+    !byte sprite_amoeba1                                                                ; 1fd9: 3e          >              ; cell type $59 = map_slime | map_anim_state5
     !byte sprite_firefly4                                                               ; 1fda: 1c          .              ; cell type $5A = map_explosion | map_anim_state5
     !byte sprite_butterfly2                                                             ; 1fdb: 17          .              ; cell type $5B = map_vertical_strip | map_anim_state5
-    !byte sprite_magic_wall2                                                            ; 1fdc: 11          .              ; cell type $5C = map_horizontal_strip | map_anim_state5
+    !byte sprite_magic_wall1                                                            ; 1fdc: 11          .              ; cell type $5C = map_growing_wall | map_anim_state5
     !byte sprite_magic_wall2                                                            ; 1fdd: 11          .              ; cell type $5D = map_magic_wall | map_anim_state5
     !byte sprite_butterfly2                                                             ; 1fde: 17          .              ; cell type $5E = map_butterfly | map_anim_state5
     !byte sprite_rockford_moving_left2                                                  ; 1fdf: 2b          +              ; cell type $5F = map_rockford | map_anim_state5
@@ -1013,10 +1034,10 @@ amoeba_animated_sprites4
     !byte sprite_firefly2                                                               ; 1fe6: 1a          .              ; cell type $66 = map_firefly | map_anim_state6
     !byte sprite_amoeba1                                                                ; 1fe7: 14          .              ; cell type $67 = map_amoeba | map_anim_state6
     !byte sprite_rockford_moving_right4                                                 ; 1fe8: 31          1              ; cell type $68 = map_rockford_appearing_or_end_position | map_anim_state6
-    !byte $61                                                                           ; 1fe9: 61          a              ; cell type $69 = map_firefly_in_earth_box | map_anim_state6
+    !byte sprite_amoeba1                                                                ; 1fe9: 61          a              ; cell type $69 = map_slime | map_anim_state6
     !byte sprite_firefly4                                                               ; 1fea: 1c          .              ; cell type $6A = map_explosion | map_anim_state6
     !byte sprite_butterfly2                                                             ; 1feb: 17          .              ; cell type $6B = map_vertical_strip | map_anim_state6
-    !byte sprite_magic_wall2                                                            ; 1fec: 11          .              ; cell type $6C = map_horizontal_strip | map_anim_state6
+    !byte sprite_magic_wall1                                                            ; 1fec: 11          .              ; cell type $6C = map_growing_wall | map_anim_state6
     !byte sprite_explosion2                                                             ; 1fed: 0d          .              ; cell type $6D = map_magic_wall | map_anim_state6
     !byte sprite_butterfly2                                                             ; 1fee: 17          .              ; cell type $6E = map_butterfly | map_anim_state6
     !byte sprite_rockford_tapping_foot4                                                 ; 1fef: 28          (              ; cell type $6F = map_rockford | map_anim_state6
@@ -1030,10 +1051,10 @@ amoeba_animated_sprites4
     !byte sprite_firefly2                                                               ; 1ff6: 1a          .              ; cell type $76 = map_firefly | map_anim_state7
     !byte sprite_amoeba2                                                                ; 1ff7: 15          .              ; cell type $77 = map_amoeba | map_anim_state7
     !byte sprite_rockford_moving_right4                                                 ; 1ff8: 31          1              ; cell type $78 = map_rockford_appearing_or_end_position | map_anim_state7
-    !byte sprite_wall2                                                                  ; 1ff9: 0b          .              ; cell type $79 = map_firefly_in_earth_box | map_anim_state7
+    !byte sprite_amoeba2                                                                ; 1ff9: 0b          .              ; cell type $79 = map_slime | map_anim_state7
     !byte sprite_firefly4                                                               ; 1ffa: 1c          .              ; cell type $7A = map_explosion | map_anim_state7
     !byte sprite_butterfly2                                                             ; 1ffb: 17          .              ; cell type $7B = map_vertical_strip | map_anim_state7
-    !byte sprite_earth2                                                                 ; 1ffc: 1e          .              ; cell type $7C = map_horizontal_strip | map_anim_state7
+    !byte sprite_magic_wall1                                                            ; 1ffc: 1e          .              ; cell type $7C = map_growing_wall | map_anim_state7
     !byte sprite_explosion1                                                             ; 1ffd: 0c          .              ; cell type $7D = map_magic_wall | map_anim_state7
     !byte sprite_butterfly2                                                             ; 1ffe: 17          .              ; cell type $7E = map_butterfly | map_anim_state7
     !byte sprite_explosion1                                                             ; 1fff: 0c          .              ; cell type $7F = map_rockford | map_anim_state7
@@ -1263,10 +1284,10 @@ cell_types_that_rocks_or_diamonds_will_fall_off
     !byte 0                                                                             ; 2106: 00          .              ; map_firefly
     !byte 1                                                                             ; 2107: 01          .              ; map_amoeba
     !byte 0                                                                             ; 2108: 00          .              ; map_rockford_appearing_or_end_position
-    !byte 0                                                                             ; 2109: 00          .              ; map_firefly_in_earth_box
+    !byte 0                                                                             ; 2109: 00          .              ; map_slime
     !byte 0                                                                             ; 210a: 00          .              ; map_explosion
     !byte 0                                                                             ; 210b: 00          .              ; map_vertical_strip
-    !byte 1                                                                             ; 210c: 01          .              ; map_horizontal_strip
+    !byte 1                                                                             ; 210c: 01          .              ; map_growing_wall
     !byte 0                                                                             ; 210d: 00          .              ; map_magic_wall
     !byte 0                                                                             ; 210e: 00          .              ; map_butterfly
     !byte 0                                                                             ; 210f: 00          .              ; map_rockford
@@ -1294,10 +1315,10 @@ items_produced_by_the_magic_wall
     !byte 0                                                                             ; 2126: 00          .              ; map_firefly
     !byte 0                                                                             ; 2127: 00          .              ; map_amoeba
     !byte 0                                                                             ; 2128: 00          .              ; map_rockford_appearing_or_end_position
-    !byte 0                                                                             ; 2129: 00          .              ; map_firefly_in_earth_box
+    !byte 0                                                                             ; 2129: 00          .              ; map_slime
     !byte 0                                                                             ; 212a: 00          .              ; map_explosion
     !byte 0                                                                             ; 212b: 00          .              ; map_vertical_strip
-    !byte 0                                                                             ; 212c: 00          .              ; map_horizontal_strip
+    !byte 0                                                                             ; 212c: 00          .              ; map_growing_wall
     !byte 0                                                                             ; 212d: 00          .              ; map_magic_wall
     !byte 0                                                                             ; 212e: 00          .              ; map_butterfly
     !byte 0                                                                             ; 212f: 00          .              ; map_rockford
@@ -1312,10 +1333,10 @@ cell_types_that_will_turn_into_diamonds
     !byte map_unprocessed | map_diamond                                                 ; 2136: 84          .              ; map_firefly
     !byte map_unprocessed | map_diamond                                                 ; 2137: 84          .              ; map_amoeba
     !byte 0                                                                             ; 2138: 00          .              ; map_rockford_appearing_or_end_position
-    !byte 0                                                                             ; 2139: 00          .              ; map_firefly_in_earth_box
+    !byte map_unprocessed | map_diamond                                                 ; 2139: 00          .              ; map_slime
     !byte 0                                                                             ; 213a: 00          .              ; map_explosion
     !byte map_unprocessed | map_diamond                                                 ; 213b: 84          .              ; map_vertical_strip
-    !byte map_unprocessed | map_diamond                                                 ; 213c: 84          .              ; map_horizontal_strip
+    !byte map_unprocessed | map_diamond                                                 ; 213c: 84          .              ; map_growing_wall
     !byte map_unprocessed | map_diamond                                                 ; 213d: 84          .              ; map_magic_wall
     !byte map_unprocessed | map_diamond                                                 ; 213e: 84          .              ; map_butterfly
     !byte $ff                                                                           ; 213f: ff          .              ; map_rockford
@@ -1330,10 +1351,10 @@ cell_types_that_will_turn_into_large_explosion
     !byte map_unprocessed | map_large_explosion_state3                                  ; 2146: b3          .              ; map_firefly
     !byte map_unprocessed | map_large_explosion_state3                                  ; 2147: b3          .              ; map_amoeba
     !byte 0                                                                             ; 2148: 00          .              ; map_rockford_appearing_or_end_position
-    !byte 0                                                                             ; 2149: 00          .              ; map_firefly_in_earth_box
+    !byte map_unprocessed | map_large_explosion_state3                                  ; 2149: 00          .              ; map_slime
     !byte 0                                                                             ; 214a: 00          .              ; map_explosion
     !byte map_unprocessed | map_large_explosion_state3                                  ; 214b: b3          .              ; map_vertical_strip
-    !byte map_unprocessed | map_large_explosion_state3                                  ; 214c: b3          .              ; map_horizontal_strip
+    !byte map_unprocessed | map_large_explosion_state3                                  ; 214c: b3          .              ; map_growing_wall
     !byte map_unprocessed | map_large_explosion_state3                                  ; 214d: b3          .              ; map_magic_wall
     !byte map_unprocessed | map_large_explosion_state3                                  ; 214e: b3          .              ; map_butterfly
     !byte $ff                                                                           ; 214f: ff          .              ; map_rockford
@@ -1354,14 +1375,31 @@ exit_cell_type
     !byte  map_anim_state1 | map_butterfly                                              ; 2159: 1e          .
     !byte  map_anim_state2 | map_butterfly                                              ; 215a: 2e          .
     !byte  map_anim_state3 | map_butterfly                                              ; 215b: 3e          >
-    !byte   map_anim_state2 | map_rockford                                              ; 215c: 2f          /
-    !byte   map_anim_state1 | map_rockford                                              ; 215d: 1f          .
-    !byte         map_firefly_in_earth_box                                              ; 215e: 09          .
+    !byte  map_anim_state2 | map_rockford                                               ; 215c: 2f          /
+    !byte  map_anim_state1 | map_rockford                                               ; 215d: 1f          .
+    !byte  map_slime                                                                    ; 215e: 09          .
 
 unused8
     !byte   9, $0a,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0     ; 215f: 09 0a 00... ...
-    !byte   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0     ; 216e: 00 00 00... ...
-    !byte   0,   0,   0                                                                 ; 217d: 00 00 00    ...
+    !byte   0,   0
+
+items_allowed_through_slime
+    !byte 0                                                                             ; map_space
+    !byte 0                                                                             ; map_earth
+    !byte 0                                                                             ; map_wall
+    !byte 0                                                                             ; map_titanium_wall
+    !byte map_unprocessed | map_diamond                                                 ; map_diamond
+    !byte map_unprocessed | map_rock                                                    ; map_rock
+    !byte 0                                                                             ; map_firefly
+    !byte 0                                                                             ; map_amoeba
+    !byte 0                                                                             ; map_rockford_appearing_or_end_position
+    !byte 0                                                                             ; map_slime
+    !byte 0                                                                             ; map_explosion
+    !byte 0                                                                             ; map_vertical_strip
+    !byte 0                                                                             ; map_growing_wall
+    !byte 0                                                                             ; map_magic_wall
+    !byte 0                                                                             ; map_butterfly
+    !byte 0                                                                             ; map_rockford
 
 update_cell_type_when_below_a_falling_rock_or_diamond
     !byte 0                                                                             ; 2180: 00          .              ; map_space
@@ -1373,10 +1411,10 @@ update_cell_type_when_below_a_falling_rock_or_diamond
     !byte map_start_large_explosion                                                     ; 2186: 46          F              ; map_firefly
     !byte 0                                                                             ; 2187: 00          .              ; map_amoeba
     !byte 0                                                                             ; 2188: 00          .              ; map_rockford_appearing_or_end_position
-    !byte 0                                                                             ; 2189: 00          .              ; map_firefly_in_earth_box
+    !byte 0                                                                             ; 2189: 00          .              ; map_slime
     !byte 0                                                                             ; 218a: 00          .              ; map_explosion
     !byte map_anim_state7 | map_magic_wall                                              ; 218b: 7d          }              ; map_vertical_strip
-    !byte 0                                                                             ; 218c: 00          .              ; map_horizontal_strip
+    !byte 0                                                                             ; 218c: 00          .              ; map_growing_wall
     !byte map_anim_state3 | map_magic_wall                                              ; 218d: 3d          =              ; map_magic_wall
     !byte map_anim_state4 | map_butterfly                                               ; 218e: 4e          N              ; map_butterfly
     !byte map_anim_state7 | map_rockford                                                ; 218f: 7f          .              ; map_rockford
@@ -1398,10 +1436,10 @@ handler_table_low
     !byte <handler_firefly_or_butterfly                                                 ; 21c6: 00          .              ; map_firefly
     !byte <handler_amoeba                                                               ; 21c7: 9e          .              ; map_amoeba
     !byte <handler_rockford_intro_or_exit                                               ; 21c8: e3          .              ; map_rockford_appearing_or_end_position
-    !byte <handler_firefly_in_box                                                       ; 21c9: ca          .              ; map_firefly_in_earth_box
+    !byte <handler_slime                                                                ; 21c9: ca          .              ; map_slime
     !byte <handler_rockford_intro_or_exit                                               ; 21ca: e3          .              ; map_explosion
-    !byte <handler_for_vertical_strip                                                   ; 21cb: e0          .              ; map_vertical_strip
-    !byte <handler_for_horizontal_strip                                                 ; 21cc: f0          .              ; map_horizontal_strip
+    !byte 0                                                                             ; not used
+    !byte <handler_growing_wall                                                         ; 21cc: f0          .              ; map_growing_wall
     !byte <handler_magic_wall                                                           ; 21cd: ae          .              ; map_magic_wall
     !byte <handler_firefly_or_butterfly                                                 ; 21ce: 00          .              ; map_butterfly
     !byte <handler_rockford                                                             ; 21cf: 00          .              ; map_rockford
@@ -1415,10 +1453,10 @@ handler_table_high
     !byte >handler_firefly_or_butterfly                                                 ; 21d6: 25          %              ; map_firefly
     !byte >handler_amoeba                                                               ; 21d7: 25          %              ; map_amoeba
     !byte >handler_rockford_intro_or_exit                                               ; 21d8: 26          &              ; map_rockford_appearing_or_end_position
-    !byte >handler_firefly_in_box                                                       ; 21d9: 2b          +              ; map_firefly_in_earth_box
+    !byte >handler_slime                                                                ; 21d9: 2b          +              ; map_slime
     !byte >handler_rockford_intro_or_exit                                               ; 21da: 26          &              ; map_explosion
-    !byte >handler_for_vertical_strip                                                   ; 21db: 23          #              ; map_vertical_strip
-    !byte >handler_for_horizontal_strip                                                 ; 21dc: 23          #              ; map_horizontal_strip
+    !byte 0                                                                             ; not used
+    !byte >handler_growing_wall                                                         ; 21dc: 23          #              ; map_growing_wall
     !byte >handler_magic_wall                                                           ; 21dd: 26          &              ; map_magic_wall
     !byte >handler_firefly_or_butterfly                                                 ; 21de: 25          %              ; map_butterfly
     !byte >handler_rockford                                                             ; 21df: 26          &              ; map_rockford
@@ -1456,10 +1494,10 @@ collision_for_cell_type
     !byte 0                                                                             ; 21f6: 00          .              ; map_firefly
     !byte 0                                                                             ; 21f7: 00          .              ; map_amoeba
     !byte 0                                                                             ; 21f8: 00          .              ; map_rockford_appearing_or_end_position
-    !byte 0                                                                             ; 21f9: 00          .              ; map_firefly_in_earth_box
+    !byte 0                                                                             ; 21f9: 00          .              ; map_slime
     !byte $ff                                                                           ; 21fa: ff          .              ; map_explosion
     !byte 0                                                                             ; 21fb: 00          .              ; map_vertical_strip
-    !byte 0                                                                             ; 21fc: 00          .              ; map_horizontal_strip
+    !byte 0                                                                             ; 21fc: 00          .              ; map_growing_wall
     !byte 0                                                                             ; 21fd: 00          .              ; map_magic_wall
     !byte 0                                                                             ; 21fe: 00          .              ; map_butterfly
     !byte 1                                                                             ; 21ff: 01          .              ; map_rockford
@@ -1846,41 +1884,27 @@ skip_high_byte2
 return2
     rts                                                                                 ; 23db: 60          `
 
-unused15
-    !byte $a0,   7, $9a, $a9                                                            ; 23dc: a0 07 9a... ...
-
 ; *************************************************************************************
-; Handler for filling in a vertical strip. Set the cells between two $0b's (including
-; the $0b's themselves) to the value above the first $0b.
-handler_for_vertical_strip
-    lda #map_vertical_strip                                                             ; 23e0: a9 0b       ..
-    cmp cell_below                                                                      ; 23e2: c5 7a       .z
-    bne replace_cell_below                                                              ; 23e4: d0 02       ..
-    lda cell_above                                                                      ; 23e6: a5 74       .t
-replace_cell_below
-    sta cell_below                                                                      ; 23e8: 85 7a       .z
-    ; copy cell above to current cell, clearing top bit
-    lda cell_above                                                                      ; 23ea: a5 74       .t
-    and #$7f                                                                            ; 23ec: 29 7f       ).
-    tax                                                                                 ; 23ee: aa          .
-    rts                                                                                 ; 23ef: 60          `
+handler_growing_wall
+;Growing wall element introduced in Boulder Dash 2, allows a wall to extend horizontally if the item beside it is empty space
+;Used in Boulder Dash 2 in cave O
 
-; *************************************************************************************
-; Handler for a horizontal strip. Copy the left cell to the current and right cells,
-; until the end of the row.
-handler_for_horizontal_strip
-    txa                                                                                 ; 23f0: 8a          .
-    and #$7f                                                                            ; 23f1: 29 7f       ).
-    cmp cell_right                                                                      ; 23f3: c5 78       .x
-    bne store_cell_right                                                                ; 23f5: d0 02       ..
-    lda cell_left                                                                       ; 23f7: a5 76       .v
-store_cell_right
-    sta cell_right                                                                      ; 23f9: 85 78       .x
-    ldx cell_left                                                                       ; 23fb: a6 76       .v
-    rts                                                                                 ; 23fd: 60          `
+    lda cell_left                                          ; read cell to the left of the growing wall
+    and #$0f                                               ; getting the cell type from the lower nybble
+    bne check_grow_right                                   ; If not zero (map_space) then examine cell to the right
+    lda #map_unprocessed | map_growing_wall                ; Otherwise replace the left cell with another growing wall
+    sta cell_left
+check_grow_right
+    lda cell_right                                         ; read cell to the right of the growing wall
+    and #$0f                                               ; getting the cell type from the lower nybble
+    bne grow_wall_return                                   ; If not zero (map_space) then end
+    lda #map_unprocessed | map_growing_wall                ; Otherwise replace the right cell with another growing wall
+    sta cell_right
+grow_wall_return
+    rts
 
 unused16
-    !byte $76, $60                                                                      ; 23fe: 76 60       v`
+    !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 ; *************************************************************************************
 ; 
@@ -1899,19 +1923,7 @@ unused16
 update_map
     ldy #update_rock_or_diamond_that_can_fall - branch_instruction - 2                  ; 2400: a0 5f       ._
     bne scan_map                                                                        ; 2402: d0 02       ..             ; ALWAYS branch
-
-; *************************************************************************************
-; 
-; This is the preprocessing step prior to gameplay. The tile map is scanned looking for
-; special cell values to replace e.g. with vertical strips or a firefly in a 4x4 box of
-; earth. This step happens twice before gameplay. Once without processing horizontal
-; strips, then once with. This means horizontal strips are applied last.
-; 
-; *************************************************************************************
-    ; set branch offset (self modifying code)
-preprocess_map
     ldy #mark_cell_above_as_processed_and_move_to_next_cell - branch_instruction - 2    ; 2404: a0 26       .&
-
 scan_map
     sty branch_offset                                                                   ; 2406: 8c 3a 24    .:$
     ; twenty rows
@@ -2691,7 +2703,7 @@ update_sprites_to_use_loop
     ldx cell_current                                                                    ; 2812: a6 77       .w
     bpl update_sprites_to_use_loop                                                      ; 2814: 10 ee       ..
 
-    ; use the tick counter (bottom two bits scaled up by 16) to update amoeba animation
+    ; use the tick counter (bottom two bits scaled up by 16) to update amoeba animation (and apply to slime as well)
     lda tick_counter                                                                    ; 2816: a5 5a       .Z
     and #3                                                                              ; 2818: 29 03       ).
     asl                                                                                 ; 281a: 0a          .
@@ -2702,9 +2714,11 @@ update_sprites_to_use_loop
     lda amoeba_animated_sprite0,x                                                       ; 281f: bd 87 1f    ...
     eor #1                                                                              ; 2822: 49 01       I.
     sta amoeba_animated_sprite0,x                                                       ; 2824: 9d 87 1f    ...
+    sta slime_animated_sprite0,x                                                        ; 3
     lda amoeba_animated_sprites4,x                                                      ; 2827: bd c7 1f    ...
     eor #1                                                                              ; 282a: 49 01       I.
     sta amoeba_animated_sprites4,x                                                      ; 282c: 9d c7 1f    ...
+    sta slime_animated_sprite1,x                                                        ; 3
     ; animate exit
     lda exit_cell_type                                                                  ; 282f: ad 56 21    .V!
     eor #$10                                                                            ; 2832: 49 10       I.
@@ -2734,7 +2748,7 @@ extract_lower_nybble
     rts                                                                                 ; 2851: 60          `
 
 unused25
-    !byte $8d, $8f, $1f, $e6, $58, $60, $d0,   5, $a5, $5e, $4c, $64, $28, $25          ; 2852: 8d 8f 1f... ...
+    !byte $8d, $8f, $1f, $e6, $58, $60, $d0,   5                                        ; 2852: 8d 8f 1f... ...
 
 ; *************************************************************************************
 read_keys_and_resolve_direction_keys
@@ -3325,57 +3339,46 @@ wait_loop
     txa                                                                                 ; 2bbc: 8a          .
     jmp set_palette_colour_ax                                                           ; 2bbd: 4c 35 2a    L5*
 
-unused36
-    !byte $a9,   1, $a0, $43, $91, $8c, $a0, $c4, $88, $91                              ; 2bc0: a9 01 a0... ...
-
 ; *************************************************************************************
-; store earth ('*' in the diagram below) in the following locations around the current
-; position, and clear the others, and add the firefly ('+') or butterfly at the current
-; location:
-; 00* 01* 02* 03*
-; 40* 41+ 42  43*
-; 80* 81  82  83*
-; C0* C1* C2* C3*
-handler_firefly_in_box
-    lda #map_earth                                                                      ; 2bca: a9 01       ..
-    ldy #$43                                                                            ; 2bcc: a0 43       .C
-    sta (ptr_low),y                                                                     ; 2bce: 91 8c       ..
-    ; this next loop runs four times from $c3 to $c0, then four more from $03 to $00
-    ldy #$c4                                                                            ; 2bd0: a0 c4       ..
-store_earth_loop
-    dey                                                                                 ; 2bd2: 88          .
-    sta (ptr_low),y                                                                     ; 2bd3: 91 8c       ..
-    beq loop_done                                                                       ; 2bd5: f0 08       ..
-    cpy #$c0                                                                            ; 2bd7: c0 c0       ..
-    bne store_earth_loop                                                                ; 2bd9: d0 f7       ..
-    ldy #4                                                                              ; 2bdb: a0 04       ..
-    bne store_earth_loop                                                                ; 2bdd: d0 f3       ..             ; ALWAYS branch
+handler_slime
+;Slime element introduced in Boulder Dash 2, allows rocks and diamonds to pass through it but nothing else
+;Used in Boulder Dash 2 in caves E (no pass-through delay) and M (random delay)
+;The slime permeability cave parameter controls how quickly rocks and diamonds can pass through it
 
-loop_done
-    ldy #$80                                                                            ; 2bdf: a0 80       ..
-    sta (ptr_low),y                                                                     ; 2be1: 91 8c       ..
-    sta cell_left                                                                       ; 2be3: 85 76       .v
-    sta cell_above                                                                      ; 2be5: 85 74       .t
-    ldy #$83                                                                            ; 2be7: a0 83       ..
-    sta (ptr_low),y                                                                     ; 2be9: 91 8c       ..
-    ; set A=0 to clear cells in the middle
-    lsr                                                                                 ; 2beb: 4a          J
-    dey                                                                                 ; 2bec: 88          .
-    sta (ptr_low),y                                                                     ; 2bed: 91 8c       ..
-    sta cell_below                                                                      ; 2bef: 85 7a       .z
-    sta cell_right                                                                      ; 2bf1: 85 78       .x
-    ; set firefly, or butterfly on cave D
-    ldx #map_firefly                                                                    ; 2bf3: a2 06       ..
-    lda cave_number                                                                     ; 2bf5: a5 87       ..
-    cmp #3                                                                              ; 2bf7: c9 03       ..
-    bne return9                                                                         ; 2bf9: d0 02       ..
-    ; set butterfly
-    ldx #map_butterfly | map_anim_state2                                                ; 2bfb: a2 2e       ..
-return9
-    rts                                                                                 ; 2bfd: 60          `
+    lda cell_above                     ; read what's above the wall, getting the cell type from the lower nybble
+    and #$0f
+    tay
+    lda items_allowed_through_slime,y  ; read which cell types are allowed to fall through
+    beq slime_return                   ; If not the right type (rock or diamond) then end
+    sta item_allowed
+    lda cell_below
+    bne slime_return                   ; If no space below the slime for a rock or diamond to fall then end
+    lda param_slime_permeability
+    beq slime_pass_through             ; If slime permeability is zero, no delay in pass through
+    lda #0                             ; Otherwise continue and determine random delay
+    sta random_seed1
+    lda random_seed2
+    bne slime_delay                    ; If random_seed2 is not zero, use it for pseudo_random calculation
+    lda param_slime_permeability       ; Otherwise set random_seed2 to slime permeability value
+    sta random_seed2
+slime_delay
+    jsr pseudo_random                  ; Call pseudo-random routine returning random_seed1 in the accumulator
+    cmp #$04                           ; A suitable delay-comparison value
+    bcc slime_pass_through             ; If random_seed1 is less than delay-comparison value then let the item pass through
+    rts                                ; Otherwise skip the item. Next time in loop, will use the last random_seed2 value and eventually pass through
+slime_pass_through
+    lda #map_unprocessed | map_space   ; something will fall into the wall, clear the cell above
+    sta cell_above
+    lda item_allowed
+    sta cell_below                     ; store the item that has fallen through the wall below
+slime_return
+    rts
+
+item_allowed
+    !byte 0
 
 unused37
-    !byte $cb, $60                                                                      ; 2bfe: cb 60       .`
+    !byte 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 ; Sound data packed into single bytes: channel, amplitude, pitch, duration
@@ -3742,10 +3745,10 @@ skip_setting_variable
     dex                                                                                 ; 2e29: ca          .
     bpl initialise_variables_loop                                                       ; 2e2a: 10 f4       ..
 
-    ; Populate the cave map using the pseudo-random method, using applicable cave parameters
-    jsr populate_cave_tiles_pseudo_random
     ; Populate the cave map from loaded data
     jsr populate_cave_from_file
+    ; Populate the cave map using the pseudo-random method, using applicable cave parameters
+    jsr populate_cave_tiles_pseudo_random
 
     ; map complete: draw titanium wall borders
     jsr set_ptr_to_start_of_map                                                         ; 2e3c: 20 1a 2a     .*
@@ -3928,6 +3931,10 @@ empty_status_bar_loop
     sta amoeba_growth_interval                                                          ; 2f7e: 85 55       .U
     sta magic_wall_timer                                                                ; 2f80: 85 51       .Q
 
+    ; initialise random seed for possible use with slime permeability
+    lda #0
+    sta random_seed2
+
     ; put the end tile on the map
     lda param_rockford_end                                                              ; 2f82: bd 18 4c    ..L
     sta map_y                                                                           ; 2f85: 85 8b       ..
@@ -3975,7 +3982,7 @@ empty_status_bar_loop
     rts                                                                                 ; 2fdc: 60          `
 
 unused47
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0
     !byte   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0     ; 2fdd: 00 00 00... ...
     !byte   0,   0, $81,   0,   0,   0,   0, $84,   0,   0, $86, $81,   0,   0,   1     ; 2fec: 00 00 81... ...
     !byte $81, $d9, $19, $81, $ff                                                       ; 2ffb: 81 d9 19... ...
@@ -5819,13 +5826,16 @@ cave_to_data_set
     !byte $ff                                                                           ; 4cf3: ff          .              ; Cave T
 
 ; ****************************************************************************************************
-; Populate the cave with tiles (objects) using the pseudo-random method
-;   Each cave has a default tile (usually dirt, sometimes space) to fill the entire cave with
-;   This tile will be used unless it is replaced by one from the pseudo-random proessing
+; Populate the cave with tiles using the pseudo-random method
+;   Tiles are applied to the map if the tile already there is a 'null' tile (from populate_cave_from_file)
+;   These tiles may be the cave default (often dirt) or a tile determined in a pseudo-random fashion
 ;   A pseudo-random value is calculated by a function using the seed value for the cave difficulty level
 ;   The pseudo-random value is returned in random_seed1
 ;   This value is compared with each of the 4 tile probability values for the cave
-;   If the pseudo-random value is less than the probability value, the corresponding tile is plotted
+;   If random_seed1 is not less than the probability value, the corresponding tile is plotted
+;   For Boulder Dash 2, a second tile may be required below the pseudo-random one
+;   These tiles are held in a 'beneath' row, populated with second tile values from cave parameters
+;   If non-zero, the 'beneath' row tile will override random tiles (when on the next row)
 ; ****************************************************************************************************
 populate_cave_tiles_pseudo_random
 
@@ -5845,37 +5855,61 @@ populate_cave_tiles_pseudo_random
 populate_cave_row
     ldy #$00                           ; Set column start to 1 (skip first column - steel wall)
 populate_cave_tile
-    lda param_initial_fill_tile        ; Set cave fill tile
-    sta (map_address_low),y
+    lda tile_below_store_row,y         ; Needed for BD2 caves G, K, get previously stored tile
+    sta tile_override                  ; The override tile might need to replace the random tile
 
+    ldx param_initial_fill_tile        ; Set cave fill tile
     jsr pseudo_random                  ; Call pseudo-random routine returning random_seed1 in the accumulator
     cmp param_tile_probability         ; Compare pseudo-random value with first cave probability parameter
     bcs check_next_probability1        ; If random_seed1 is not less than cave random compare parameter, don't plot the cave random object, try next one
-    lda param_tile_for_probability     ; Set the designated cave random tile
-    sta (map_address_low),y
+    ldx param_tile_for_probability     ; Set the designated cave random tile
+    lda param_tile_for_prob_below      ; Needed for BD2 caves G, K, set the tile below current one
+    sta tile_below_store_row,y         ; to the parameter value for it (this value is 0 for most caves)
 
 check_next_probability1
     lda random_seed1
     cmp param_tile_probability+1       ; Compare pseudo-random value with second cave probability parameter
     bcs check_next_probability2        ; If random_seed1 is not less than cave random compare parameter, don't plot the cave random object, try next one
-    lda param_tile_for_probability+1   ; Set the designated cave random tile
-    sta (map_address_low),y
+    ldx param_tile_for_probability+1   ; Set the designated cave random tile
+    lda param_tile_for_prob_below+1    ; Needed for BD2 caves G, K, set the tile below current one
+    sta tile_below_store_row,y         ; to the parameter value for it (this value is 0 for most caves)
 
 check_next_probability2
     lda random_seed1
     cmp param_tile_probability+2       ; Compare pseudo-random value with third cave probability parameter
     bcs check_next_probability3        ; If random_seed1 is not less than cave random compare parameter, don't plot the cave random object, try next one
-    lda param_tile_for_probability+2   ; Set the designated cave random tile
-    sta (map_address_low),y
+    ldx param_tile_for_probability+2   ; Set the designated cave random tile
+    lda param_tile_for_prob_below+2    ; Needed for BD2 caves G, K, set the tile below current one
+    sta tile_below_store_row,y         ; to the parameter value for it (this value is 0 for most caves)
 
 check_next_probability3
     lda random_seed1
     cmp param_tile_probability+3       ; Compare pseudo-random value with forth cave probability parameter
     bcs check_probability_end          ; If random_seed1 is not less than cave random compare parameter, don't plot the cave random object, continue
-    lda param_tile_for_probability+3   ; Set the designated cave random tile
-    sta (map_address_low),y
+    ldx param_tile_for_probability+3   ; Set the designated cave random tile
+    lda param_tile_for_prob_below+3    ; Needed for BD2 caves G, K, set the tile below current one
+    sta tile_below_store_row,y         ; to the parameter value for it (this value is 0 for most caves)
 
 check_probability_end
+    lda (map_address_low),y            ; Get the map tile added when the cave was loaded
+    cmp #$0f                           ; Check if a null tile #$0f. This occurs at this late stage to preserve the ongoing random seed calculations
+    beq apply_random_tile_ok           ; Allow replacement with the random tile where is currently null
+    lda #0                             ; Needed for BD2 caves G, K, reset the tile below current one
+    sta tile_below_store_row,y         ; It must not be used later for override
+    jmp check_tile_override            ; Now check for a previous override
+
+apply_random_tile_ok
+    txa                                ; The loaded map tile was a null, so replace with the random tile instead
+    sta (map_address_low),y
+
+check_tile_override
+    lda tile_override
+    beq skip_below_tile                ; Needed for BD2 caves G, K, check the override tile is 0
+    sta (map_address_low),y            ; If not then apply the override tile
+    lda #0                             ; Reset the tile below current one for next time
+    sta tile_below_store_row,y
+
+skip_below_tile
     iny                                ; Add 1 to column count
     cpy #$28                           ; Check if 40 columns plotted
     bne populate_cave_tile             ; Continue if not
@@ -5890,6 +5924,13 @@ populate_cave_end
 
 populate_row_counter
     !byte 0
+
+tile_override
+    !byte 0
+
+;version2_unused
+    !byte 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0
 
 ; ****************************************************************************************************
 ; Pseudo-random function
@@ -5964,11 +6005,7 @@ system_load_end
     !byte $0d                          ; Termination for LOAD command
 
 ; ****************************************************************************************************
-; Populate Cave from file loaded data
-;   Process each byte by splitting into 2 nibbles, each one representing a tile value
-;   Plot the resulting tiles
-;   There is a mechanism to skip plotting a tile if the tile value is 'null' (designated $0f)
-;   This preserves any tiles already plotted by the pseudo-random routine
+; Populate Cave from file loaded data. Split bytes into 2 nibbles, each one representing a tile value
 ; ****************************************************************************************************
 populate_cave_from_file
     lda #>cave_map_data                ; Point to cave address 4e70 (high byte)
@@ -5992,17 +6029,11 @@ plot_cave_tiles_x2
     lsr
     lsr
     lsr
-    cmp #$0f                           ; If a null tile #$0f, preserve the current map value, otherwise overwrite it
-    beq skip_null_tile_1
     sta (map_address_low),y            ; Store nibble as tile value to map
-skip_null_tile_1
     iny                                ; Add 1 for next tile position
     pla                                ; Pull the byte off the stack
     and #$0f                           ; Get the second nibble
-    cmp #$0f                           ; If a null tile #$0f, preserve the current map value, otherwise overwrite it
-    beq skip_null_tile_2
     sta (map_address_low),y            ; Store nibble as tile value to map
-skip_null_tile_2
     iny                                ; Add 1 for next tile position
     inc plot_cave_tiles_x2+1           ; Move onto the next byte, calculating the high bytes as well
     lda plot_cave_tiles_x2+1
@@ -6023,17 +6054,6 @@ populate_cave_from_file_end
 
 load_row_counter
     !byte 0
-
-; ****************************************************************************************************
-
-version2_unused
-    !byte 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0
 
 ; ****************************************************************************************************
 ; Loaded data is placed here for cave parameters and map
@@ -6065,8 +6085,12 @@ param_rockford_start
     !byte 0, 0                         ; Rockford start row and column
 param_rockford_end
     !byte 0, 0                         ; Rockford exit row and column
+param_slime_permeability
+    !byte $0a                          ; Slime permeability used in Boulder Dash 2 engine
+param_tile_for_prob_below
+    !byte 0, 0, 0, 0                   ; For Boulder Dash 2 caves C, K. Additional tile below the one generated by pseudo-random routine
 param_unused
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ;Unused
+    !byte 0, 0, 0, 0, 0, 0, 0, 0       ; Currently unused, potential future use (cannot be removed)
 
 cave_map_data                          ; Empty cave (earth and side steel walls)
     !byte $31, $11, $11, $10, $11, $41, $50, $11, $11, $15, $15, $11, $11, $11, $10, $11  ; 4e70
@@ -6607,15 +6631,20 @@ move_to_next_tune_channel
     bne update_channels_loop                                                            ; 5793: d0 82       ..
     rts                                                                                 ; 5795: 60          `
 
+tile_below_store_row
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0
+
 unused80
-    !byte $d0,   7, $c8, $c0,   6, $d0,   2, $a0,   1, $84, $89, $85, $87, $c9, $10     ; 5796: d0 07 c8... ...
-    !byte $30, $9d, $ee, $1e, $32, $d0, $98, $60,   0,   0,   0,   0,   0,   0,   0     ; 57a5: 30 9d ee... 0..
-    !byte   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0     ; 57b4: 00 00 00... ...
     !byte   0,   0,   0,   0, $cb, $36,   5, $ff, $85, $18,   0,   0,   0, $85, $18     ; 57c3: 00 00 00... ...
     !byte   0,   0, $8f, $29, $80,   0,   0, $cb, $36,   5, $ff, $85, $18,   0,   0     ; 57d2: 00 00 8f... ...
-    !byte   0, $c3, $36,   5, $ff, $82, $40,   0,   0,   0, $ef, $ff, $9d,   0,   0     ; 57e1: 00 c3 36... ..6
-    !byte   0,   0,   0, $14,   0,   0,   0, $81,   0,   0,   0, $83,   0,   0,   0     ; 57f0: 00 00 00... ...
-    !byte   0                                                                           ; 57ff: 00          .
+    !byte   0, $c3, $36,   5, $ff, $82, $40,   0,   0,   0, $ef, $ff                    ; 57e1: 00 c3 36... ..6
+
 big_rockford_destination_screen_address
 pydis_end
 !if ('A') != $41 {
@@ -6795,9 +6824,6 @@ pydis_end
 !if (<current_status_bar_sprites) != $28 {
     !error "Assertion failed: <current_status_bar_sprites == $28"
 }
-;!if (<data_sets) != $f4 {
-;    !error "Assertion failed: <data_sets == $f4"
-;}
 !if (<demonstration_mode_text) != $a0 {
     !error "Assertion failed: <demonstration_mode_text == $a0"
 }
@@ -6810,17 +6836,14 @@ pydis_end
 !if (<handler_basics) != $a5 {
     !error "Assertion failed: <handler_basics == $a5"
 }
-!if (<handler_firefly_in_box) != $ca {
-    !error "Assertion failed: <handler_firefly_in_box == $ca"
+!if (<handler_slime) != $c0 {
+    !error "Assertion failed: <handler_slime == $c0"
 }
 !if (<handler_firefly_or_butterfly) != $00 {
     !error "Assertion failed: <handler_firefly_or_butterfly == $00"
 }
-!if (<handler_for_horizontal_strip) != $f0 {
-    !error "Assertion failed: <handler_for_horizontal_strip == $f0"
-}
-!if (<handler_for_vertical_strip) != $e0 {
-    !error "Assertion failed: <handler_for_vertical_strip == $e0"
+!if (<handler_growing_wall) != $dc {
+    !error "Assertion failed: <handler_growing_wall == $dc"
 }
 !if (<handler_amoeba) != $9e {
     !error "Assertion failed: <handler_amoeba == $9e"
@@ -7179,26 +7202,20 @@ pydis_end
 !if (>current_status_bar_sprites) != $50 {
     !error "Assertion failed: >current_status_bar_sprites == $50"
 }
-;!if (>data_sets) != $4c {
-;    !error "Assertion failed: >data_sets == $4c"
-;}
 !if (>grid_of_currently_displayed_sprites) != $0c {
     !error "Assertion failed: >grid_of_currently_displayed_sprites == $0c"
 }
 !if (>handler_basics) != $22 {
     !error "Assertion failed: >handler_basics == $22"
 }
-!if (>handler_firefly_in_box) != $2b {
-    !error "Assertion failed: >handler_firefly_in_box == $2b"
+!if (>handler_slime) != $2b {
+    !error "Assertion failed: >handler_slime == $2b"
 }
 !if (>handler_firefly_or_butterfly) != $25 {
     !error "Assertion failed: >handler_firefly_or_butterfly == $25"
 }
-!if (>handler_for_horizontal_strip) != $23 {
-    !error "Assertion failed: >handler_for_horizontal_strip == $23"
-}
-!if (>handler_for_vertical_strip) != $23 {
-    !error "Assertion failed: >handler_for_vertical_strip == $23"
+!if (>handler_growing_wall) != $23 {
+    !error "Assertion failed: >handler_growing_wall == $23"
 }
 !if (>handler_amoeba) != $25 {
     !error "Assertion failed: >handler_amoeba == $25"
@@ -7641,8 +7658,8 @@ pydis_end
 !if (map_firefly) != $06 {
     !error "Assertion failed: map_firefly == $06"
 }
-!if (map_firefly_in_earth_box) != $09 {
-    !error "Assertion failed: map_firefly_in_earth_box == $09"
+!if (map_slime) != $09 {
+    !error "Assertion failed: map_slime == $09"
 }
 !if (map_rockford) != $0f {
     !error "Assertion failed: map_rockford == $0f"
