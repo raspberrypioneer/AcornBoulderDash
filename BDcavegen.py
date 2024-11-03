@@ -37,7 +37,7 @@ SPRITES_FILE = ""
 #SPRITES_FILE = "Bubble_Bobble_sprites.bin"
 #SPRITES_FILE = "Pacman_sprites.bin"
 #SPRITES_FILE = "Easter_sprites.bin"
-TIDY_OUTPUT_FOLDER = True
+TIDY_OUTPUT_FOLDER = False
 
 ################################################################################
 #region Helper functions
@@ -509,7 +509,7 @@ if __name__ == '__main__':
             #Move BD file and cave definition json file to completed folder
             print(f"Completing definitions for {BD_filename}")
             BD_files_complete_folder = path.join(BD_files_folder, "done")
-            os.replace(input_file_name, path.join(BD_files_complete_folder, BD_filename + ".bd"))
+#            os.replace(input_file_name, path.join(BD_files_complete_folder, BD_filename + ".bd"))
             os.replace(path.join(output_subfolder, "cavedef.json"), path.join(BD_files_complete_folder, "json", BD_filename + ".json"))
 
             #Create SSD file

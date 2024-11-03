@@ -97,7 +97,7 @@
 ;   $08 = map_rockford_appearing_or_end_position
 ;   $09 = map_slime
 ;   $0a = map_explosion
-;   $0b = map_vertical_strip      (not used in Boulder Dash version 2)
+;   $0b = map_bomb                (new element, animation states $0b to $7b as timer ticks)
 ;   $0c = map_growing_wall
 ;   $0d = map_magic_wall
 ;   $0e = map_butterfly           (with animation states $0e, $1e, $2e, $3e)
@@ -164,7 +164,7 @@ map_space                                = 0
 map_start_large_explosion                = 70
 map_titanium_wall                        = 3
 map_unprocessed                          = 128
-map_vertical_strip                       = 11
+map_bomb                                 = 11
 map_wall                                 = 2
 opcode_dex                               = 202
 opcode_inx                               = 232
@@ -242,6 +242,11 @@ sprite_titanium_wall2                    = 8
 sprite_wall1                             = 10
 sprite_wall2                             = 11
 sprite_white                             = 60
+sprite_bomb1                             = 91
+sprite_bomb2                             = 92
+sprite_bomb3                             = 93
+sprite_bomb4                             = 94
+sprite_bubble1                           = 95
 total_caves                              = 20
 
 ; Memory locations
@@ -258,6 +263,7 @@ sound5_active_flag                      = $4b
 sound6_active_flag                      = $4c
 sound7_active_flag                      = $4d
 pause_counter                           = $4e
+gravity_timer                           = $4f
 magic_wall_state                        = $50
 magic_wall_timer                        = $51
 rockford_cell_value                     = $52
@@ -286,6 +292,7 @@ timeout_until_demo_mode                 = $6a
 map_rockford_end_position_addr_high     = $6b
 diamonds_required                       = $6c
 time_remaining                          = $6d
+bomb_delay                              = $6e
 bonus_life_available_flag               = $6f
 map_rockford_current_position_addr_low  = $70
 map_rockford_current_position_addr_high = $71
@@ -311,6 +318,7 @@ cell_below_right                        = $7b
 lower_nybble_value                      = $7c
 real_keys_pressed                       = $7c
 x_loop_counter                          = $7c
+bomb_counter                            = $7d
 visible_top_left_map_x                  = $7e
 visible_top_left_map_y                  = $7f
 screen_addr2_low                        = $80
@@ -335,6 +343,7 @@ map_address_high                        = $8d
 ptr_high                                = $8d
 sound_channel                           = $8e
 offset_to_sound                         = $8f
+
 l0ba9                                   = $0ba9
 grid_of_currently_displayed_sprites     = $0c00
 start_of_grid_screen_address            = $5bc0
@@ -355,10 +364,12 @@ sprite_addr_boulder1
     !byte $33, $57, $bf, $2d, $69, $c3, $87, $0f, $88, $4c, $ae, $7f, $7f, $b7, $3f     ; 1320: 33 57 bf... 3W.
     !byte $7b, $0b, $0d, $0b, $0d, $2c, $78, $42,   3, $3d, $1e, $0f, $0f, $0e, $0e     ; 132f: 7b 0b 0d... {..
     !byte $0c,   8                                                                      ; 133e: 0c 08       ..
-sprite_addr_boulder2
-    !byte $33, $57, $af, $4f, $0f, $0f, $0f, $0f, $88, $4c, $ae, $7f, $7f, $37, $3f     ; 1340: 33 57 af... 3W.
-    !byte $1f, $0b, $0d, $0b, $0d, $0e, $0f,   6,   3, $0f, $0f, $0f, $0f, $0e, $0e     ; 134f: 1f 0b 0d... ...
-    !byte $0c,   8                                                                      ; 135e: 0c 08       ..
+sprite_addr_boulder2  ;now a bubble
+    !byte $11, $23, $44, $44, $88, $88, $00, $88, $88, $44, $2a, $22, $11, $11, $11, $00
+    !byte $88, $00, $88, $88, $46, $54, $23, $11, $11, $15, $11, $19, $22, $26, $c4, $88
+;    !byte $33, $57, $af, $4f, $0f, $0f, $0f, $0f, $88, $4c, $ae, $7f, $7f, $37, $3f     ; 1340: 33 57 af... 3W.
+;    !byte $1f, $0b, $0d, $0b, $0d, $0e, $0f,   6,   3, $0f, $0f, $0f, $0f, $0e, $0e     ; 134f: 1f 0b 0d... ...
+;    !byte $0c,   8                                                                      ; 135e: 0c 08       ..
 sprite_addr_diamond1
     !byte $11, $11, $13, $23, $77, $37, $df, $ef,   0,   0, $88, $88, $4c, $8c, $ce     ; 1360: 11 11 13... ...
     !byte $ee, $7f, $bf, $57, $67, $33, $33, $11,   1, $6e, $ae, $cc, $cc,   8, $88     ; 136f: ee 7f bf... ...
@@ -711,6 +722,21 @@ sprite_addr_Z
     !byte   0, $77, $78, $0f,   0,   0,   1, $11,   0, $ee, $e0, $6e, $68, $cc, $c0     ; 1e40: 00 77 78... .wx
     !byte $88, $12, $33, $34, $66, $68, $7f, $78, $0f, $80,   0,   0,   0,   0, $ee     ; 1e4f: 88 12 33... ..3
     !byte $e0, $0c                                                                      ; 1e5e: e0 0c       ..
+sprite_addr_bomb
+    !byte $00, $00, $10, $01, $01, $03, $07, $0c, $00, $80, $00, $00, $00, $08, $0c, $06
+    !byte $28, $28, $08, $1c, $2c, $0c, $07, $03, $82, $82, $02, $06, $86, $06, $0c, $08
+sprite_addr_bomb3
+    !byte $00, $00, $20, $10, $01, $13, $37, $4c, $00, $00, $00, $00, $00, $08, $8c, $46
+    !byte $5d, $7f, $6e, $7f, $5d, $4c, $37, $03, $46, $46, $46, $46, $46, $46, $8c, $08
+sprite_addr_bomb2
+    !byte $00, $00, $00, $00, $10, $13, $37, $4c, $00, $00, $00, $80, $00, $08, $8c, $46
+    !byte $5d, $7f, $4c, $5d, $5d, $4c, $37, $03, $46, $46, $46, $ce, $ce, $46, $8c, $08
+sprite_addr_bomb1
+    !byte $00, $00, $00, $00, $10, $12, $37, $6e, $00, $00, $00, $00, $00, $08, $8c, $ce
+    !byte $4c, $6e, $6e, $6e, $6e, $4c, $37, $03, $ce, $ce, $ce, $ce, $ce, $46, $8c, $08
+sprite_addr_bubble2
+    !byte $11, $32, $45, $54, $88, $88, $01, $a8, $88, $4c, $a2, $22, $11, $11, $91, $48
+    !byte $89, $05, $8b, $8d, $ac, $34, $46, $33, $11, $17, $1f, $1f, $0e, $2e, $4c, $88
 
 ; *************************************************************************************
 initial_values_of_variables_from_0x50
@@ -738,7 +764,7 @@ initial_clock_value                    ; Five byte clock value (low byte to high
     !byte 0, 0, 0, 0, 0
 
 unused1
-    !byte   0,   0,   0,   0, $ee, $e0
+    !byte 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 ; Sprites to use for idle animation of rockford. They are encoded into the nybbles of
@@ -811,43 +837,6 @@ idle_animation_data
     !byte 16*(sprite_rockford_winking1-0x20) + sprite_rockford_tapping_foot1-0x20       ; 1ebf: 35          5
 
 ; *************************************************************************************
-unused2
-    !byte $35, $ff, $fb, $f7, $fd, $fe, $7f, $ff, $b7, $af, $bf, $bf, $bf, $bf, $bf     ; 1ec0: 35 ff fb... 5..
-    !byte $9f,   8,   8,   4,   8,   4,   8,   4,   1, $ff, $ff, $ff, $ff, $ff, $ff     ; 1ecf: 9f 08 08... ...
-    !byte $ff, $ff                                                                      ; 1ede: ff ff       ..
-
-    !byte sprite_0                                                                      ; 1ee0: 32          2
-    !byte sprite_0                                                                      ; 1ee1: 32          2
-    !byte sprite_diamond1                                                               ; 1ee2: 03          .
-    !byte sprite_0                                                                      ; 1ee3: 32          2
-    !byte sprite_0                                                                      ; 1ee4: 32          2
-    !byte sprite_space                                                                  ; 1ee5: 00          .
-    !byte sprite_0                                                                      ; 1ee6: 32          2
-    !byte sprite_0                                                                      ; 1ee7: 32          2
-    !byte sprite_0                                                                      ; 1ee8: 32          2
-    !byte sprite_space                                                                  ; 1ee9: 00          .
-    !byte sprite_0                                                                      ; 1eea: 32          2
-    !byte sprite_0                                                                      ; 1eeb: 32          2
-    !byte sprite_0                                                                      ; 1eec: 32          2
-    !byte sprite_space                                                                  ; 1eed: 00          .
-    !byte sprite_0                                                                      ; 1eee: 32          2
-    !byte sprite_0                                                                      ; 1eef: 32          2
-    !byte 2, 5, 4                                                                       ; 1ef0: 02 05 04    ...
-    !byte sprite_space                                                                  ; 1ef3: 00          .
-    !byte sprite_0                                                                      ; 1ef4: 32          2
-    !byte sprite_0                                                                      ; 1ef5: 32          2
-    !byte sprite_0                                                                      ; 1ef6: 32          2
-    !byte sprite_0                                                                      ; 1ef7: 32          2
-    !byte sprite_0                                                                      ; 1ef8: 32          2
-    !byte sprite_0                                                                      ; 1ef9: 32          2
-    !byte $0a                                                                           ; 1efa: 0a          .
-    !byte sprite_space                                                                  ; 1efb: 00          .
-    !byte sprite_space                                                                  ; 1efc: 00          .
-    !byte sprite_space                                                                  ; 1efd: 00          .
-    !byte sprite_space                                                                  ; 1efe: 00          .
-    !byte sprite_0                                                                      ; 1eff: 32          2
-
-; *************************************************************************************
 sprite_to_next_sprite
     !byte sprite_space                                                                  ; 1f00: 00          .
     !byte sprite_boulder1                                                               ; 1f01: 01          .
@@ -866,7 +855,7 @@ sprite_to_next_sprite
     !byte sprite_explosion3                                                             ; 1f0e: 0e          .
 
 ; *************************************************************************************
-unused3
+used_for_unknown1
     !byte $0f, $11, $12, $13, $10, $14, $15, $17, $18, $62, $1a, $1b, $1c, $1a, $1d     ; 1f0f: 0f 11 12... ...
     !byte $68, $1f, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2b, $2c, $2d     ; 1f1e: 68 1f 20... h.
     !byte $63, $2f, $30, $31, $65                                                       ; 1f2d: 63 2f 30... c/0
@@ -931,7 +920,8 @@ amoeba_animated_sprite0
     !byte sprite_earth2                                                                 ; 1f88: 1e          .              ; cell type $08 = map_rockford_appearing_or_end_position
 slime_animated_sprite0
     !byte sprite_amoeba1                                                                ; 1f89: 07          .              ; cell type $09 = map_slime
-    !text "LD"                                                                          ; 1f8a: 4c 44       LD             ; cell type $0A = map_explosion; cell type $0B = map_vertical_strip
+    !byte $4c                                                                           ; 1f8a: 4c 44       .              ; cell type $0A = map_explosion
+    !byte sprite_bomb1                                                                  ; cell type $0B = map_bomb
     !byte sprite_magic_wall1                                                            ;                                  ; cell type $0C = map_growing_wall
     !byte sprite_wall2                                                                  ; 1f8d: 0b          .              ; cell type $0D = map_magic_wall
     !byte sprite_butterfly1                                                             ; 1f8e: 16          .              ; cell type $0E = map_butterfly
@@ -943,13 +933,13 @@ rockford_sprite
     !byte sprite_explosion4                                                             ; 1f92: 0f          .              ; cell type $12 = map_wall | map_anim_state1
     !byte sprite_explosion4                                                             ; 1f93: 0f          .              ; cell type $13 = map_large_explosion_state1
     !byte sprite_rockford_winking2                                                      ; 1f94: 24          $              ; cell type $14 = map_diamond | map_anim_state1
-    !byte sprite_rockford_moving_right4                                                 ; 1f95: 31          1              ; cell type $15 = map_rock | map_anim_state1
+    !byte sprite_boulder2                                                               ; 1f95: 31          1              ; cell type $15 = map_rock | map_anim_state1
     !byte sprite_firefly4                                                               ; 1f96: 1c          .              ; cell type $16 = map_firefly | map_anim_state1
     !byte sprite_amoeba1                                                                ; 1f97: 14          .              ; cell type $17 = map_amoeba | map_anim_state1
     !byte sprite_box                                                                    ; 1f98: 09          .              ; cell type $18 = map_active_exit
     !byte sprite_amoeba1                                                                ; 1f99: 3e          >              ; cell type $19 = map_slime | map_anim_state1
     !byte sprite_firefly4                                                               ; 1f9a: 1c          .              ; cell type $1A = map_explosion | map_anim_state1
-    !byte sprite_butterfly2                                                             ; 1f9b: 17          .              ; cell type $1B = map_vertical_strip | map_anim_state1
+    !byte sprite_bomb2                                                                  ; cell type $1B = map_bomb | map_anim_state1
     !byte sprite_magic_wall1                                                            ; 1f9c: 14          .              ; cell type $1C = map_growing_wall | map_anim_state1
     !byte sprite_magic_wall1                                                            ; 1f9d: 10          .              ; cell type $1D = map_magic_wall | map_anim_state1
     !byte sprite_butterfly1                                                             ; 1f9e: 16          .              ; cell type $1E = map_butterfly | map_anim_state1
@@ -960,13 +950,13 @@ rockford_sprite
     !byte sprite_explosion3                                                             ; 1fa2: 0e          .              ; cell type $22 = map_wall | map_anim_state2
     !byte sprite_explosion3                                                             ; 1fa3: 0e          .              ; cell type $23 = map_large_explosion_state2
     !byte sprite_diamond2                                                               ; 1fa4: 04          .              ; cell type $24 = map_diamond | map_anim_state2
-    !byte sprite_rockford_moving_right4                                                 ; 1fa5: 31          1              ; cell type $25 = map_rock | map_anim_state2
+    !byte sprite_bubble1                                                                ; 1fa5: 31          1              ; cell type $25 = map_rock | map_anim_state2
     !byte sprite_firefly4                                                               ; 1fa6: 1c          .              ; cell type $26 = map_firefly | map_anim_state2
     !byte sprite_amoeba2                                                                ; 1fa7: 15          .              ; cell type $27 = map_amoeba | map_anim_state2
     !byte sprite_firefly2                                                               ; 1fa8: 1a          .              ; cell type $28 = map_rockford_appearing_or_end_position | map_anim_state2
     !byte sprite_amoeba2                                                                ; 1fa9: 61          a              ; cell type $29 = map_slime | map_anim_state2
-    !byte sprite_firefly4                                                               ; 1faa: 1c          .              ; cell type $2A = map_explosion | map_anim_state2
-    !byte sprite_butterfly2                                                             ; 1fab: 17          .              ; cell type $2B = map_vertical_strip | map_anim_state2
+    !byte $46                                                                           ; 1faa: 1c          .              ; cell type $2A = map_explosion | map_anim_state2
+    !byte sprite_bomb3                                                                  ; cell type $2B = map_bomb | map_anim_state2
     !byte sprite_magic_wall1                                                            ; 1fac: 14          .              ; cell type $2C = map_growing_wall | map_anim_state2
     !byte sprite_wall2                                                                  ; 1fad: 0b          .              ; cell type $2D = map_magic_wall | map_anim_state2
     !byte sprite_butterfly1                                                             ; 1fae: 16          .              ; cell type $2E = map_butterfly | map_anim_state2
@@ -977,13 +967,13 @@ rockford_sprite
     !byte sprite_explosion2                                                             ; 1fb2: 0d          .              ; cell type $32 = map_wall | map_anim_state3
     !byte sprite_explosion2                                                             ; 1fb3: 0d          .              ; cell type $33 = map_large_explosion_state3
     !byte sprite_diamond2                                                               ; 1fb4: 04          .              ; cell type $34 = map_diamond | map_anim_state3
-    !byte sprite_rockford_moving_right4                                                 ; 1fb5: 31          1              ; cell type $35 = map_rock | map_anim_state3
+    !byte sprite_boulder1                                                               ; 1fb5: 31          1              ; cell type $35 = map_rock | map_anim_state3
     !byte sprite_firefly4                                                               ; 1fb6: 1c          .              ; cell type $36 = map_firefly | map_anim_state3
     !byte sprite_amoeba2                                                                ; 1fb7: 15          .              ; cell type $37 = map_amoeba | map_anim_state3
     !byte sprite_firefly2                                                               ; 1fb8: 1a          .              ; cell type $38 = map_rockford_appearing_or_end_position | map_anim_state3
     !byte sprite_amoeba2                                                                ; 1fb9: 0b          .              ; cell type $39 = map_slime | map_anim_state3
     !byte sprite_firefly4                                                               ; 1fba: 1c          .              ; cell type $3A = map_explosion | map_anim_state3
-    !byte sprite_butterfly2                                                             ; 1fbb: 17          .              ; cell type $3B = map_vertical_strip | map_anim_state3
+    !byte sprite_bomb4                                                                  ; cell type $3B = map_bomb | map_anim_state3
     !byte sprite_magic_wall1                                                            ; 1fbc: 14          .              ; cell type $3C = map_growing_wall | map_anim_state3
     !byte sprite_wall2                                                                  ; 1fbd: 0b          .              ; cell type $3D = map_magic_wall | map_anim_state3
     !byte sprite_butterfly1                                                             ; 1fbe: 16          .              ; cell type $3E = map_butterfly | map_anim_state3
@@ -1002,7 +992,7 @@ amoeba_animated_sprites4
 slime_animated_sprite1
     !byte sprite_amoeba2                                                                ; 1fc9: 20                         ; cell type $49 = map_slime | map_anim_state4
     !byte sprite_firefly4                                                               ; 1fca: 1c          .              ; cell type $4A = map_explosion | map_anim_state4
-    !byte sprite_butterfly2                                                             ; 1fcb: 17          .              ; cell type $4B = map_vertical_strip | map_anim_state4
+    !byte sprite_bomb1                                                                  ; cell type $4B = map_bomb | map_anim_state4
     !byte sprite_magic_wall1                                                            ;                                  ; cell type $4D = map_growing_wall | map_anim_state4
     !text "A"                                                                           ; 1fcc: 4b 42       A              ; cell type $4C = map_magic_wall | map_anim_state4
     !byte sprite_butterfly2                                                             ; 1fce: 17          .              ; cell type $4E = map_butterfly | map_anim_state4
@@ -1013,13 +1003,13 @@ slime_animated_sprite1
     !byte sprite_explosion2                                                             ; 1fd2: 0d          .              ; cell type $52 = map_wall | map_anim_state5
     !byte sprite_explosion2                                                             ; 1fd3: 0d          .              ; cell type $53 = map_titanium_wall | map_anim_state5
     !byte sprite_rockford_winking2                                                      ; 1fd4: 24          $              ; cell type $54 = map_diamond | map_anim_state5
-    !byte sprite_rockford_moving_right4                                                 ; 1fd5: 31          1              ; cell type $55 = map_rock | map_anim_state5
+    !byte sprite_boulder1                                                               ; 1fd5: 31          1              ; cell type $55 = map_rock | map_anim_state5
     !byte sprite_firefly2                                                               ; 1fd6: 1a          .              ; cell type $56 = map_firefly | map_anim_state5
     !byte sprite_amoeba1                                                                ; 1fd7: 14          .              ; cell type $57 = map_amoeba | map_anim_state5
     !byte sprite_rockford_moving_right4                                                 ; 1fd8: 31          1              ; cell type $58 = map_rockford_appearing_or_end_position | map_anim_state5
     !byte sprite_amoeba1                                                                ; 1fd9: 3e          >              ; cell type $59 = map_slime | map_anim_state5
     !byte sprite_firefly4                                                               ; 1fda: 1c          .              ; cell type $5A = map_explosion | map_anim_state5
-    !byte sprite_butterfly2                                                             ; 1fdb: 17          .              ; cell type $5B = map_vertical_strip | map_anim_state5
+    !byte sprite_bomb2                                                                  ; cell type $5B = map_bomb | map_anim_state5
     !byte sprite_magic_wall1                                                            ; 1fdc: 11          .              ; cell type $5C = map_growing_wall | map_anim_state5
     !byte sprite_magic_wall2                                                            ; 1fdd: 11          .              ; cell type $5D = map_magic_wall | map_anim_state5
     !byte sprite_butterfly2                                                             ; 1fde: 17          .              ; cell type $5E = map_butterfly | map_anim_state5
@@ -1030,13 +1020,13 @@ slime_animated_sprite1
     !byte sprite_explosion3                                                             ; 1fe2: 0e          .              ; cell type $62 = map_wall | map_anim_state6
     !byte sprite_explosion3                                                             ; 1fe3: 0e          .              ; cell type $63 = map_titanium_wall | map_anim_state6
     !byte sprite_diamond1                                                               ; 1fe4: 03          .              ; cell type $64 = map_diamond | map_anim_state6
-    !byte sprite_rockford_moving_right4                                                 ; 1fe5: 31          1              ; cell type $65 = map_rock | map_anim_state6
+    !byte sprite_boulder1                                                               ; 1fe5: 31          1              ; cell type $65 = map_rock | map_anim_state6
     !byte sprite_firefly2                                                               ; 1fe6: 1a          .              ; cell type $66 = map_firefly | map_anim_state6
     !byte sprite_amoeba1                                                                ; 1fe7: 14          .              ; cell type $67 = map_amoeba | map_anim_state6
     !byte sprite_rockford_moving_right4                                                 ; 1fe8: 31          1              ; cell type $68 = map_rockford_appearing_or_end_position | map_anim_state6
     !byte sprite_amoeba1                                                                ; 1fe9: 61          a              ; cell type $69 = map_slime | map_anim_state6
     !byte sprite_firefly4                                                               ; 1fea: 1c          .              ; cell type $6A = map_explosion | map_anim_state6
-    !byte sprite_butterfly2                                                             ; 1feb: 17          .              ; cell type $6B = map_vertical_strip | map_anim_state6
+    !byte sprite_bomb3                                                                  ; cell type $6B = map_bomb | map_anim_state6
     !byte sprite_magic_wall1                                                            ; 1fec: 11          .              ; cell type $6C = map_growing_wall | map_anim_state6
     !byte sprite_explosion2                                                             ; 1fed: 0d          .              ; cell type $6D = map_magic_wall | map_anim_state6
     !byte sprite_butterfly2                                                             ; 1fee: 17          .              ; cell type $6E = map_butterfly | map_anim_state6
@@ -1047,13 +1037,13 @@ slime_animated_sprite1
     !byte sprite_explosion4                                                             ; 1ff2: 0f          .              ; cell type $72 = map_wall | map_anim_state7
     !byte sprite_explosion4                                                             ; 1ff3: 0f          .              ; cell type $73 = map_titanium_wall | map_anim_state7
     !byte sprite_diamond1                                                               ; 1ff4: 03          .              ; cell type $74 = map_diamond | map_anim_state7
-    !byte sprite_rockford_moving_right4                                                 ; 1ff5: 31          1              ; cell type $75 = map_rock | map_anim_state7
+    !byte sprite_boulder1                                                               ; 1ff5: 31          1              ; cell type $75 = map_rock | map_anim_state7
     !byte sprite_firefly2                                                               ; 1ff6: 1a          .              ; cell type $76 = map_firefly | map_anim_state7
     !byte sprite_amoeba2                                                                ; 1ff7: 15          .              ; cell type $77 = map_amoeba | map_anim_state7
     !byte sprite_rockford_moving_right4                                                 ; 1ff8: 31          1              ; cell type $78 = map_rockford_appearing_or_end_position | map_anim_state7
     !byte sprite_amoeba2                                                                ; 1ff9: 0b          .              ; cell type $79 = map_slime | map_anim_state7
     !byte sprite_firefly4                                                               ; 1ffa: 1c          .              ; cell type $7A = map_explosion | map_anim_state7
-    !byte sprite_butterfly2                                                             ; 1ffb: 17          .              ; cell type $7B = map_vertical_strip | map_anim_state7
+    !byte sprite_bomb4                                                                  ; cell type $7B = map_bomb | map_anim_state7
     !byte sprite_magic_wall1                                                            ; 1ffc: 1e          .              ; cell type $7C = map_growing_wall | map_anim_state7
     !byte sprite_explosion1                                                             ; 1ffd: 0c          .              ; cell type $7D = map_magic_wall | map_anim_state7
     !byte sprite_butterfly2                                                             ; 1ffe: 17          .              ; cell type $7E = map_butterfly | map_anim_state7
@@ -1153,12 +1143,17 @@ sprite_titanium_addressA
     !byte <sprite_addr_X                                                                ; 2058: 00          .
     !byte <sprite_addr_Y                                                                ; 2059: 20
     !byte <sprite_addr_Z                                                                ; 205a: 40          @
+    !byte <sprite_addr_bomb
+    !byte <sprite_addr_bomb3
+    !byte <sprite_addr_bomb2
+    !byte <sprite_addr_bomb1
+    !byte <sprite_addr_bubble2
 unused4
-    !byte $60                                                                           ; 205b: 60          `
-    !byte $80                                                                           ; 205c: 80          .
-    !byte $a0                                                                           ; 205d: a0          .
-    !byte $c0                                                                           ; 205e: c0          .
-    !byte $e0                                                                           ; 205f: e0          .
+;    !byte $60                                                                           ; 205b: 60          `
+;    !byte $80                                                                           ; 205c: 80          .
+;    !byte $a0                                                                           ; 205d: a0          .
+;    !byte $c0                                                                           ; 205e: c0          .
+;    !byte $e0                                                                           ; 205f: e0          .
 sprite_titanium_addressB
     !byte <sprite_addr_titanium_wall1                                                   ; 2060: e0          .
 unused5
@@ -1259,12 +1254,17 @@ sprite_addresses_high
     !byte >sprite_addr_X                                                                ; 20d8: 1e          .
     !byte >sprite_addr_Y                                                                ; 20d9: 1e          .
     !byte >sprite_addr_Z                                                                ; 20da: 1e          .
+    !byte >sprite_addr_bomb
+    !byte >sprite_addr_bomb3
+    !byte >sprite_addr_bomb2
+    !byte >sprite_addr_bomb1
+    !byte >sprite_addr_bubble2
 unused6
-    !byte $1e                                                                           ; 20db: 1e          .
-    !byte $1e                                                                           ; 20dc: 1e          .
-    !byte $1e                                                                           ; 20dd: 1e          .
-    !byte $1e                                                                           ; 20de: 1e          .
-    !byte $1e                                                                           ; 20df: 1e          .
+;    !byte $1e                                                                           ; 20db: 1e          .
+;    !byte $1e                                                                           ; 20dc: 1e          .
+;    !byte $1e                                                                           ; 20dd: 1e          .
+;    !byte $1e                                                                           ; 20de: 1e          .
+;    !byte $1e                                                                           ; 20df: 1e          .
 sprite_titanium_addressC
     !byte >sprite_addr_titanium_wall1                                                   ; 20e0: 13          .
 
@@ -1286,7 +1286,7 @@ cell_types_that_rocks_or_diamonds_will_fall_off
     !byte 0                                                                             ; 2108: 00          .              ; map_rockford_appearing_or_end_position
     !byte 0                                                                             ; 2109: 00          .              ; map_slime
     !byte 0                                                                             ; 210a: 00          .              ; map_explosion
-    !byte 0                                                                             ; 210b: 00          .              ; map_vertical_strip
+    !byte 0                                                                             ; 210b: 00          .              ; map_bomb
     !byte 1                                                                             ; 210c: 01          .              ; map_growing_wall
     !byte 0                                                                             ; 210d: 00          .              ; map_magic_wall
     !byte 0                                                                             ; 210e: 00          .              ; map_butterfly
@@ -1317,7 +1317,7 @@ items_produced_by_the_magic_wall
     !byte 0                                                                             ; 2128: 00          .              ; map_rockford_appearing_or_end_position
     !byte 0                                                                             ; 2129: 00          .              ; map_slime
     !byte 0                                                                             ; 212a: 00          .              ; map_explosion
-    !byte 0                                                                             ; 212b: 00          .              ; map_vertical_strip
+    !byte 0                                                                             ; 212b: 00          .              ; map_bomb
     !byte 0                                                                             ; 212c: 00          .              ; map_growing_wall
     !byte 0                                                                             ; 212d: 00          .              ; map_magic_wall
     !byte 0                                                                             ; 212e: 00          .              ; map_butterfly
@@ -1335,7 +1335,7 @@ cell_types_that_will_turn_into_diamonds
     !byte 0                                                                             ; 2138: 00          .              ; map_rockford_appearing_or_end_position
     !byte map_unprocessed | map_diamond                                                 ; 2139: 00          .              ; map_slime
     !byte 0                                                                             ; 213a: 00          .              ; map_explosion
-    !byte map_unprocessed | map_diamond                                                 ; 213b: 84          .              ; map_vertical_strip
+    !byte 0                                                                             ; 213b: 84          .              ; map_bomb
     !byte map_unprocessed | map_diamond                                                 ; 213c: 84          .              ; map_growing_wall
     !byte map_unprocessed | map_diamond                                                 ; 213d: 84          .              ; map_magic_wall
     !byte map_unprocessed | map_diamond                                                 ; 213e: 84          .              ; map_butterfly
@@ -1353,7 +1353,7 @@ cell_types_that_will_turn_into_large_explosion
     !byte 0                                                                             ; 2148: 00          .              ; map_rockford_appearing_or_end_position
     !byte map_unprocessed | map_large_explosion_state3                                  ; 2149: 00          .              ; map_slime
     !byte 0                                                                             ; 214a: 00          .              ; map_explosion
-    !byte map_unprocessed | map_large_explosion_state3                                  ; 214b: b3          .              ; map_vertical_strip
+    !byte map_unprocessed | map_large_explosion_state3                                  ; 214b: b3          .              ; map_bomb
     !byte map_unprocessed | map_large_explosion_state3                                  ; 214c: b3          .              ; map_growing_wall
     !byte map_unprocessed | map_large_explosion_state3                                  ; 214d: b3          .              ; map_magic_wall
     !byte map_unprocessed | map_large_explosion_state3                                  ; 214e: b3          .              ; map_butterfly
@@ -1380,8 +1380,8 @@ exit_cell_type
     !byte  map_slime                                                                    ; 215e: 09          .
 
 unused8
-    !byte   9, $0a,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0     ; 215f: 09 0a 00... ...
-    !byte   0,   0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0
 
 items_allowed_through_slime
     !byte 0                                                                             ; map_space
@@ -1395,7 +1395,7 @@ items_allowed_through_slime
     !byte 0                                                                             ; map_rockford_appearing_or_end_position
     !byte 0                                                                             ; map_slime
     !byte 0                                                                             ; map_explosion
-    !byte 0                                                                             ; map_vertical_strip
+    !byte map_unprocessed | map_bomb                                                    ; map_bomb
     !byte 0                                                                             ; map_growing_wall
     !byte 0                                                                             ; map_magic_wall
     !byte 0                                                                             ; map_butterfly
@@ -1413,7 +1413,7 @@ update_cell_type_when_below_a_falling_rock_or_diamond
     !byte 0                                                                             ; 2188: 00          .              ; map_rockford_appearing_or_end_position
     !byte 0                                                                             ; 2189: 00          .              ; map_slime
     !byte 0                                                                             ; 218a: 00          .              ; map_explosion
-    !byte map_anim_state7 | map_magic_wall                                              ; 218b: 7d          }              ; map_vertical_strip
+    !byte map_start_large_explosion                                                     ; 218b: 7d          }              ; map_bomb
     !byte 0                                                                             ; 218c: 00          .              ; map_growing_wall
     !byte map_anim_state3 | map_magic_wall                                              ; 218d: 3d          =              ; map_magic_wall
     !byte map_anim_state4 | map_butterfly                                               ; 218e: 4e          N              ; map_butterfly
@@ -1438,7 +1438,7 @@ handler_table_low
     !byte <handler_rockford_intro_or_exit                                               ; 21c8: e3          .              ; map_rockford_appearing_or_end_position
     !byte <handler_slime                                                                ; 21c9: ca          .              ; map_slime
     !byte <handler_rockford_intro_or_exit                                               ; 21ca: e3          .              ; map_explosion
-    !byte 0                                                                             ; not used
+    !byte 0                                                                                                                ; map_bomb (special handler)
     !byte <handler_growing_wall                                                         ; 21cc: f0          .              ; map_growing_wall
     !byte <handler_magic_wall                                                           ; 21cd: ae          .              ; map_magic_wall
     !byte <handler_firefly_or_butterfly                                                 ; 21ce: 00          .              ; map_butterfly
@@ -1455,7 +1455,7 @@ handler_table_high
     !byte >handler_rockford_intro_or_exit                                               ; 21d8: 26          &              ; map_rockford_appearing_or_end_position
     !byte >handler_slime                                                                ; 21d9: 2b          +              ; map_slime
     !byte >handler_rockford_intro_or_exit                                               ; 21da: 26          &              ; map_explosion
-    !byte 0                                                                             ; not used
+    !byte 0                                                                                                                ; map_bomb (special handler)
     !byte >handler_growing_wall                                                         ; 21dc: 23          #              ; map_growing_wall
     !byte >handler_magic_wall                                                           ; 21dd: 26          &              ; map_magic_wall
     !byte >handler_firefly_or_butterfly                                                 ; 21de: 25          %              ; map_butterfly
@@ -1496,7 +1496,7 @@ collision_for_cell_type
     !byte 0                                                                             ; 21f8: 00          .              ; map_rockford_appearing_or_end_position
     !byte 0                                                                             ; 21f9: 00          .              ; map_slime
     !byte $ff                                                                           ; 21fa: ff          .              ; map_explosion
-    !byte 0                                                                             ; 21fb: 00          .              ; map_vertical_strip
+    !byte $ff                                                                           ; 21fb: 00          .              ; map_bomb
     !byte 0                                                                             ; 21fc: 00          .              ; map_growing_wall
     !byte 0                                                                             ; 21fd: 00          .              ; map_magic_wall
     !byte 0                                                                             ; 21fe: 00          .              ; map_butterfly
@@ -1515,6 +1515,7 @@ neighbouring_cell_variable_from_direction_index
 ;       c1
 check_for_rock_direction_offsets
     !byte $43, $3f,   0, $c1                                                            ; 2204: 43 3f 00... C?.
+
 map_offset_for_direction
     !byte $42, $40,   1, $81                                                            ; 2208: 42 40 01... B@.
 
@@ -1548,13 +1549,7 @@ inkey_keys_table
     !byte inkey_key_x                                                                   ; 222f: bd          .
 
 unused11
-    lsr                                                                                 ; 2230: 4a          J
-    lsr                                                                                 ; 2231: 4a          J
-    lsr                                                                                 ; 2232: 4a          J
-    lsr                                                                                 ; 2233: 4a          J
-    and #3                                                                              ; 2234: 29 03       ).
-    tax                                                                                 ; 2236: aa          .
-    rts                                                                                 ; 2237: 60          `
+    !byte 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 increment_ptr_and_clear_carry
@@ -1591,8 +1586,6 @@ get_next_random_byte
 ; *************************************************************************************
 ; Clears the entire map to initial_cell_fill_value.
 ; Clears the visible grid to $ff
-; amount_to_increment_ptr_minus_one is always zero in this routine, making some of the
-; instructions unused.
 clear_map_and_grid
     lda #<(tile_map_row_1-1)                                                            ; 2256: a9 3f       .?
     sta ptr_low                                                                         ; 2258: 85 8c       ..
@@ -1604,18 +1597,6 @@ clear_map_and_grid
     stx random_seed                                                                     ; 2262: 86 88       ..
 clear_map_loop
     lda amount_to_increment_ptr_minus_one                                               ; 2264: a5 78       .x             ; variable is always zero in practice (see calling function)
-    beq store_increment                                                                 ; 2266: f0 0c       ..             ; ALWAYS branch
-
-unused12
-    jsr get_next_random_byte                                                            ; 2268: 20 4a 22     J"
-unused_repeated_subtraction_loop
-    cmp amount_to_increment_ptr_minus_one                                               ; 226b: c5 78       .x
-    bcc store_increment                                                                 ; 226d: 90 05       ..
-    sec                                                                                 ; 226f: 38          8
-    sbc amount_to_increment_ptr_minus_one                                               ; 2270: e5 78       .x
-    bne unused_repeated_subtraction_loop                                                ; 2272: d0 f7       ..
-
-store_increment
     sta cell_current                                                                    ; 2274: 85 77       .w             ; loop counter
 increment_ptr_using_40_bytes_out_of_every_64
     inc ptr_low                                                                         ; 2276: e6 8c       ..
@@ -1724,16 +1705,6 @@ skip_to_next_row
     ldx #$85                                                                            ; 22f3: a2 85       ..
     jsr play_sound_x_pitch_y                                                            ; 22f5: 20 2c 2c     ,,
     rts                                                                                 ; 22f8: 60          `
-
-unused13
-    lda #$eb                                                                            ; 22f9: a9 eb       ..
-    ; sta $2c16
-    !byte $8d, $16, $2c                                                                 ; 22fb: 8d 16 2c    ..,
-
-    rts                                                                                 ; 22fe: 60          `
-
-unused14
-    rts                                                                                 ; 22ff: 60          `
 
 ; *************************************************************************************
 ; draw a full grid of sprites, updating the current map position first
@@ -1885,28 +1856,6 @@ return2
     rts                                                                                 ; 23db: 60          `
 
 ; *************************************************************************************
-handler_growing_wall
-;Growing wall element introduced in Boulder Dash 2, allows a wall to extend horizontally if the item beside it is empty space
-;Used in Boulder Dash 2 in cave O
-
-    lda cell_left                                          ; read cell to the left of the growing wall
-    and #$0f                                               ; getting the cell type from the lower nybble
-    bne check_grow_right                                   ; If not zero (map_space) then examine cell to the right
-    lda #map_unprocessed | map_growing_wall                ; Otherwise replace the left cell with another growing wall
-    sta cell_left
-check_grow_right
-    lda cell_right                                         ; read cell to the right of the growing wall
-    and #$0f                                               ; getting the cell type from the lower nybble
-    bne grow_wall_return                                   ; If not zero (map_space) then end
-    lda #map_unprocessed | map_growing_wall                ; Otherwise replace the right cell with another growing wall
-    sta cell_right
-grow_wall_return
-    rts
-
-unused16
-    !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-
-; *************************************************************************************
 ; 
 ; This is the map processing that happens every tick during gameplay.
 ; The map is scanned to handle any changes required.
@@ -1955,6 +1904,15 @@ tile_map_x_loop
     sta cell_right                                                                      ; 2427: 85 78       .x
     cpx #map_diamond                                                                    ; 2429: e0 04       ..
     bmi mark_cell_above_as_processed_and_move_to_next_cell                              ; 242b: 30 34       04
+
+    ; read cells into cell_above and cell_below variables
+    ldy #1                                                                              ; 2444: a0 01       ..
+    lda (ptr_low),y                                                                     ; 2446: b1 8c       ..
+    sta cell_above                                                                      ; 2448: 85 74       .t
+    ldy #$81                                                                            ; 244a: a0 81       ..
+    lda (ptr_low),y                                                                     ; 244c: b1 8c       ..
+    sta cell_below                                                                      ; 244e: 85 7a       .z
+
     ; if current cell is already processed (top bit set), then skip to next cell
     txa                                                                                 ; 242d: 8a          .
     bmi mark_cell_above_as_processed_and_move_to_next_cell                              ; 242e: 30 31       01
@@ -1973,19 +1931,12 @@ branch_offset = branch_instruction+1
     sta handler_high                                                                    ; 243b: 8d 52 24    .R$
     lda handler_table_low,y                                                             ; 243e: b9 c0 21    ..!
     sta handler_low                                                                     ; 2441: 8d 51 24    .Q$
-    ; read cells into cell_above and cell_below variables
-    ldy #1                                                                              ; 2444: a0 01       ..
-    lda (ptr_low),y                                                                     ; 2446: b1 8c       ..
-    sta cell_above                                                                      ; 2448: 85 74       .t
-    ldy #$81                                                                            ; 244a: a0 81       ..
-    lda (ptr_low),y                                                                     ; 244c: b1 8c       ..
-    sta cell_below                                                                      ; 244e: 85 7a       .z
     ; call the handler for the cell based on the type (0-15)
 jsr_handler_instruction
 handler_low = jsr_handler_instruction+1
 handler_high = jsr_handler_instruction+2
     jsr handler_firefly_or_butterfly                                                    ; 2450: 20 00 25     .%
-    ; the handler may have changed the surreounding cells. store the new cell below
+    ; the handler may have changed the surrounding cells, store the new cell below
     lda cell_below                                                                      ; 2453: a5 7a       .z
     ldy #$81                                                                            ; 2455: a0 81       ..
     sta (ptr_low),y                                                                     ; 2457: 91 8c       ..
@@ -2045,12 +1996,30 @@ clear_top_bit_on_final_row_loop
     rts                                                                                 ; 2499: 60          `
 
 ; *************************************************************************************
-; 
-; This is the update when we find a diamond or rock in the map during gameplay
-; 
-; *************************************************************************************
-    ; get cell below
+; Update for rock/diamond/bomb elements
+;
 update_rock_or_diamond_that_can_fall
+
+    cpy #map_bomb
+    bne not_a_bomb
+    jsr handler_bomb  ;handle the bomb timer before continuing so it behaves like a rock/diamond
+not_a_bomb
+    lda gravity_timer
+    beq gravity_on_as_normal
+    ;gravity is off, so a rock/diamond/bomb can float
+    cpy #map_rock
+    bne mark_cell_above_as_processed_and_move_to_next_cell  ;only want to transition the rock
+    ldx #map_rock | map_unprocessed | map_anim_state1  ;switch to a bubble sprite
+    lda gravity_timer
+    cmp #4
+    bcs mark_cell_above_as_processed_and_move_to_next_cell
+    ldx #map_rock | map_unprocessed | map_anim_state2  ;switch to a bubble-transition-to-rock sprite instead
+    jmp mark_cell_above_as_processed_and_move_to_next_cell  ;bypass rock/diamond/bomb falling when gravity is off
+gravity_on_as_normal
+    cpx #map_rock | map_unprocessed | map_anim_state2
+    bne not_a_rock
+    ldx #map_rock | map_unprocessed  ;switch back to rock
+not_a_rock
     ldy #$81                                                                            ; 249a: a0 81       ..
     lda (ptr_low),y                                                                     ; 249c: b1 8c       ..
     beq cell_below_is_a_space                                                           ; 249e: f0 34       .4
@@ -2062,9 +2031,9 @@ not_c0_or_above
     and #$4f                                                                            ; 24a7: 29 4f       )O
     tay                                                                                 ; 24a9: a8          .
     asl                                                                                 ; 24aa: 0a          .
-    bmi mark_cell_above_as_processed_and_move_to_next_cell                              ; 24ab: 30 b4       0.
+    bmi process_next_cell                                                               ; 24ab: 30 b4       0.
     lda cell_types_that_rocks_or_diamonds_will_fall_off,y                               ; 24ad: b9 00 21    ..!
-    beq mark_cell_above_as_processed_and_move_to_next_cell                              ; 24b0: f0 af       ..
+    beq process_next_cell                                                               ; 24b0: f0 af       ..
     lda cell_left                                                                       ; 24b2: a5 76       .v
     bne check_if_cell_right_is_empty                                                    ; 24b4: d0 06       ..
     ; cell left is empty, now check below left cell
@@ -2073,11 +2042,11 @@ not_c0_or_above
     beq rock_or_diamond_can_fall_left_or_right                                          ; 24ba: f0 0a       ..
 check_if_cell_right_is_empty
     lda cell_right                                                                      ; 24bc: a5 78       .x
-    bne mark_cell_above_as_processed_and_move_to_next_cell                              ; 24be: d0 a1       ..
+    bne process_next_cell                                                               ; 24be: d0 a1       ..
     ; cell right is empty, now check below right cell
     ldy #$82                                                                            ; 24c0: a0 82       ..
     lda (ptr_low),y                                                                     ; 24c2: b1 8c       ..
-    bne mark_cell_above_as_processed_and_move_to_next_cell                              ; 24c4: d0 9b       ..
+    bne process_next_cell                                                               ; 24c4: d0 9b       ..
     ; take the rock or diamond, and set bit 6 to indicate it has been moved this scan
     ; (so it won't be moved again). Then store it in the below left or below right cell
 rock_or_diamond_can_fall_left_or_right
@@ -2091,7 +2060,7 @@ rock_or_diamond_can_fall_left_or_right
     sta (ptr_low),y                                                                     ; 24ce: 91 8c       ..
 set_to_unprocessed_space
     ldx #$80                                                                            ; 24d0: a2 80       ..
-    bne mark_cell_above_as_processed_and_move_to_next_cell                              ; 24d2: d0 8d       ..             ; ALWAYS branch
+    bne process_next_cell                                                               ; 24d2: d0 8d       ..             ; ALWAYS branch
 
     ; take the rock or diamond, and set bit 6 to indicate it has been moved this scan
     ; (so it won't be moved again). Then store it in the cell below.
@@ -2126,8 +2095,9 @@ play_rock_or_diamond_fall_sound
     pla                                                                                 ; 24f5: 68          h
     rts                                                                                 ; 24f6: 60          `
 
-unused17
-    !byte $60,   3, $d0,   2, $e6, $4a, $60,   1, $60                                   ; 24f7: 60 03 d0... `..
+;Needed because subroutine is out of range to branch to
+process_next_cell
+    jmp mark_cell_above_as_processed_and_move_to_next_cell
 
 ; *************************************************************************************
 handler_firefly_or_butterfly
@@ -2137,8 +2107,8 @@ handler_firefly_or_butterfly
     ldy #8                                                                              ; 2504: a0 08       ..
 look_for_amoeba_or_player_loop
     lda cell_above_left-1,y                                                             ; 2506: b9 72 00    .r.
-    bne unnecessary_branch                                                              ; 2509: d0 00       ..             ; redundant instruction
-unnecessary_branch
+;    bne unnecessary_branch                                                              ; 2509: d0 00       ..             ; redundant instruction
+;unnecessary_branch
     and #7                                                                              ; 250b: 29 07       ).
     eor #7                                                                              ; 250d: 49 07       I.
     beq show_large_explosion                                                            ; 250f: f0 31       .1
@@ -2243,11 +2213,6 @@ skip_storing_explosion_into_cell
     ldx cell_current                                                                    ; 2595: a6 77       .w
     rts                                                                                 ; 2597: 60          `
 
-unused18
-    ldy #$82                                                                            ; 2598: a0 82       ..
-    lda cell_below_right                                                                ; 259a: a5 7b       .{
-    sta (ptr_low),y                                                                     ; 259c: 91 8c       ..
-
 ; *************************************************************************************
 handler_amoeba
     lda amoeba_replacement                                                              ; 259e: a5 54       .T
@@ -2317,16 +2282,6 @@ store_x
 return3
     rts                                                                                 ; 25f5: 60          `
 
-unused19
-    sbc l0ba9,y                                                                         ; 25f6: f9 a9 0b    ...
-    sta cell_below                                                                      ; 25f9: 85 7a       .z
-    rts                                                                                 ; 25fb: 60          `
-
-unused20
-    rts                                                                                 ; 25fc: 60          `
-
-    !byte   0, $60, $4a                                                                 ; 25fd: 00 60 4a    .`J
-
 ; *************************************************************************************
 handler_rockford
     stx current_rockford_sprite                                                         ; 2600: 86 5b       .[
@@ -2384,6 +2339,8 @@ skip_storing_rockford_cell_type
     ; trying to move into something difficult to move (e.g. a rock)
     ldy check_for_rock_direction_offsets,x                                              ; 264a: bc 04 22    .."
     beq check_if_value_is_empty                                                         ; 264d: f0 25       .%
+    cpy #$ee  ;Special value used to detect rock has been pushed up
+    beq check_push_up
     lda (ptr_low),y                                                                     ; 264f: b1 8c       ..
     bne check_if_value_is_empty                                                         ; 2651: d0 21       .!
     lda neighbour_cell_contents                                                         ; 2653: a5 64       .d
@@ -2402,8 +2359,8 @@ check_for_return_pressed
     and #8                                                                              ; 2669: 29 08       ).
     beq store_rockford_cell_value_without_return_pressed                                ; 266b: f0 0b       ..
     ; return and direction is pressed. clear the appropriate cell
-    ldy neighbouring_cell_variable                                                      ; 266d: a4 73       .s
-    lda #0                                                                              ; 266f: a9 00       ..
+    jsr check_if_bombs_used  ;Returns accumulator used below
+    ldy neighbouring_cell_variable
     sta page_0,y                                                                        ; 2671: 99 00 00    ...
 check_if_value_is_empty
     ldx rockford_cell_value                                                             ; 2674: a6 52       .R
@@ -2440,8 +2397,119 @@ read_keys_loop
     sta keys_to_process                                                                 ; 26a8: 85 62       .b
     rts                                                                                 ; 26aa: 60          `
 
-unused21
-    !byte $62, $60, $a6                                                                 ; 26ab: 62 60 a6    b`.
+;Subroutine to allow Rockford to push a rock upwards
+;Needs to check there is a free space above the rock being pushed, allow for the push delay, then continue like other direction pushes
+check_push_up
+    lda ptr_high  ;store current line pointer high/low on stack
+    pha
+    lda ptr_low
+    pha
+    sec
+	lda ptr_low
+	sbc #$80  ;Need to point upwards 2 lines, so subtract (64 x 2 = 128) from pointer high/low
+	sta ptr_low
+    bcs no_up_ptr_high_change
+    dec ptr_high
+no_up_ptr_high_change
+    ldy #$41  ;offset the line pointer with Rockford's position
+    lda (ptr_low),y  ;this is the cell value 2 rows above Rockford
+    bne end_check_up
+    dec delay_trying_to_push_rock  ;ok to push up but delay
+    bne end_check_up
+    lda #map_rock | map_anim_state1  ;delay over, store a rock in the cell 2 rows above Rockford
+    sta (ptr_low),y
+    lda #4  ;reset the delay for next time
+    sta delay_trying_to_push_rock
+    inc sound4_active_flag
+    pla  ;restore current line pointer high/low from stack
+    sta ptr_low
+    pla
+    sta ptr_high
+    jmp store_rockford_cell_value_without_return_pressed  ;continue like side/bottom pushes
+end_check_up
+    pla  ;restore current line pointer high/low from stack
+    sta ptr_low
+    pla
+    sta ptr_high
+    jmp check_if_value_is_empty  ;continue like side/bottom non-pushes
+
+;Subroutine called when pressing return + key direction
+;if bombs are allowed, place a bomb in the space of the direction, otherwise just clear the space given by the direction
+check_if_bombs_used
+    lda bomb_counter
+    bne bombs_allowed
+    lda #0
+    rts
+bombs_allowed
+    lda neighbour_cell_contents
+    beq check_bomb_delay
+    lda #0
+    rts
+check_bomb_delay
+    lda bomb_delay
+    beq create_a_bomb
+    lda #0
+    rts
+create_a_bomb
+    lda #3  ;delay creation of next bomb
+    sta bomb_delay
+    dec bomb_counter  ;one less bomb to use
+    ldy #4
+    jsr decrement_status_bar_number  ;update status bar
+    lda #map_bomb
+    rts
+
+; *************************************************************************************
+handler_growing_wall
+;Growing wall element introduced in Boulder Dash 2, allows a wall to extend horizontally if the item beside it is empty space
+;Used in Boulder Dash 2 in cave O
+
+    lda cell_left                                          ; read cell to the left of the growing wall
+    and #$0f                                               ; getting the cell type from the lower nybble
+    bne check_grow_right                                   ; If not zero (map_space) then examine cell to the right
+    lda #map_unprocessed | map_growing_wall                ; Otherwise replace the left cell with another growing wall
+    sta cell_left
+check_grow_right
+    lda cell_right                                         ; read cell to the right of the growing wall
+    and #$0f                                               ; getting the cell type from the lower nybble
+    bne grow_wall_return                                   ; If not zero (map_space) then end
+    lda #map_unprocessed | map_growing_wall                ; Otherwise replace the right cell with another growing wall
+    sta cell_right
+grow_wall_return
+    rts
+
+; *************************************************************************************
+handler_bomb
+;Bomb element is not an original game element, introduced by raspberrypioneer in October 2024
+;Rockford can lay a bomb in a space tile by holding down return and pressing a direction key
+;The bomb has a fuse and when time is up, it explodes like a firefly / butterfly / Rockford can
+
+    cpx #map_bomb | map_unprocessed | $40                  ;if bomb, unprocessed and falling then suspend countdown
+    bcs bomb_return
+    lda tick_counter
+    and #7                                                 ;check only bits 0,1,2 of the tick counter
+    cmp #7                                                 ;equals 7
+    bne bomb_return                                        ;do nothing if not 7
+    txa                                                    ;x register holds current cell value
+    clc
+    adc #map_anim_state1                                   ;add the next animation frame
+    cmp #map_bomb | map_unprocessed | map_anim_state4      ;use last animation frame to check limit
+    bcs bomb_explode                                       ;if past last frame, time to explode!
+    tax                                                    ;x register holds current cell value, updated with animation frame
+    rts
+bomb_explode
+    ldx #map_deadly                                        ;set the cell to deadly
+    jsr show_large_explosion                               ;call the explosion routine
+
+    lda cell_below                                         ;update cell below (as done by other 'standard' handlers)
+    ldy #$81
+    sta (ptr_low),y
+    lda cell_above                                         ;update cell below (as done by other 'standard' handlers)
+    ldy #1
+    sta (ptr_low),y
+
+bomb_return
+    rts
 
 ; *************************************************************************************
 handler_magic_wall
@@ -2484,9 +2552,6 @@ check_if_magic_wall_is_active
     beq magic_wall_is_active                                                            ; 26dc: f0 ef       ..
     rts                                                                                 ; 26de: 60          `
 
-unused22
-    !byte $29, $7f, $aa, $e0                                                            ; 26df: 29 7f aa... )..
-
 ; *************************************************************************************
     ; mark rockford cell as visible
 handler_rockford_intro_or_exit
@@ -2510,9 +2575,6 @@ handler_rockford_intro_or_exit
     sta status_text_address_low                                                         ; 26fb: 85 69       .i
 return4
     rts                                                                                 ; 26fd: 60          `
-
-unused23
-    !byte   0, $24                                                                      ; 26fe: 00 24       .$
 
 ; *************************************************************************************
 start_gameplay
@@ -2633,10 +2695,25 @@ skip_got_diamond
     jsr update_sounds                                                                   ; 27a4: 20 80 2c     .,
     ; update game tick
     dec tick_counter                                                                    ; 27a7: c6 5a       .Z
-    ; update magic wall timer
     lda tick_counter                                                                    ; 27a9: a5 5a       .Z
     and #7                                                                              ; 27ab: 29 07       ).
     bne update_death_explosion                                                          ; 27ad: d0 08       ..
+    ;update bomb delay timer
+    lda bomb_delay
+    beq end_update_bomb_delay
+    dec bomb_delay
+end_update_bomb_delay
+    ; update gravity timer
+    lda gravity_timer
+    beq end_update_gravity_timer  ;stop at zero
+    cmp #$ff
+    beq end_update_gravity_timer  ;gravity is always on if set to #$ff
+    dec gravity_timer
+    bne end_update_gravity_timer
+    lda #0
+    sta check_for_rock_direction_offsets+2
+end_update_gravity_timer
+    ; update magic wall timer
     lda magic_wall_state                                                                ; 27af: a5 50       .P
     cmp #$1d                                                                            ; 27b1: c9 1d       ..
     bne update_death_explosion                                                          ; 27b3: d0 02       ..
@@ -2684,10 +2761,6 @@ gameplay_loop_local
 
 return5
     rts                                                                                 ; 27ef: 60          `
-
-unused24
-    !byte $27, $60, $f0,   6, $d0, $e9, $29, $23,   2, $40, $60, $29,   8, $f0, $e5     ; 27f0: 27 60 f0... '`.
-    !byte $60                                                                           ; 27ff: 60          `
 
 ; *************************************************************************************
 update_grid_animations
@@ -2747,9 +2820,6 @@ extract_lower_nybble
     inc ticks_since_last_direction_key_pressed                                          ; 284f: e6 58       .X
     rts                                                                                 ; 2851: 60          `
 
-unused25
-    !byte $8d, $8f, $1f, $e6, $58, $60, $d0,   5                                        ; 2852: 8d 8f 1f... ...
-
 ; *************************************************************************************
 read_keys_and_resolve_direction_keys
     jsr read_keys                                                                       ; 2860: 20 89 26     .&
@@ -2784,9 +2854,6 @@ store_active_direction_keys
     sta keys_to_process                                                                 ; 2885: 85 62       .b
     sty previous_direction_keys                                                         ; 2887: 84 5d       .]
     rts                                                                                 ; 2889: 60          `
-
-unused26
-    !byte $bd,   0, $1f, $99, $80, $1f, $c6, $77, $a6, $77, $10, $ee, $a5, $5a          ; 288a: bd 00 1f... ...
 
 ; *************************************************************************************
 increment_status_bar_number
@@ -2828,148 +2895,18 @@ finished_add
     ldy real_keys_pressed                                                               ; 28d1: a4 7c       .|
     rts                                                                                 ; 28d3: 60          `
 
-unused27
-    !byte $81, $22, $20,   1, $41, $78, $76, $74, $7a, $43, $3f,   1, $81, $22, $20     ; 28d4: 81 22 20... ."
-    !byte   1, $41, $41, $98, $38, $e9, $10, $c9,   4, $10,   4, $aa, $bd, $f7, $28     ; 28e3: 01 41 41... .AA
-    !byte   9, $80, $85, $77, $60,   0,   0, $84,   1, $55, $28, $a5, $98, $0a          ; 28f2: 09 80 85... ...
+; *************************************************************************************
+
+unused13
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
-; !!! prepare_stage no longer being used
-prepare_stage
-    lda #0                                                                              ; 2900: a9 00       ..
-    sta amount_to_increment_ptr_minus_one                                               ; 2902: 85 78       .x
-
-    ; STEP 1: The initial fill. Find the cell type to fill the map with initially, and
-    ; clear the map to that value
-    ldy cave_number                                                                     ; 2904: a4 87       ..
-    lda fill_cell_in_lower_nybble_strip_value_to_skip_in_upper_nybble_for_each_cave,y   ; 2906: b9 90 4c    ..L
-    and #$0f                                                                            ; 2909: 29 0f       ).
-    sta value_to_clear_map_to                                                           ; 290b: 85 79       .y
-    jsr clear_map_and_grid                                                              ; 290d: 20 56 22     V"
-
-    ; STEP 2: The 'basics'. This is a 2-bit-per-cell array that's copied into the map.
-    ; One value skips the cell so the initial fill value remains, the other three are
-    ; specified in the high nybbles in the cave colour arrays. Here we copy them into
-    ; cell_above_left/cell_above/cell_above_right
-    ldy cave_number                                                                     ; 2910: a4 87       ..
-    ldx #1                                                                              ; 2912: a2 01       ..
-loop_three_times
-    lda colour_1_in_lower_nybble_cell_type_1_in_upper_nybble_for_each_cave,y            ; 2914: b9 a4 4c    ..L
-    lsr                                                                                 ; 2917: 4a          J
-    lsr                                                                                 ; 2918: 4a          J
-    lsr                                                                                 ; 2919: 4a          J
-    lsr                                                                                 ; 291a: 4a          J
-    sta cell_above_left-1,x                                                             ; 291b: 95 72       .r
-    ; add number of caves to Y, in order to get next block type
-    tya                                                                                 ; 291d: 98          .
-    clc                                                                                 ; 291e: 18          .
-    adc #total_caves                                                                    ; 291f: 69 14       i.
-    tay                                                                                 ; 2921: a8          .
-    ; increment loop counter X
-    inx                                                                                 ; 2922: e8          .
-    cpx #4                                                                              ; 2923: e0 04       ..
-    bne loop_three_times                                                                ; 2925: d0 ed       ..
-    ; STEP 2a: Find the right data set to use for the cave and difficulty level
-    ; look up which data set is needed from the cave number
-    ldy cave_number                                                                     ; 2927: a4 87       ..
-    lda cave_to_data_set,y                                                              ; 2929: b9 e0 4c    ..L
-    ; branch if no data set is present
-    bmi add_strips                                                                      ; 292c: 30 54       0T
-    tax                                                                                 ; 292e: aa          .
-    ; start with ptr = data_sets
-    lda #<data_sets                                                                     ; 292f: a9 f4       ..
-    sta ptr_low                                                                         ; 2931: 85 8c       ..
-    lda #>data_sets                                                                     ; 2933: a9 4c       .L
-    sta ptr_high                                                                        ; 2935: 85 8d       ..
-    ; Loop counter X is data set number.
-    ; Add X * twenty bytes to pointer to get to 'data_set_X' address
-    txa                                                                                 ; 2937: 8a          .
-    beq got_data_set_X_address                                                          ; 2938: f0 08       ..
-add_twenty_times_x_loop
-    lda #total_caves                                                                    ; 293a: a9 14       ..
-    jsr add_a_to_ptr                                                                    ; 293c: 20 40 22     @"
-    dex                                                                                 ; 293f: ca          .
-    bne add_twenty_times_x_loop                                                         ; 2940: d0 f8       ..
-    ; remember pointer to data set
-got_data_set_X_address
-    lda ptr_low                                                                         ; 2942: a5 8c       ..
-    sta data_set_ptr_low                                                                ; 2944: 85 46       .F
-    ; set offset in Y = 4*(difficulty level-1)
-    ldx difficulty_level                                                                ; 2946: a6 89       ..
-    dex                                                                                 ; 2948: ca          .
-    txa                                                                                 ; 2949: 8a          .
-    asl                                                                                 ; 294a: 0a          .
-    asl                                                                                 ; 294b: 0a          .
-    tay                                                                                 ; 294c: a8          .
-    ; STEP 2b: Now we have found the right data set, decode the four byte data set
-    ; entry
-    lda ptr_high                                                                        ; 294d: a5 8d       ..
-    sta data_set_ptr_high                                                               ; 294f: 85 47       .G
-    ; set next_ptr = $4e00+?ptr, and if top bit of (ptr?1) is set, increment high byte
-    lda (ptr_low),y                                                                     ; 2951: b1 8c       ..
-    sta next_ptr_low                                                                    ; 2953: 85 82       ..
-    lda #$4e                                                                            ; 2955: a9 4e       .N
-    sta next_ptr_high                                                                   ; 2957: 85 83       ..
-    ; use the lower seven bits of (ptr?1) as ptr_low
-    iny                                                                                 ; 2959: c8          .
-    lda (ptr_low),y                                                                     ; 295a: b1 8c       ..
-    sty remember_y                                                                      ; 295c: 84 48       .H
-    bpl store_ptr_low_and_fill_with_basics                                              ; 295e: 10 04       ..
-    inc next_ptr_high                                                                   ; 2960: e6 83       ..
-    and #$7f                                                                            ; 2962: 29 7f       ).
-    ; set ptr_low = (ptr?1) AND &7F
-store_ptr_low_and_fill_with_basics
-    sta ptr_low                                                                         ; 2964: 85 8c       ..
-    ; STEP 2c: now we have the correct data, actually fill with the basics
-    jsr fill_with_basics                                                                ; 2966: 20 90 2d     .-
-
-    ; STEP 3: The 'patches'. Individual cells can be changed using patch data.
-    ; First reset ptr to the start of the data_set_X
-    lda data_set_ptr_low                                                                ; 2969: a5 46       .F
-    sta ptr_low                                                                         ; 296b: 85 8c       ..
-    lda data_set_ptr_high                                                               ; 296d: a5 47       .G
-    sta ptr_high                                                                        ; 296f: 85 8d       ..
-    ; recall Y and read the next two bytes as an address. Can be zero. For patches.
-    ldy remember_y                                                                      ; 2971: a4 48       .H
-    iny                                                                                 ; 2973: c8          .
-    lda (ptr_low),y                                                                     ; 2974: b1 8c       ..
-    sta next_ptr_low                                                                    ; 2976: 85 82       ..
-    iny                                                                                 ; 2978: c8          .
-    lda (ptr_low),y                                                                     ; 2979: b1 8c       ..
-    ; branch if no patch data is present
-    beq add_strips                                                                      ; 297b: f0 05       ..
-    sta next_ptr_high                                                                   ; 297d: 85 83       ..
-    jsr add_patches                                                                     ; 297f: 20 50 2d     P-
-
-    ; STEP 4: The 'strips'
-add_strips
-    lda #<strip_data                                                                    ; 2982: a9 00       ..
-    sta ptr_low                                                                         ; 2984: 85 8c       ..
-    lda #>strip_data                                                                    ; 2986: a9 47       .G
-    sta ptr_high                                                                        ; 2988: 85 8d       ..
-    ; get value to skip when writing strips to the map
-    ldy cave_number                                                                     ; 298a: a4 87       ..
-    lda fill_cell_in_lower_nybble_strip_value_to_skip_in_upper_nybble_for_each_cave,y   ; 298c: b9 90 4c    ..L
-    lsr                                                                                 ; 298f: 4a          J
-    lsr                                                                                 ; 2990: 4a          J
-    lsr                                                                                 ; 2991: 4a          J
-    lsr                                                                                 ; 2992: 4a          J
-    sta cell_current                                                                    ; 2993: 85 77       .w
-find_strip_data_for_cave_loop
-    dey                                                                                 ; 2995: 88          .
-    bmi found_strip_data_for_cave                                                       ; 2996: 30 09       0.
-    lda length_of_strip_data_for_each_cave,y                                            ; 2998: b9 7c 4c    .|L
-    jsr add_a_to_ptr                                                                    ; 299b: 20 40 22     @"
-    jmp find_strip_data_for_cave_loop                                                   ; 299e: 4c 95 29    L.)
-
-found_strip_data_for_cave
-    lda ptr_low                                                                         ; 29a1: a5 8c       ..
-    sta next_ptr_low                                                                    ; 29a3: 85 82       ..
-    lda ptr_high                                                                        ; 29a5: a5 8d       ..
-    sta next_ptr_high                                                                   ; 29a7: 85 83       ..
-    jsr write_strips                                                                    ; 29a9: 20 00 2d     .-
-
 ; Set palette using cave parameter values
+;
 set_palette
     ldx #1
     lda param_colours
@@ -2984,7 +2921,9 @@ set_palette
     jsr set_palette_colour_ax
     rts
 
+; *************************************************************************************
 ; Set initial palette for menu
+;
 set_initial_palette
     ldx #1
     lda #5                             ;Purple
@@ -2998,13 +2937,6 @@ set_initial_palette
     lda #7                             ;White
     jsr set_palette_colour_ax
     rts
-
-; *************************************************************************************
-data_sets                              ;Label just for compilation purposes
-unused32
-    !byte 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 increment_map_ptr
@@ -3211,14 +3143,11 @@ get_next_ptr_byte
 return8
     rts                                                                                 ; 2af3: 60          `
 
-unused33
-    !byte $f0, $e5, $a9,   0                                                            ; 2af4: f0 e5 a9... ...
-
 rle_bytes_table
     !byte $85, $48, $10, $ec, $ff, $0f,   0                                             ; 2af8: 85 48 10... .H.
 
 unused34
-    !byte $27                                                                           ; 2aff: 27          '
+    !byte 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 map_address_to_map_xy_position
@@ -3310,7 +3239,7 @@ skip_bonus_stage
     rts                                                                                 ; 2b84: 60          `
 
 unused35
-    !byte $86, $60, $a0, $1e, $a2, $fa, $a9,   1, $20, $f1, $ff                         ; 2b85: 86 60 a0... .`.
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 wait_for_13_centiseconds_and_read_keys
@@ -3517,196 +3446,23 @@ return10
     rts                                                                                 ; 2cef: 60          `
 
 unused39
-    !byte $85, $a6, $a8, $91, $70, $60, $a2,   3, $bd, $e3, $20, $18, $69,   1, $c9     ; 2cf0: 85 a6 a8... ...
-    !byte $0a                                                                           ; 2cff: 0a          .
-
-; *************************************************************************************
-; 
-; Each byte holds a repeat count in the top nybble, and the value to store in the lower
-; nybble (with special values $Xa meaning skip to the start of the next row X times.)
-; 
-; *************************************************************************************
-write_strips
-    ldy #1                                                                              ; 2d00: a0 01       ..
-    sty map_y                                                                           ; 2d02: 84 8b       ..
-    dey                                                                                 ; 2d04: 88          .
-    sty map_x                                                                           ; 2d05: 84 8a       ..
-    jsr map_xy_position_to_map_address                                                  ; 2d07: 20 15 2b     .+
-write_next_strip_loop
-    lda (next_ptr_low),y                                                                ; 2d0a: b1 82       ..
-    inc next_ptr_low                                                                    ; 2d0c: e6 82       ..
-    bne skip_high_byte1                                                                 ; 2d0e: d0 02       ..
-    inc next_ptr_high                                                                   ; 2d10: e6 83       ..
-    ; remember value
-skip_high_byte1
-    pha                                                                                 ; 2d12: 48          H
-    ; get repeat count (from high nybble) into X
-    lsr                                                                                 ; 2d13: 4a          J
-    lsr                                                                                 ; 2d14: 4a          J
-    lsr                                                                                 ; 2d15: 4a          J
-    lsr                                                                                 ; 2d16: 4a          J
-    tax                                                                                 ; 2d17: aa          .
-    inx                                                                                 ; 2d18: e8          .
-    ; recall value
-    pla                                                                                 ; 2d19: 68          h
-    and #$0f                                                                            ; 2d1a: 29 0f       ).
-    sta lower_nybble_value                                                              ; 2d1c: 85 7c       .|
-write_strip_loop
-    lda lower_nybble_value                                                              ; 2d1e: a5 7c       .|
-    ; a value of 10 means move to the next row (repeatedly)
-    cmp #$0a                                                                            ; 2d20: c9 0a       ..
-    beq move_to_next_row                                                                ; 2d22: f0 0e       ..
-    ; if it's this cave's skip value, then don't write to the map
-    cmp cell_current                                                                    ; 2d24: c5 77       .w
-    beq skip_write_to_map                                                               ; 2d26: f0 02       ..
-    ; write patch byte to map
-    sta (map_address_low),y                                                             ; 2d28: 91 8c       ..
-    ; move the map position one to the right, wrapping to the next row if needed
-skip_write_to_map
-    inc map_x                                                                           ; 2d2a: e6 8a       ..
-    lda map_x                                                                           ; 2d2c: a5 8a       ..
-    cmp #40                                                                             ; 2d2e: c9 28       .(
-    bne get_map_address                                                                 ; 2d30: d0 0a       ..
-move_to_next_row
-    sty map_x                                                                           ; 2d32: 84 8a       ..
-    inc map_y                                                                           ; 2d34: e6 8b       ..
-    lda map_y                                                                           ; 2d36: a5 8b       ..
-    cmp #21                                                                             ; 2d38: c9 15       ..
-    beq return11                                                                        ; 2d3a: f0 08       ..
-get_map_address
-    jsr map_xy_position_to_map_address                                                  ; 2d3c: 20 15 2b     .+
-    dex                                                                                 ; 2d3f: ca          .
-    bne write_strip_loop                                                                ; 2d40: d0 dc       ..
-    beq write_next_strip_loop                                                           ; 2d42: f0 c6       ..             ; ALWAYS branch
-
-return11
-    rts                                                                                 ; 2d44: 60          `
-
-unused40
-    !byte $31, $15, $41, $15, $11, $25, $31, $12, $21, $15, $21                         ; 2d45: 31 15 41... 1.A
-
-; *************************************************************************************
-add_patches
-    lda #<(tile_map_row_1-1)                                                            ; 2d50: a9 3f       .?
-    jsr set_ptr_high_to_start_of_map_with_offset_a                                      ; 2d52: 20 1c 2a     .*
-add_patches_loop
-    lda (next_ptr_low),y                                                                ; 2d55: b1 82       ..
-    jsr increment_next_ptr                                                              ; 2d57: 20 2e 2a     .*
-    ; remember the byte read
-    pha                                                                                 ; 2d5a: 48          H
-    ; the top five bits are the offset into the map to change.
-    lsr                                                                                 ; 2d5b: 4a          J
-    lsr                                                                                 ; 2d5c: 4a          J
-    lsr                                                                                 ; 2d5d: 4a          J
-    tax                                                                                 ; 2d5e: aa          .
-    inx                                                                                 ; 2d5f: e8          .
-    ; add X to ptr (where we only use 40 out of every 64 bytes for the map)
-add_X_to_map_ptr_loop
-    jsr increment_map_ptr                                                               ; 2d60: 20 00 2a     .*
-    beq pull_a_and_return                                                               ; 2d63: f0 1a       ..
-    dex                                                                                 ; 2d65: ca          .
-    bne add_X_to_map_ptr_loop                                                           ; 2d66: d0 f8       ..
-    ; recall the byte, and isolate the bottom three bits.
-    pla                                                                                 ; 2d68: 68          h
-    and #7                                                                              ; 2d69: 29 07       ).
-    ; 0 = store value 0 (map_space)
-    ; 1 = no change     (this is used to skip to offsets larger than 32 bytes.)
-    ; 2 = store value 2 (map_wall)
-    ; 3 = terminator
-    ; 4 = store value 4 (map_diamond)
-    ; 5 = store value 5 (map_rock)
-    ; 6 = store value 6 (map_firefly)
-    ; 7 = store value 1 (map_earth)
-    cmp #1                                                                              ; 2d6b: c9 01       ..
-    beq next_patch                                                                      ; 2d6d: f0 0d       ..
-    cmp #3                                                                              ; 2d6f: c9 03       ..
-    bne patch_value_is_not_three_or_one                                                 ; 2d71: d0 01       ..
-    rts                                                                                 ; 2d73: 60          `
-
-patch_value_is_not_three_or_one
-    cmp #7                                                                              ; 2d74: c9 07       ..
-    bne store_patch                                                                     ; 2d76: d0 02       ..
-    lda #1                                                                              ; 2d78: a9 01       ..
-store_patch
-    sta (ptr_low),y                                                                     ; 2d7a: 91 8c       ..
-next_patch
-    jmp add_patches_loop                                                                ; 2d7c: 4c 55 2d    LU-
-
-pull_a_and_return
-    pla                                                                                 ; 2d7f: 68          h
-    rts                                                                                 ; 2d80: 60          `
-
-unused41
-    !byte $8a, $69, $18, $aa, $90, $d3, $e6, $8d, $d0, $cf, $60, $15, $11, $15, $51     ; 2d81: 8a 69 18... .i.
-
-; *************************************************************************************
-fill_with_basics
-    jsr set_ptr_high_to_start_of_map                                                    ; 2d90: 20 1e 2a     .*
-    ; read byte from stage. This is done 200 times (40x20 cells, 4 cells per byte)
-read_next_byte_loop
-    ldy #0                                                                              ; 2d93: a0 00       ..
-    lda (next_ptr_low),y                                                                ; 2d95: b1 82       ..
-    ; increment to next byte
-    inc next_ptr_low                                                                    ; 2d97: e6 82       ..
-    bne skip_increment_high_byte1                                                       ; 2d99: d0 02       ..
-    inc next_ptr_high                                                                   ; 2d9b: e6 83       ..
-skip_increment_high_byte1
-    ldx #3                                                                              ; 2d9d: a2 03       ..
-    stx cell_current                                                                    ; 2d9f: 86 77       .w
-    ; Extract the top two bits of the stage byte. Each pair of bits holds a type to
-    ; write into the cell. We shift down six times to get the index, and put the result
-    ; in X.
-loop_for_each_byte
-    pha                                                                                 ; 2da1: 48          H
-    lsr                                                                                 ; 2da2: 4a          J
-    lsr                                                                                 ; 2da3: 4a          J
-    lsr                                                                                 ; 2da4: 4a          J
-    lsr                                                                                 ; 2da5: 4a          J
-    lsr                                                                                 ; 2da6: 4a          J
-    lsr                                                                                 ; 2da7: 4a          J
-    tax                                                                                 ; 2da8: aa          .
-    ; if the index is zero, don't write to the map.
-    beq skip_write                                                                      ; 2da9: f0 04       ..
-    ; X=1,2 or 3. Look up the sprite to store in the cell (in the map).
-    lda cell_above_left-1,x                                                             ; 2dab: b5 72       .r
-    sta (ptr_low),y                                                                     ; 2dad: 91 8c       ..
-skip_write
-    jsr increment_map_ptr                                                               ; 2daf: 20 00 2a     .*
-    beq pull_and_return2                                                                ; 2db2: f0 09       ..
-    ; recall the byte and shift twice to start reading the next pair of bits
-    pla                                                                                 ; 2db4: 68          h
-    asl                                                                                 ; 2db5: 0a          .
-    asl                                                                                 ; 2db6: 0a          .
-    dec cell_current                                                                    ; 2db7: c6 77       .w
-    bpl loop_for_each_byte                                                              ; 2db9: 10 e6       ..
-    bmi read_next_byte_loop                                                             ; 2dbb: 30 d6       0.             ; ALWAYS branch
-
-pull_and_return2
-    pla                                                                                 ; 2dbd: 68          h
-    rts                                                                                 ; 2dbe: 60          `
-
-unused42
-    lda #$18                                                                            ; 2dbf: a9 18       ..
-    jsr add_a_to_ptr                                                                    ; 2dc1: 20 40 22     @"
-    dec real_keys_pressed                                                               ; 2dc4: c6 7c       .|
-    bne unused43                                                                        ; 2dc6: d0 02       ..
-    pla                                                                                 ; 2dc8: 68          h
-    rts                                                                                 ; 2dc9: 60          `
-
-unused43
-    pla                                                                                 ; 2dca: 68          h
-    asl                                                                                 ; 2dcb: 0a          .
-    asl                                                                                 ; 2dcc: 0a          .
-    dec cell_current                                                                    ; 2dcd: c6 77       .w
-    ; bpl $2da6
-    ; bmi $2d98
-    !byte $10, $d5                                                                      ; 2dcf: 10 d5       ..
-    !byte $30, $c5                                                                      ; 2dd1: 30 c5       0.             ; ALWAYS branch
-
-unused44
-    !byte $11, $25, $b1, $15, $11, $15, $12, $25, $11, $15, $21, $15, $11, $15, $21     ; 2dd3: 11 25 b1... .%.
-    !byte $15, $11, $25, $41, $10, $51, $10, $21, $45, $21, $15, $11, $12, $21, $15     ; 2de2: 15 11 25... ..%
-    !byte $11, $15, $31, $10, $11, $25, $12, $51, $15, $11, $25, $16, $25, $11, $15     ; 2df1: 11 15 31... ..1
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 play_one_life
@@ -3869,6 +3625,7 @@ got_diamond_so_update_status_bar
     jsr add_a_to_status_bar_number_at_y                                                 ; 2f17: 20 c0 28     .(
     dec diamonds_required                                                               ; 2f1a: c6 6c       .l
     bne return12                                                                        ; 2f1c: d0 29       .)
+    ;got all the diamonds
     lda #7                                                                              ; 2f1e: a9 07       ..
     ldx #0                                                                              ; 2f20: a2 00       ..
     jsr set_palette_colour_ax                                                           ; 2f22: 20 35 2a     5*
@@ -3883,18 +3640,23 @@ got_diamond_so_update_status_bar
     lda #sprite_0                                                                       ; 2f33: a9 32       .2
     sta total_diamonds_on_status_bar_high_digit                                         ; 2f35: 8d 03 32    ..2
     sta total_diamonds_on_status_bar_low_digit                                          ; 2f38: 8d 04 32    ..2
+
+    ;if bombs are used, skip diamond value/extra value update
+    ldy #4                                                                              ; 2f40: a0 04       ..
+    lda param_bombs
+    bne skip_diamond_value_change
     ; show score per diamond on status bar
     lda param_diamond_extra_value                                                       ; 2f3d: bd 14 4b    ..K
-    ldy #4                                                                              ; 2f40: a0 04       ..
+skip_diamond_value_change
     jsr add_a_to_status_bar_number_at_y                                                 ; 2f42: 20 c0 28     .(
+
     ; play sound 6
     inc sound6_active_flag                                                              ; 2f45: e6 4c       .L
 return12
     rts                                                                                 ; 2f47: 60          `
 
 unused46
-    !byte 0, 0
-    !byte $91, $6a, $e6, $4c, $60,   0,   0,   0                                        ; 2f48: 91 6a e6... .j.
+    !byte 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 initialise_stage
@@ -3909,10 +3671,20 @@ empty_status_bar_loop
     dey                                                                                 ; 2f5f: 88          .
     bpl empty_status_bar_loop                                                           ; 2f60: 10 f7       ..
 
-    ; set and show initial diamond score amount on status bar
-    lda param_diamond_value                                                             ; 2f64: bd 00 4b    ..K
+    ;if are bombs used, replace diamond value/extra value with number of bombs left (2 digits) and bomb sprite
     ldy #4                                                                              ; 2f67: a0 04       ..
+    lda param_bombs
+    sta bomb_counter
+    beq keep_diamond_value_on_status
+    jsr add_a_to_status_bar_number_at_y
+    ldy #5
+    lda #sprite_bomb1
+    sta regular_status_bar,y
+    jmp next_parameter    
+keep_diamond_value_on_status
+    lda param_diamond_value                                                             ; 2f64: bd 00 4b    ..K
     jsr add_a_to_status_bar_number_at_y                                                 ; 2f69: 20 c0 28     .(
+next_parameter
 
     ; show cave letter on status bar
     lda cave_number                                                                                 ; 2f6c: 8a          .
@@ -3930,6 +3702,15 @@ empty_status_bar_loop
     lda param_amoeba_magic_wall_time                                                    ; 2f7b: bd 54 4c    .TL
     sta amoeba_growth_interval                                                          ; 2f7e: 85 55       .U
     sta magic_wall_timer                                                                ; 2f80: 85 51       .Q
+
+    ; set the gravity timer
+    ldy #0
+    lda param_zero_gravity_time
+    beq dont_allow_rock_push_up
+    ldy #$ee  ;Special value used to detect rock has been pushed up, only applies when gravity is off
+dont_allow_rock_push_up
+    sta gravity_timer
+    sty check_for_rock_direction_offsets+2
 
     ; initialise random seed for possible use with slime permeability
     lda #0
@@ -3983,9 +3764,6 @@ empty_status_bar_loop
 
 unused47
     !byte 0, 0, 0, 0, 0, 0, 0
-    !byte   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0     ; 2fdd: 00 00 00... ...
-    !byte   0,   0, $81,   0,   0,   0,   0, $84,   0,   0, $86, $81,   0,   0,   1     ; 2fec: 00 00 81... ...
-    !byte $81, $d9, $19, $81, $ff                                                       ; 2ffb: 81 d9 19... ...
 
 ; *************************************************************************************
 update_amoeba_timing
@@ -4862,813 +4640,281 @@ set_cave_number_and_difficulty_level_from_status_bar
 return16
     rts                                                                                 ; 3bcc: 60          `
 
-unused52
-    !byte $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff     ; 3bcd: ff ff ff... ...
-    !byte $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff     ; 3bdc: ff ff ff... ...
-    !byte $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff     ; 3beb: ff ff ff... ...
-    !byte $ff, $ff, $be,   0,   0,   0                                                  ; 3bfa: ff ff be... ...
+unused_following_replacement_with_load_cave_file
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
-; *************************************************************************************
-; 
-; Patch data.
-; 
-; These patches are applied to the tile_map after the 'basics' (the basics being a two
-; bit per cell base coat of paint for the stage).
-; 
-; The top five bits of each byte is the offset to the next patch byte (add one for an
-; offset from 1 to 32 bytes), and the bottom three bits are what to do:
-; 
-; 0 = store value 0 (map_space)
-; 1 = no change     (this is used to skip to offsets larger than 32 bytes.)
-; 2 = store value 2 (map_wall)
-; 3 = terminator
-; 4 = store value 4 (map_diamond)
-; 5 = store value 5 (map_rock)
-; 6 = store value 6 (map_firefly)
-; 7 = store value 1 (map_earth)
-; 
-; *************************************************************************************
-; !!! patch_for_data_sets no longer being used
-patch_for_data_set_11_difficulty_5
-    !byte $0d,   5, $15,   5, $17, $48, $15, $10, $1e,   8, $58, $1e, $c0, $20,   0     ; 3c00: 0d 05 15... ...
-    !byte $28, $38, $c0, $80, $67, $38, $28, $68, $98, $28, $48, $a8, $48, $60, $37     ; 3c0f: 28 38 c0... (8.
-    !byte $50, $70, $98, $70, $f9, $20, $f9, $f9,   6, $3d, $6e, $50, $18, $58, $5f     ; 3c1e: 50 70 98... Pp.
-    !byte $60, $16, $60, $68, $50, $68, $80, $38, $68, $7e, $46, $18, $10, $40, $68     ; 3c2d: 60 16 60... `.`
-    !byte $80, $28, $40, $67, $6e, $1f, $70, $98, $70,   3                              ; 3c3c: 80 28 40... .(@
-patch_for_data_set_6_difficulty_1
-    !byte   8,   8, $f9, $a7, $17, $20, $80,   5, $f9, $86, $0f, $1d,   7, $f9, $27     ; 3c46: 08 08 f9... ...
-    !byte $0f, $f9, $37, $f9,   7,   6, $f9, $f9, $be, $f9, $f9, $77, $f9, $f9, $f9     ; 3c55: 0f f9 37... ..7
-    !byte $bf, $f9, $6f, $8d, $60, $3f, $4d, $ef, $58, $5e, $d0,   3                    ; 3c64: bf f9 6f... ..o
-patch_for_data_set_6_difficulty_2
-    !byte $15, $f9, $f9, $95,   5, $f9, $70,   5,   5, $f9, $28,   0,   0, $15, $2f     ; 3c70: 15 f9 f9... ...
-    !byte $0f, $f9, $f9, $f9, $57, $1f,   7, $0d, $0f,   7, $f9, $f9, $4f, $f9, $27     ; 3c7f: 0f f9 f9... ...
-    !byte $f9, $68, $f9, $f9,   6, $17,   7, $5f, $f9, $88, $ef, $56,   3               ; 3c8e: f9 68 f9... .h.
-patch_for_data_set_6_difficulty_3
-    !byte $38, $f9, $f9, $b7, $f9, $2f, $1f, $f9, $2f, $f9, $f9, $f9, $f9, $f9, $f9     ; 3c9b: 38 f9 f9... 8..
-    !byte $f9, $6f, $10, $27, $36, $c7,   8, $f9, $f9, $f9, $f9, $f9, $f9, $10,   0     ; 3caa: f9 6f 10... .o.
-    !byte $50, $98, $a0, $98, $98,   3                                                  ; 3cb9: 50 98 a0... P..
-patch_for_data_set_6_difficulty_4
-    !byte $f9, $f9, $f9, $2e, $f9, $f9, $f9, $f9, $f9, $f9, $f9, $f9, $f9, $f9, $f9     ; 3cbf: f9 f9 f9... ...
-    !byte $f9, $f9, $4e, $ae, $f9, $f9, $f9, $f9, $f9, $0e, $4e,   3                    ; 3cce: f9 f9 4e... ..N
-patch_for_data_set_6_difficulty_5
-    !byte $0f, $27,   5, $0f, $0f, $f9, $8f, $f9, $37, $f9, $f9, $78, $f9, $1f, $56     ; 3cda: 0f 27 05... .'.
-    !byte $ad, $37, $f9, $f9, $48,   5, $f9, $f9, $f9, $f9,   7, $f9, $f9, $f9, $f9     ; 3ce9: ad 37 f9... .7.
-    !byte $c8, $f9, $36, $ae, $f9, $b6,   3                                             ; 3cf8: c8 f9 36... ..6
-patch_for_data_set_5_difficulty_1
-    !byte $28, $57, $10, $47, $88, $0f, $3f, $57, $98, $16, $f9, $f9, $f9, $f9, $76     ; 3cff: 28 57 10... (W.
-    !byte $f9, $58, $f9, $f6, $f9, $77, $0f, $f9, $18, $f9, $38, $20, $f9, $20, $f9     ; 3d0e: f9 58 f9... .X.
-    !byte $f9, $f9, $f9, $c8, $f9, $30, $f9, $28,   0,   7, $ce, $ae,   3               ; 3d1d: f9 f9 f9... ...
-patch_for_data_set_5_difficulty_2
-    !byte $98, $f9, $38, $f9, $50, $f9, $f9, $f9, $f9, $30, $f9, $20, $10, $f9, $ee     ; 3d2a: 98 f9 38... ..8
-    !byte $17,   7, $f9, $38, $a8, $f9, $46, $f9, $b0, $f9, $17, $20, $27, $f9, $f9     ; 3d39: 17 07 f9... ...
-    !byte $f9, $30, $47, $87, $40, $6d, $30, $f9, $18, $18, $10, $87,   8,   8,   0     ; 3d48: f9 30 47... .0G
-    !byte $77,   8,   3                                                                 ; 3d57: 77 08 03    w..
-patch_for_data_set_5_difficulty_3
-    !byte $f9, $d0, $f9,   8,   0, $f9, $88, $48,   0, $e0, $f9, $40, $f9, $70, $b0     ; 3d5a: f9 d0 f9... ...
-    !byte $77, $d8, $58, $10, $fd, $f9, $f9, $f9, $80, $17,   8,   0, $f9, $17,   7     ; 3d69: 77 d8 58... w.X
-    !byte $1f, $f9, $18, $f9, $38, $f9, $78, $f9, $36, $ae, $5f, $1e, $f9, $30, $10     ; 3d78: 1f f9 18... ...
-    !byte   3                                                                           ; 3d87: 03          .
-patch_for_data_set_5_difficulty_4
-    !byte $f9, $f9, $f9, $30, $f9, $30, $f9, $f9, $90,   0, $f9, $f9, $30, $6e, $66     ; 3d88: f9 f9 f9... ...
-    !byte $58, $48,   8, $10, $68, $6d, $30, $f9, $0f, $f9, $3f, $66, $50, $f9, $3e     ; 3d97: 58 48 08... XH.
-    !byte $e0, $f9, $f9, $f9, $f9, $68,   3                                             ; 3da6: e0 f9 f9... ...
-patch_for_data_set_5_difficulty_5
-    !byte   8,   8,   0,   7, $17, $80,   0, $f9, $c0, $36,   8, $f9, $28, $28, $48     ; 3dad: 08 08 00... ...
-    !byte $f9, $38, $f9, $60, $f9, $70, $f9, $f9, $f9, $38, $f9, $f9, $40, $fe, $38     ; 3dbc: f9 38 f9... .8.
-    !byte $6e, $7e, $17, $f9, $47, $70,   0, $a7, $0f, $70, $8f, $80, $38, $26, $d7     ; 3dcb: 6e 7e 17... n~.
-    !byte   7, $b6, $68, $17,   8, $78, $5e, $45,   7,   3                              ; 3dda: 07 b6 68... ..h
-unused53
-    !text "255:LDX #251:LDA #128"                                                       ; 3de4: 32 35 35... 255
-    !byte $0d,   1, $e0                                                                 ; 3df9: 0d 01 e0    ...
-    !text '"', " JS"                                                                    ; 3dfc: 22 20 4a... " J
-patch_for_data_set_9_difficulty_4
-    !byte $0c, $10, $4d, $37, $9f, $f9, $25, $38, $4d, $48, $58, $f9, $30, $98, $14     ; 3e00: 0c 10 4d... ..M
-    !byte $10, $5f, $9f, $28, $47,   5,   4, $5f,   8, $47, $28, $0f, $5d, $0f, $78     ; 3e0f: 10 5f 9f... ._.
-    !byte $77, $2d, $95, $50, $f9, $88,   5, $f9, $f9,   8, $2f, $4c, $48, $3f, $0f     ; 3e1e: 77 2d 95... w-.
-    !byte $0d,   7, $20, $50, $f9, $30, $68, $f9, $f9, $68, $20, $10, $68, $98, $90     ; 3e2d: 0d 07 20... ..
-    !byte $20, $5f, $18,   8, $f9, $38,   3                                             ; 3e3c: 20 5f 18...  _.
-patch_for_data_set_9_difficulty_5
-    !byte $f9, $57, $90, $f9, $f9, $f9, $38, $78, $f9, $38, $f9,   8, $38, $f8, $40     ; 3e43: f9 57 90... .W.
-    !byte $18, $f9, $68, $a8, $f8, $98, $f9, $f9, $f9, $f9, $70,   0, $f9, $c0, $40     ; 3e52: 18 f9 68... ..h
-    !byte $c8, $e0, $f9, $30, $68, $f0, $70,   3                                        ; 3e61: c8 e0 f9... ...
-patch_for_data_set_3_difficulty_1
-    !byte $3d, $a5, $45, $45, $75, $dd, $15, $e5, $f9, $d5, $ad, $ad, $4d, $45, $2d     ; 3e69: 3d a5 45... =.E
-    !byte $5d, $15, $6d, $45, $35, $ad, $8d, $f9, $3d, $ad, $f9, $7d, $f5, $45, $2d     ; 3e78: 5d 15 6d... ].m
-    !byte $f9, $25, $5d, $95, $6d, $3d, $b5, $75, $f9, $5d, $4d, $f9, $45, $15, $45     ; 3e87: f9 25 5d... .%]
-    !byte $35, $0d,   5, $95, $8d, $0d,   5, $4d, $15, $0d, $cb                         ; 3e96: 35 0d 05... 5..
-patch_for_data_set_3_difficulty_2
-    !byte $45, $4d, $45, $2d, $f9, $25, $5d, $95,   5, $65, $3d, $b5, $75, $ad, $ad     ; 3ea1: 45 4d 45... EME
-    !byte $4d, $f9, $45, $15, $45, $35, $0d,   5, $f9, $35,   5, $75, $c5, $85, $f9     ; 3eb0: 4d f9 45... M.E
-    !byte $f9, $2d, $25, $2d, $45, $15, $15, $5d, $f9, $b5,   5, $75, $35, $b5, $f9     ; 3ebf: f9 2d 25... .-%
-    !byte $f9, $25, $bd, $85, $5d, $3d, $15, $8d, $95, $15, $65,   3                    ; 3ece: f9 25 bd... .%.
-patch_for_data_set_3_difficulty_3
-    !byte $15, $2d, $f9, $4d, $15, $e5, $f9, $d5, $ad, $ad, $4d, $75, $75, $b5, $35     ; 3eda: 15 2d f9... .-.
-    !byte $0d, $9d, $8d, $65, $15, $bd, $f9, $f9, $a5, $4d, $2d, $45, $15, $15, $5d     ; 3ee9: 0d 9d 8d... ...
-    !byte $f9, $25, $8d, $b5, $f9, $2d, $ad,   5,   5, $15,   5,   5, $0d, $15, $9d     ; 3ef8: f9 25 8d... .%.
-    !byte $3d, $15, $0d, $1d,   5, $0d, $a5, $35,   5,   5, $15,   5, $15,   5,   5     ; 3f07: 3d 15 0d... =..
-    !byte   5, $ad, $2d, $15, $0d, $1d, $0d,   5, $85, $55,   5,   5, $15,   5,   5     ; 3f16: 05 ad 2d... ..-
-    !byte $0d, $15, $0d,   3                                                            ; 3f25: 0d 15 0d... ...
-patch_for_data_set_3_difficulty_4
-    !byte $bd, $15, $45, $3d, $0d, $f9, $35, $45, $f9, $3d, $2d, $f9, $25, $5d, $95     ; 3f29: bd 15 45... ..E
-    !byte   5, $65, $3d, $b5, $75, $f9, $5d, $4d, $f9, $45, $15, $7d, $0d, $9d, $8d     ; 3f38: 05 65 3d... .e=
-    !byte $0d, $6d, $bd, $15, $85, $f9, $f9, $2d, $25, $2d, $45, $15, $15, $5d, $f9     ; 3f47: 0d 6d bd... .m.
-    !byte $25, $8d,   5, $6d, $3d, $b5, $75,   3                                        ; 3f56: 25 8d 05... %..
-patch_for_data_set_3_difficulty_5
-    !byte $25, $5d, $15, $6d, $f9, $f9, $25, $d5, $15, $45, $3d, $0d, $8d, $75, $f9     ; 3f5e: 25 5d 15... %].
-    !byte $6d, $75, $e5, $3d, $15, $f9, $f9, $bd, $f9, $f9, $25, $75, $6d, $7d, $0d     ; 3f6d: 6d 75 e5... mu.
-    !byte $9d, $8d, $0d, $55, $d5, $15, $85, $0d, $3d, $f5, $45, $f9, $6d, $5d, $f9     ; 3f7c: 9d 8d 0d... ...
-    !byte $25, $95,   5, $65, $3d, $b5,   3                                             ; 3f8b: 25 95 05... %..
-patch_for_data_set_8_difficulty_1
-    !byte $f9, $60, $50, $e8, $98, $88, $10, $50, $f9, $10,   0, $c0, $f9, $f9, $58     ; 3f92: f9 60 50... .`P
-    !byte $0e, $e8, $28, $18,   8, $f9, $68,   0, $c0,   5, $60, $70,   8, $a0, $28     ; 3fa1: 0e e8 28... ..(
-    !byte $68, $98, $28, $f9,   0, $a8, $37, $c8, $f8,   8,   0, $c0, $f9, $2d, $f9     ; 3fb0: 68 98 28... h.(
-    !byte $36, $3d, $6f, $50,   0, $10, $24, $50, $be,   3                              ; 3fbf: 36 3d 6f... 6=o
-patch_for_data_set_8_difficulty_2
-    !byte $0d,   8, $10,   0, $e8, $28, $a8, $58,   0, $f9, $a8,   0, $20, $f9, $f9     ; 3fc9: 0d 08 10... ...
-    !byte $10,   0, $f9, $e8,   0, $70, $18, $38, $d8, $f9, $30, $80,   7,   7, $78     ; 3fd8: 10 00 f9... ...
-    !byte $85, $38, $1e,   0, $78, $38, $0d, $18, $80, $28, $f9,   8,   8, $18, $20     ; 3fe7: 85 38 1e... .8.
-    !byte $2f, $20, $90, $8f,   8, $88, $68, $f9, $18, $2d, $55, $38, $15, $40, $95     ; 3ff6: 2f 20 90... / .
-    !byte $0d, $25, $45,   5, $25,   4, $1d, $75, $45, $15, $1d, $5d,   5, $38, $18     ; 4005: 0d 25 45... .%E
-    !byte $83                                                                           ; 4014: 83          .
-patch_for_data_set_8_difficulty_3
-    !byte $28, $10, $50, $f9, $10,   0, $f9, $e8, $f9, $46, $e8, $28, $18, $68,   0     ; 4015: 28 10 50... (.P
-    !byte $16, $c0, $20,   0, $80, $38,   5, $d8, $b0, $f9, $38,   8, $18, $48, $a8     ; 4024: 16 c0 20... ..
-    !byte   0, $a8, $60, $98, $f8, $f9, $f9, $f9, $46, $ae, $50, $1e, $78, $a0,   0     ; 4033: 00 a8 60... ..`
-    !byte   8, $15, $48, $68,   8, $77, $30,   0, $c7, $10, $54, $20, $56, $46,   7     ; 4042: 08 15 48... ..H
-    !byte   3                                                                           ; 4051: 03          .
-patch_for_data_set_8_difficulty_4
-    !byte $15,   5, $10, $0f, $17,   8, $20,   0, $1f, $0d,   0,   5, $38, $3d,   7     ; 4052: 15 05 10... ...
-    !byte   5,   0,   7,   8, $45, $18,   7,   7, $0d, $2f, $0f,   8, $57,   7, $15     ; 4061: 05 00 07... ...
-    !byte $3f, $35,   7,   5, $17,   0,   5, $25, $15, $15, $0f, $0f,   0, $0f,   7     ; 4070: 3f 35 07... ?5.
-    !byte   7, $0f, $15, $bf, $4d, $bf, $8f,   0, $40,   0, $a7, $0f, $17,   7, $48     ; 407f: 07 0f 15... ...
-    !byte $b7, $10, $1f, $28, $27, $0e, $f9, $f9, $f8, $56, $90, $28, $1f, $68,   0     ; 408e: b7 10 1f... ...
-    !byte $17, $0f, $a8,   0, $f0,   5, $d8,   8,   0, $98, $f9, $38, $78, $a8, $48     ; 409d: 17 0f a8... ...
-    !byte $9f, $50, $70, $ac, $60, $c0, $58,   3                                        ; 40ac: 9f 50 70... .Pp
-patch_for_data_set_8_difficulty_5
-    !byte $1e, $96, $10, $f9, $4e, $20,   8,   0, $f9, $f5, $f9, $37, $bd,   5,   5     ; 40b4: 1e 96 10... ...
-    !byte $38, $10, $5f, $30, $96, $0f, $0f, $0d,   7, $30,   0, $68, $50, $60, $88     ; 40c3: 38 10 5f... 8._
-    !byte $50, $d6, $46,   0, $28, $f9, $68, $a8, $58, $0e, $f9, $a8, $20, $f8, $f9     ; 40d2: 50 d6 46... P.F
-    !byte $18, $ff, $e8, $4f, $28, $58, $df,   0, $78,   5,   4,   8, $88,   7, $d0     ; 40e1: 18 ff e8... ...
-    !byte   0, $27,   7, $85,   3                                                       ; 40f0: 00 27 07... .'.
-patch_for_data_set_7_difficulty_1
-    !byte $0c,   4, $0c,   4,   4, $2f, $0d, $37, $24, $0c, $84, $7c,   4, $0f, $ff     ; 40f5: 0c 04 0c... ...
-    !byte $24,   4, $14, $1f, $3c, $9c,   4,   7,   7,   4, $6f, $af, $3c, $3c, $3c     ; 4104: 24 04 14... $..
-    !byte   4,   4, $24,   7, $4c, $4f, $14,   4, $84, $17,   7, $0d,   4,   4,   5     ; 4113: 04 04 24... ..$
-    !byte   4,   4,   7, $37, $14, $f9, $8f, $ac, $f9, $3c, $f9, $17, $14, $f9, $f9     ; 4122: 04 04 07... ...
-    !byte $7f, $f9, $d7, $87, $f9, $f9, $f9, $bc,   4,   7, $f9, $f7,   7, $8c,   3     ; 4131: 7f f9 d7... ...
-patch_for_data_set_7_difficulty_2
-    !byte $3f, $1f, $8f, $af, $4f, $47, $57, $37, $0d, $6f,   7, $47, $37, $bc, $e7     ; 4140: 3f 1f 8f... ?..
-    !byte $6d, $67, $17, $47, $5f, $7f, $d4, $17, $f7, $f9, $f9, $f9, $f9, $f9, $f9     ; 414f: 6d 67 17... mg.
-    !byte $27, $f9, $5f, $f9, $2f, $f9, $f9, $f9, $f9, $f7, $1f, $f9, $3f,   3          ; 415e: 27 f9 5f... '._
-patch_for_data_set_7_difficulty_3
-    !byte $af, $85, $17, $bf,   7, $2c,   4,   7, $37, $af, $8f, $67, $ac, $27, $17     ; 416c: af 85 17... ...
-    !byte $87, $74, $f9, $17, $14, $df, $1f, $57, $f9, $f9, $f9, $f7, $f9, $b7, $f9     ; 417b: 87 74 f9... .t.
-    !byte $47, $f9, $47, $f9, $f9, $f9, $f9, $77, $f9, $d7,   7, $9f, $8f,   7,   3     ; 418a: 47 f9 47... G.G
-patch_for_data_set_7_difficulty_4
-    !byte $87, $f9, $74, $dc, $2f, $1f, $3f, $17, $5f, $2c, $57, $9f, $97, $34, $37     ; 4199: 87 f9 74... ..t
-    !byte $ef,   7, $f9, $f9, $f9, $f9, $f9, $f9, $f9, $f9, $f9, $f9, $87, $7f,   7     ; 41a8: ef 07 f9... ...
-    !byte $f9, $f9, $f9, $bc, $0c, $f9, $24, $24,   4, $f9, $24, $0c,   3               ; 41b7: f9 f9 f9... ...
-patch_for_data_set_7_difficulty_5
-    !byte $0f, $27, $3c, $6f, $8f, $67, $24, $af, $17, $47, $0f, $f9, $bf, $27, $74     ; 41c4: 0f 27 3c... .'<
-    !byte $57, $1f, $24, $2f, $e7, $9f, $97,   7, $67, $f9, $f9, $f9, $b7, $f9, $f9     ; 41d3: 57 1f 24... W.$
-    !byte $87, $7f,   7, $f9, $f9, $f9, $f9, $f9, $f9, $27, $1f, $f9, $f9, $7f,   3     ; 41e2: 87 7f 07... ...
-patch_for_data_set_11_difficulty_1
-    !byte $0d, $0d, $0f,   8,   0,   5, $3d, $f9, $37, $af, $15,   5, $30, $18, $5f     ; 41f1: 0d 0d 0f... ...
-    !byte $66, $5e,   0, $0f, $0f, $0d,   7,   0, $28,   0, $c0, $60, $88, $38, $68     ; 4200: 66 5e 00... f^.
-    !byte $c6, $18, $f9, $50, $40, $90, $58, $0e, $18, $40, $28, $c0, $30, $10, $f9     ; 420f: c6 18 f9... ...
-    !byte $f9, $40, $b7, $f9, $30,   0, $70, $18, $38, $e0, $68, $28, $28, $58, $e0     ; 421e: f9 40 b7... .@.
-    !byte $28, $20, $17, $45, $38, $18,   6, $78, $38, $0d, $18, $80, $28, $68, $98     ; 422d: 28 20 17... ( .
-    !byte   8,   3                                                                      ; 423c: 08 03       ..
-patch_for_data_set_11_difficulty_2
-    !byte $4e, $30, $28, $f9, $10, $58,   8, $d0, $f9, $20, $48, $36, $f9, $b0, $f9     ; 423e: 4e 30 28... N0(
-    !byte $40, $e8, $58, $58, $e0, $98, $58, $98, $48, $a0, $28, $68, $c8, $f9, $18     ; 424d: 40 e8 58... @.X
-    !byte $90, $d0, $f0, $48, $c0, $58, $f9, $f9,   6, $3d, $6e, $50, $1e, $58, $d8     ; 425c: 90 d0 f0... ...
-    !byte $60, $68,   3                                                                 ; 426b: 60 68 03    `h.
-patch_for_data_set_11_difficulty_3
-    !byte $38, $47, $0f,   7, $0d,   7,   5, $0f, $20, $20, $56, $40,   6, $70, $68     ; 426e: 38 47 0f... 8G.
-    !byte $80, $28, $a8, $66,   0, $60, $f0, $48, $20, $f8, $f9, $18, $b7, $f9, $30     ; 427d: 80 28 a8... .(.
-    !byte   0, $90, $40, $d0, $70, $28, $90, $80, $a8, $80, $10, $a0, $68, $b0, $f9     ; 428c: 00 90 40... ..@
-    !byte $38, $20, $f9, $f9, $68, $18, $f9, $e0, $10, $40,   3                         ; 429b: 38 20 f9... 8 .
-patch_for_data_set_11_difficulty_4
-    !byte $58, $f9,   6, $38, $20, $98, $58, $18, $f9, $f9, $97, $0d,   5,   5, $30     ; 42a6: 58 f9 06... X..
-    !byte $18, $90, $2e, $5e,   0, $38, $30, $68, $50, $f9, $48, $58, $76, $40,   6     ; 42b5: 18 90 2e... ...
-    !byte $70, $68, $c8, $90, $6e, $f9, $30, $f9, $f9, $b8, $b7, $f9, $30, $78, $18     ; 42c4: 70 68 c8... ph.
-    !byte $38, $60, $78, $37, $30,   8, $18, $28, $17, $48, $3f, $38, $58, $17, $10     ; 42d3: 38 60 78... 8`x
-    !byte $6f, $70,   6, $2f, $10,   3                                                  ; 42e2: 6f 70 06... op.
-unused54
-    !text "PUT"                                                                         ; 42e8: 50 55 54    PUT
-    !byte $0d,   0, $82, $13                                                            ; 42eb: 0d 00 82... ...
-    !text " LDA 8464,Y:TAY"                                                             ; 42ef: 20 4c 44...  LD
-    !byte $0d,   0                                                                      ; 42fe: 0d 00       ..
-patch_for_data_set_2_difficulty_2
-    !byte $1d, $4c, $8f, $0f, $0d,   7,   3                                             ; 4300: 1d 4c 8f... .L.
-patch_for_data_set_2_difficulty_4
-    !byte $15,   7, $df, $ac, $b7, $27,   5,   7, $f9, $f9, $7d, $b7, $af, $72, $92     ; 4307: 15 07 df... ...
-    !byte $14, $8f, $1d,   7,   3                                                       ; 4316: 14 8f 1d... ...
-patch_for_data_set_2_difficulty_5
-    !byte $0c, $15,   7, $27,   7, $17,   2, $0f,   3                                   ; 431b: 0c 15 07... ...
-patch_for_data_set_12_difficulty_1
-    !byte $2f, $dd, $b7, $af, $1d, $b7, $df, $0f, $0d,   7, $f9, $f9, $f9, $f9, $85     ; 4324: 2f dd b7... /..
-    !byte $f9, $55, $5d,   5, $ad, $0d, $35,   3                                        ; 4333: f9 55 5d... .U]
-patch_for_data_set_12_difficulty_3
-    !byte $27, $2f, $5f, $0f,   7, $f9, $f9, $f9, $ad, $c7, $0f, $f9, $b5, $f9, $f9     ; 433b: 27 2f 5f... '/_
-    !byte $fd, $15, $25, $45, $b5, $15, $0d, $65, $d7,   3                              ; 434a: fd 15 25... ..%
-patch_for_data_set_12_difficulty_5
-    !byte $25,   7, $17, $25,   7, $fd,   5, $f9, $f9, $f9, $bf, $f9, $f9, $f9, $8d     ; 4354: 25 07 17... %..
-    !byte $1d, $45, $e5, $0d, $15, $0d, $f9,   5, $2d, $45,   5,   3                    ; 4363: 1d 45 e5... .E.
-patch_for_data_set_0_difficulty_1
-    !byte $38, $14, $0d,   0, $5f, $18,   7, $77, $28, $47,   5,   4, $38, $1f,   8     ; 436f: 38 14 0d... 8..
-    !byte $47, $28, $0f, $35, $25, $0f, $27, $0d,   7, $0f, $2d, $77, $15, $0f,   5     ; 437e: 47 28 0f... G(.
-    !byte $90, $50, $e8, $98,   5, $f9, $85, $38, $1f, $20, $2f, $4c, $48, $3f, $0f     ; 438d: 90 50 e8... .P.
-    !byte $0d,   7, $20, $50, $f9, $30, $f9, $60, $f9, $2f, $40, $20, $80, $f9, $e8     ; 439c: 0d 07 20... ..
-    !byte $cf, $68, $50, $67, $80, $98,   0, $f9, $e0, $20, $c8, $58, $28, $48, $4d     ; 43ab: cf 68 50... .hP
-    !byte   3                                                                           ; 43ba: 03          .
-patch_for_data_set_0_difficulty_2
-    !byte $15,   7, $0d, $15, $f9, $b0, $40, $c8, $88, $f9, $88, $68, $f0, $70, $20     ; 43bb: 15 07 0d... ...
-    !byte   0, $f9, $f9, $18, $b8, $78,   8, $f9, $38, $50, $e8, $98,   0, $f9, $e0     ; 43ca: 00 f9 f9... ...
-    !byte $20, $78, $0d, $f9, $f9, $70, $f9, $3d, $90, $58, $f9, $30, $98, $28, $f9     ; 43d9: 20 78 0d...  x.
-    !byte $28, $93                                                                      ; 43e8: 28 93       (.
-patch_for_data_set_0_difficulty_3
-    !byte $38, $20, $78,   8, $f9, $38, $50, $e8, $98,   0, $87, $8f, $c8, $10,   8     ; 43ea: 38 20 78... 8 x
-    !byte $c8, $5d, $f9, $f9, $f9,   8,   5, $90, $58, $40, $e8, $98, $28, $78, $a8     ; 43f9: c8 5d f9... .].
-    !byte $90, $a0, $f9, $f9, $38, $50, $e8, $98, $d0, $45, $a8, $f9, $10, $88, $50     ; 4408: 90 a0 f9... ...
-    !byte $f9, $9b                                                                      ; 4417: f9 9b       ..
-patch_for_data_set_0_difficulty_4
-    !byte $17, $17, $0c, $2c, $30, $15,   8,   0, $2d, $2c, $18, $a8, $14,   8, $1d     ; 4419: 17 17 0c... ...
-    !byte $48, $28, $58, $10, $f9, $4f, $f9, $f9, $f9, $f9, $a0, $f9, $2d, $ed, $18     ; 4428: 48 28 58... H(X
-    !byte $4d, $f0, $18, $c8, $98, $20,   0, $44, $74, $37, $80, $f9, $e8, $f9, $38     ; 4437: 4d f0 18... M..
-    !byte $50, $e8, $98,   0, $24, $f9, $98, $35,   8, $c8, $34, $50, $50,   3          ; 4446: 50 e8 98... P..
-patch_for_data_set_0_difficulty_5
-    !byte $d8, $f9, $f9, $f9, $55, $ed, $18, $4d, $f0, $18, $f9, $e4, $74, $30, $80     ; 4454: d8 f9 f9... ...
-    !byte $98, $1f, $70, $b0,   0, $f9, $27, $0d, $50, $78, $68, $98,   0, $24, $f9     ; 4463: 98 1f 70... ..p
-    !byte $f9, $ec, $50, $f9, $88, $34, $f9, $3d, $14, $70, $ad, $17,   8, $20, $80     ; 4472: f9 ec 50... ..P
-    !byte $67, $dc,   3                                                                 ; 4481: 67 dc 03    g..
-patch_for_data_set_10_difficulty_1
-    !byte $77, $9f, $15, $45, $ff, $4f,   5, $6f, $8d, $2f, $27, $8f, $ed, $4f, $57     ; 4484: 77 9f 15... w..
-    !byte $ef, $15, $87,   7, $f9, $15, $35, $ad, $0f, $7d, $37, $17, $15, $47, $2f     ; 4493: ef 15 87... ...
-    !byte $75, $6d, $15, $8f, $f9, $67, $f9,   5, $6f, $27,   7, $e5, $57, $3d, $df     ; 44a2: 75 6d 15... um.
-    !byte $85, $f9, $f9, $f9, $f9, $ef,   3                                             ; 44b1: 85 f9 f9... ...
-patch_for_data_set_10_difficulty_2
-    !byte $2f, $f9, $f9, $65, $5f, $15, $37,   7, $65, $65, $1f, $17, $6f,   7, $f9     ; 44b8: 2f f9 f9... /..
-    !byte $37, $f9, $57, $75, $87,   5, $15, $5d, $3f, $77, $9f, $5d,   5, $47, $f9     ; 44c7: 37 f9 57... 7.W
-    !byte $1d, $27, $2f, $5f, $17, $f9, $f9, $0d, $5f, $2d, $ad, $37, $97, $6d, $6d     ; 44d6: 1d 27 2f... .'/
-    !byte $f9, $f9, $0f, $f9, $f9, $8f, $f9, $f9, $6f,   3                              ; 44e5: f9 f9 0f... ...
-patch_for_data_set_10_difficulty_3
-    !byte $3d,   5, $17, $2d, $f9,   7, $f9, $df, $77, $77,   5, $bf, $d7, $0d,   7     ; 44ef: 3d 05 17... =..
-    !byte $0f, $f9, $f9, $f9, $f9, $f9, $9f, $4f, $0f, $8f, $17, $c7, $f9, $f7, $97     ; 44fe: 0f f9 f9... ...
-    !byte $f9, $6f, $e5,   3                                                            ; 450d: f9 6f e5... .o.
-patch_for_data_set_10_difficulty_4
-    !byte $15, $f9, $f9, $f9, $f9, $25, $af,   7, $f9, $75, $55, $f9, $f9, $67, $27     ; 4511: 15 f9 f9... ...
-    !byte $0d, $17, $2d, $fd,   7, $47, $0f, $f9, $35, $f9, $f9, $4f, $2f, $27, $8f     ; 4520: 0d 17 2d... ..-
-    !byte $8f, $0d,   7, $f9, $f9, $87, $f9, $f9, $9f, $f9, $f9, $55, $2d,   3          ; 452f: 8f 0d 07... ...
-patch_for_data_set_10_difficulty_5
-    !byte $0d, $27,   5,   7,   5,   5, $0d, $9f, $77, $6d, $2f, $af, $27, $4f, $a5     ; 453d: 0d 27 05... .'.
-    !byte $27, $2f, $5f, $17, $b7, $47,   7, $f9,   5, $2f,   7, $27, $2d, $ad, $37     ; 454c: 27 2f 5f... '/_
-    !byte $97, $6d, $f9, $f9, $7f, $15, $77, $57,   5, $15, $25, $5d, $8f, $6f, $f7     ; 455b: 97 6d f9... .m.
-    !byte $8d, $0f, $d7, $27, $f9, $8f, $2f, $27, $f9, $f9, $f9, $bf, $f9, $15,   3     ; 456a: 8d 0f d7... ...
-patch_for_data_set_1_difficulty_1
-    !byte $15, $f9, $f0, $f9, $f9, $68, $f9, $2d, $70, $f9, $f9, $f0, $9c, $f9, $ed     ; 4579: 15 f9 f0... ...
-    !byte $88, $75, $78, $75, $c0, $50, $f9, $88,   0,   6, $f9, $40, $15, $4c, $28     ; 4588: 88 75 78... .ux
-    !byte $15, $f9, $a4, $0f,   7, $f9, $37, $44, $ec, $20, $18, $3c, $0d, $20,   7     ; 4597: 15 f9 a4... ...
-    !byte $40,   0,   0, $1d, $5d, $27, $17, $35, $0d,   3                              ; 45a6: 40 00 00... @..
-patch_for_data_set_1_difficulty_2
-    !byte $18, $f9, $f9, $38, $f9, $f9, $f9, $38, $f9, $f9, $f9, $38, $78, $4d, $36     ; 45b0: 18 f9 f9... ...
-    !byte $f9, $c0, $1f, $18, $4d, $48, $58, $40, $18, $c8, $c0,   0, $f9, $78, $98     ; 45bf: f9 c0 1f... ...
-    !byte $90, $20, $88, $f9, $f9, $80, $98,   0, $b6, $ae, $58, $40, $c8, $30,   6     ; 45ce: 90 20 88... . .
-    !byte $cb                                                                           ; 45dd: cb          .
-patch_for_data_set_1_difficulty_3
-    !byte $18, $0f, $dd, $f9, $f9, $d8, $2e, $58, $50, $f9, $30, $f9, $c6, $10, $20     ; 45de: 18 0f dd... ...
-    !byte   0, $5d, $68, $20, $80, $f9, $d8,   8, $f9, $38, $f9, $40, $98,   0, $27     ; 45ed: 00 5d 68... .]h
-    !byte $f9, $b8, $20, $c8, $58, $28, $f9, $f9, $d8,   0, $5e, $30, $58, $45, $f9     ; 45fc: f9 b8 20... ..
-    !byte $88, $28, $78, $eb                                                            ; 460b: 88 28 78... .(x
-patch_for_data_set_1_difficulty_4
-    !byte $0d, $4c, $16, $66,   8, $0f, $0d, $80, $f9, $f9, $98, $5e, $38,   0, $cd     ; 460f: 0d 4c 16... .L.
-    !byte $20, $f9, $c8, $10, $78,   8, $f9, $38, $50, $f9, $88,   0, $f9, $e0, $20     ; 461e: 20 f9 c8...  ..
-    !byte $c8, $58, $28, $f9, $f9, $d8,   5, $58, $30, $f9, $f9, $60, $78, $f9, $40     ; 462d: c8 58 28... .X(
-    !byte $28,   3                                                                      ; 463c: 28 03       (.
-patch_for_data_set_1_difficulty_5
-    !byte $65, $f9, $f9, $f9, $e6, $f9, $c5, $f9, $f9, $80, $f9, $f9, $f9,   8, $f9     ; 463e: 65 f9 f9... e..
-    !byte $f9, $f9, $f9, $f9, $1e,   5, $58, $f9, $50,   8, $f9, $c8, $20, $f9, $3d     ; 464d: f9 f9 f9... ...
-    !byte $5e, $10, $20, $d0, $20, $80, $98, $56, $8b                                   ; 465c: 5e 10 20... ^.
-patch_for_data_set_9_difficulty_1
-    !byte $18, $f9, $a0, $90, $a8, $88, $f9, $f8, $f9, $f9, $f9, $b8, $f9, $f9, $48     ; 4665: 18 f9 a0... ...
-    !byte $38, $98, $58, $60, $f9, $90,   0, $f9, $78, $98, $90, $b0, $f9, $38, $f9     ; 4674: 38 98 58... 8.X
-    !byte $40, $98, $f9, $c8, $40, $f9, $db                                             ; 4683: 40 98 f9... @..
-patch_for_data_set_9_difficulty_2
-    !byte $10, $48, $1f, $98, $4c, $3d, $f9, $90, $e8, $98,   5, $b7, $a8, $58, $c4     ; 468a: 10 48 1f... .H.
-    !byte $48, $3f, $1d,   7, $20, $50, $f9, $30, $f9, $f9, $f9,   0, $80, $f9, $30     ; 4699: 48 3f 1d... H?.
-    !byte $20, $88, $f9, $38, $f9, $40, $f9, $f9, $88, $20, $2f, $98, $88,   5, $40     ; 46a8: 20 88 f9...  ..
-    !byte $f9, $f9, $88,   5,   3                                                       ; 46b7: f9 f9 88... ...
-patch_for_data_set_9_difficulty_3
-    !byte $f9, $70, $27,   0,   0, $2c,   7, $fd,   0, $7d, $f9, $d8, $0d, $48, $ff     ; 46bc: f9 70 27... .p'
-    !byte $f9, $4c, $f9, $28, $f9, $2c, $20, $64, $9d, $8f, $f9, $30, $38, $f8, $40     ; 46cb: f9 4c f9... .L.
-    !byte $e8, $c8, $78, $f8, $f9, $58, $88, $cf, $68, $50, $e8, $f8, $f9, $eb          ; 46da: e8 c8 78... ..x
-
-unused55
-    !text "5526,Y"                                                                      ; 46e8: 35 35 32... 552
-    !byte $0d,   2, $80,   9                                                            ; 46ee: 0d 02 80... ...
-    !text ".AVEC"                                                                       ; 46f2: 2e 41 56... .AV
-    !byte $0d,   2, $8a, $16                                                            ; 46f7: 0d 02 8a... ...
-    !text "LDX #"                                                                       ; 46fb: 4c 44 58... LDX
-
-; *************************************************************************************
-; !!! strip_data no longer being used
-strip_data
-strip_data_for_cave_A
-    !byte $5a, $f2, $e2, $6a, $81, $f2, $d2, $6a                                        ; 4700: 5a f2 e2... Z..
-strip_data_for_cave_B
-    !byte $71,   2, $61,   2, $21,   0, $21,   2, $61,   2, $e1, $0b, $61, $0b, $21     ; 4708: 71 02 61... q.a
-    !byte $0b, $21, $0b, $61, $0b, $61, $60, $0c, $f1, $d1, $0c, $2a, $62, $0c, $a1     ; 4717: 0b 21 0b... .!.
-    !byte $0c, $22, $0c, $d1, $0c, $2a, $60, $0c, $f1, $d1, $0c, $3a, $62, $0c, $a1     ; 4726: 0c 22 0c... .".
-    !byte $0c, $22, $0c, $d1, $0c, $2a, $60, $0c, $f1, $d1, $0c, $3a, $71, $0b, $61     ; 4735: 0c 22 0c... .".
-    !byte $0b, $21, $0b, $21, $0b, $61, $0b, $61                                        ; 4744: 0b 21 0b... .!.
-strip_data_for_cave_C
-    !byte $fa, $3a                                                                      ; 474c: fa 3a       .:
-strip_data_for_cave_D
-    !byte $7a, $81,   9, $61,   9, $61,   9, $61,   9, $ba                              ; 474e: 7a 81 09... z..
-strip_data_for_cave_E
-    !byte $6a, $71, $20, $41, $20, $41, $20, $41, $20, $c1, $20, $41, $20, $41, $20     ; 4758: 6a 71 20... jq
-    !byte $41, $20, $c1,   0,   4,   6, $41,   0,   4,   6, $41,   0,   4,   6, $41     ; 4767: 41 20 c1... A .
-    !byte   0,   4,   6, $3a, $71, $20, $41, $20, $41, $20, $41, $20, $c1, $20, $41     ; 4776: 00 04 06... ...
-    !byte $20, $41, $20, $41, $20, $c1,   0,   4,   6, $41,   0,   4,   6, $41,   0     ; 4785: 20 41 20...  A
-    !byte   4,   6, $41,   0,   4,   6, $4a                                             ; 4794: 04 06 41... ..A
-strip_data_for_cave_F
-    !byte $92,   1, $f3, $13,   1, $92, $1b, $70, $0b, $f3, $13, $0b, $70, $0b, $20     ; 479b: 92 01 f3... ...
-    !byte   6,   4, $60, $f3, $13, $60,   4,   6, $10, $a2, $f3, $13, $a2, $a0, $f3     ; 47aa: 06 04 60... ..`
-    !byte $13, $c0,   6,   4, $60, $f3, $13, $60,   4,   6, $10, $a2, $f3, $13, $a2     ; 47b9: 13 c0 06... ...
-    !byte $a0, $f3, $13, $c0,   6,   4, $60, $f3, $13, $60,   4,   6, $10, $a2, $f3     ; 47c8: a0 f3 13... ...
-    !byte $13, $a2, $a0, $f3, $13, $c0,   6,   4, $60, $f3, $13, $60,   4,   6, $10     ; 47d7: 13 a2 a0... ...
-    !byte $1b, $72, $0b, $f3, $13, $0b, $72, $1b, $6a                                   ; 47e6: 1b 72 0b... .r.
-strip_data_for_cave_G
-    !byte $0a, $f1, $f1, $11,   4, $f1, $f1,   1, $b2, $31,   4, $f1, $f1, $21, $c2     ; 47ef: 0a f1 f1... ...
-    !byte $6a, $f1, $f1, $11,   4, $81,   4, $5a, $f1, $31,   7, $0a, $31,   4, $f1     ; 47fe: 6a f1 f1... j..
-    !byte $c1,   4, $41                                                                 ; 480d: c1 04 41    ..A
-strip_data_for_cave_H
-    !byte $0a, $f0, $f0, $10,   4, $f0, $f0,   0, $b2, $30,   4, $0a, $c2, $4a, $f0     ; 4810: 0a f0 f0... ...
-    !byte $f0, $10,   4, $f0, $f0,   0, $a2, $1a, $c2, $81, $0a, $b0,   4, $0a, $d0     ; 481f: f0 10 04... ...
-    !byte $7d, $0a, $f0, $20,   4, $4a, $4a                                             ; 482e: 7d 0a f0... }..
-strip_data_for_cave_I
-    !byte $6a, $43, $62,   1, $42, $63, $52,   1, $52, $63, $0b, $a0, $0b, $63, $0b     ; 4835: 6a 43 62... jCb
-    !byte $a0, $0b, $73, $ab, $83, $ab, $5a, $f3,   3, $0b, $62, $0b, $f3, $e3, $f0     ; 4844: a0 0b 73... ..s
-    !byte $30, $f3, $33,   2, $63,   2, $f3, $23, $bb,   2, $63,   2, $bb, $63, $c2     ; 4853: 30 f3 33... 0.3
-    !byte $63, $c2, $0a, $73, $0b, $b2, $63, $b2, $0b, $13                              ; 4862: 63 c2 0a... c..
-strip_data_for_cave_J
-    !byte $0a,   1, $b2,   0, $72, $0a,   1,   2, $31,   4, $c1,   4, $0b, $0a,   1     ; 486c: 0a 01 b2... ...
-    !byte   2,   1,   2,   6,   2,   1, $52,   0, $52, $0a, $5b,   1, $0b,   4, $81     ; 487b: 02 01 02... ...
-    !byte   4, $0b, $0a, $81, $32,   0, $32, $0a, $81, $0b,   4, $41,   4, $0b, $0a     ; 488a: 04 0b 0a... ...
-    !byte $a1, $12,   0, $12, $0a, $51, $40, $0b, $20, $0b, $40, $0a, $51, $e0, $0a     ; 4899: a1 12 00... ...
-    !byte $51, $e6, $0a, $31, $0b, $51, $0b, $22, $0b, $0a, $31,   0, $41,   4, $41     ; 48a8: 51 e6 0a... Q..
-    !byte   4, $0a, $31,   4, $31, $0b, $62, $0b, $0a, $31, $0b, $21,   4, $81,   4     ; 48b7: 04 0a 31... ..1
-    !byte $0a, $61, $0b, $a2, $0b, $0a, $5b,   4, $c1,   4, $0a, $f2, $42, $0b, $2a     ; 48c6: 0a 61 0b... .a.
-strip_data_for_cave_K
-    !byte $31,   4, $41,   2, $21,   4, $41,   2, $21,   4, $41,   2, $21,   4, $31     ; 48d5: 31 04 41... 1.A
-    !byte   3, $91, $0b, $81, $0b, $81, $0b, $4a, $f1, $f1, $51,   2,   3, $91, $0b     ; 48e4: 03 91 0b... ...
-    !byte $81, $0b, $81, $0b, $51,   2,   1,   3, $41, $82,   1, $82,   1, $82, $11     ; 48f3: 81 0b 81... ...
-    !byte   2, $11,   3, $f1, $f1, $21,   2, $21,   3, $f1, $f1, $11,   2, $31,   3     ; 4902: 02 11 03... ...
-    !byte $81,   2, $f1, $61,   2, $41,   3, $81, $0b, $11, $f2,   2, $21,   2, $51     ; 4911: 81 02 f1... ...
-    !byte   3, $f1, $e1,   2, $61,   3, $f1, $d1,   2, $71,   3, $f1, $c1,   2, $81     ; 4920: 03 f1 e1... ...
-    !byte   3, $f1, $b1,   2, $2a, $31,   4, $31, $0b, $0a                              ; 492f: 03 f1 b1... ...
-strip_data_for_cave_L
-    !byte $1a, $91,   2, $21,   2, $21,   2, $21,   2, $71,   9, $91, $72, $0b, $12     ; 4939: 1a 91 02... ...
-    !byte   1, $0b, $21, $0b, $21, $0b, $3a, $11, $a2, $f1, $11,   9, $3a, $11, $e2     ; 4948: 01 0b 21... ..!
-    !byte $0a, $f1, $e1,   9, $2a, $11, $a2, $3a, $91, $0b, $21, $0b, $21, $0b, $21     ; 4957: 0a f1 e1... ...
-    !byte $0b, $0a, $0b, $21, $0b, $0a                                                  ; 4966: 0b 0a 0b... ...
-strip_data_for_cave_M
-    !byte $f0, $30,   7, $ea, $40, $f2, $d2, $90, $fe, $de, $90, $f5, $d5, $90, $f1     ; 496c: f0 30 07... .0.
-    !byte $d1, $90, $f1, $d1, $40                                                       ; 497b: d1 90 f1... ...
-strip_data_for_cave_N
-    !byte $3a, $f1, $51,   6,   1,   6,   1,   6,   1,   6,   1,   6,   1,   6, $f1     ; 4980: 3a f1 51... :.Q
-    !byte $c1,   5,   1,   5,   1,   5,   1,   5,   1,   5,   1,   5, $2a, $a1,   0     ; 498f: c1 05 01... ...
-    !byte $0b,   0, $0b,   0, $0b,   0, $0b,   0, $0b, $0e, $0a, $a1, $a0, $0a, $a1     ; 499e: 0b 00 0b... ...
-    !byte $70, $0e, $10, $0a, $a1, $a0, $0a, $a1, $50, $0e, $30, $0a, $a1, $a0, $0a     ; 49ad: 70 0e 10... p..
-    !byte $a1, $30, $0e, $50, $0a, $a1, $a0, $0a, $a1, $10, $0e, $70, $0a, $a1, $a0     ; 49bc: a1 30 0e... .0.
-    !byte $0a, $a1, $0e, $0b,   0, $0b,   0, $0b,   0, $0b,   0, $0b,   0, $1a          ; 49cb: 0a a1 0e... ...
-strip_data_for_cave_O
-    !byte $0a, $10,   2, $f0, $40,   2, $0a, $20,   2, $f0, $20,   2, $0a, $30,   2     ; 49d9: 0a 10 02... ...
-    !byte $f0,   0,   2, $0a, $40,   2, $e0,   2, $0a, $50,   2, $c0,   2, $0a, $60     ; 49e8: f0 00 02... ...
-    !byte   2, $a0,   2, $0a, $70,   2, $80,   2, $0a, $80,   2, $60,   2, $0a, $90     ; 49f7: 02 a0 02... ...
-    !byte   2, $40,   2, $0a, $a0,   2, $20,   2, $0a, $b0, $21, $0a, $b0, $2d, $7a     ; 4a06: 02 40 02... .@.
-strip_data_for_cave_P
-    !byte $6a, $61, $5d, $11, $5d, $0a, $61,   2, $31,   2, $11,   2, $31,   2, $0a     ; 4a15: 6a 61 5d... ja]
-    !byte $61, $0b, $31, $0b, $11, $0b, $31, $0b, $4a, $61, $0b, $32, $0b, $11, $0b     ; 4a24: 61 0b 31... a.1
-    !byte $32, $0b, $2a, $81,   9, $61,   9, $61,   9, $61,   9, $2a                    ; 4a33: 32 0b 2a... 2.*
-strip_data_for_cave_Q
-    !byte $f0, $20, $0b, $0a, $90,   5, $0a, $90,   1, $6a, $90, $0e, $0a, $f3, $23     ; 4a3f: f0 20 0b... . .
-    !byte $0b, $9a                                                                      ; 4a4e: 0b 9a       ..
-strip_data_for_cave_R
-    !byte   1,   5,   6, $e1,   5, $0b, $0a, $11,   5,   6, $c1,   5, $0a,   1,   4     ; 4a50: 01 05 06... ...
-    !byte   1,   5,   6, $a1,   5,   1,   4, $0a,   1,   5,   4,   1,   5,   6, $81     ; 4a5f: 01 05 06... ...
-    !byte   5,   1,   4,   5, $0a, $11,   5,   4,   1,   5,   6, $61,   5,   1,   4     ; 4a6e: 05 01 04... ...
-    !byte   5, $0a, $21,   5,   4,   1,   5,   6, $41,   5,   1,   4,   5, $0a, $31     ; 4a7d: 05 0a 21... ..!
-    !byte   5,   4,   1,   5,   6, $21,   5,   1,   4,   5, $0a, $41,   5,   4,   1     ; 4a8c: 05 04 01... ...
-    !byte   5,   6,   1,   5,   1,   4,   5, $0a, $51,   5,   4,   1, $15,   1,   4     ; 4a9b: 05 06 01... ...
-    !byte   5, $0a, $61,   5,   4, $11,   4,   5, $0a, $f3, $23, $0b, $9a               ; 4aaa: 05 0a 61... ..a
-strip_data_for_cave_S
-    !byte $f0, $20, $0b, $5a, $e0, $36, $0a, $e0, $36, $0a, $e0, $36, $0a, $e4, $36     ; 4ab7: f0 20 0b... . .
-    !byte $0b, $0a, $f3, $33, $9a                                                       ; 4ac6: 0b 0a f3... ...
-strip_data_for_cave_T
-    !byte $a1, $25, $41, $0b, $0a, $a1, $25, $1a, $a1, $2d, $0a, $71,   5, $11, $20     ; 4acb: a1 25 41... .%A
-    !byte $0a, $81,   5,   1, $20, $0a, $91,   5, $20, $0a, $a1, $2d, $0a, $a1, $20     ; 4ada: 0a 81 05... ...
-    !byte $0a, $a1, $20, $0a, $f3, $23, $0b, $9a                                        ; 4ae9: 0a a1 20... ..
-unused56
-    !byte $90, $6a, $90, $0e, $0a, $f3, $23, $0b, $9a, $2a,   3, $34,   3, $3e,   3     ; 4af1: 90 6a 90... .j.
-
-; *************************************************************************************
-; !!! data no longer being used - replaced with load of cave parameters
-diamond_score_before_enough_obtained_for_each_cave
-    !byte 10                                                                            ; 4b00: 0a          .              ; Cave A
-    !byte 20                                                                            ; 4b01: 14          .              ; Cave B
-    !byte 15                                                                            ; 4b02: 0f          .              ; Cave C
-    !byte 5                                                                             ; 4b03: 05          .              ; Cave D
-    !byte 50                                                                            ; 4b04: 32          2              ; Cave E
-    !byte 40                                                                            ; 4b05: 28          (              ; Cave F
-    !byte 10                                                                            ; 4b06: 0a          .              ; Cave G
-    !byte 10                                                                            ; 4b07: 0a          .              ; Cave H
-    !byte 5                                                                             ; 4b08: 05          .              ; Cave I
-    !byte 25                                                                            ; 4b09: 19          .              ; Cave J
-    !byte 50                                                                            ; 4b0a: 32          2              ; Cave K
-    !byte 20                                                                            ; 4b0b: 14          .              ; Cave L
-    !byte 5                                                                             ; 4b0c: 05          .              ; Cave M
-    !byte 10                                                                            ; 4b0d: 0a          .              ; Cave N
-    !byte 10                                                                            ; 4b0e: 0a          .              ; Cave O
-    !byte 10                                                                            ; 4b0f: 0a          .              ; Cave P
-    !byte 30                                                                            ; 4b10: 1e          .              ; Cave Q
-    !byte 10                                                                            ; 4b11: 0a          .              ; Cave R
-    !byte 10                                                                            ; 4b12: 0a          .              ; Cave S
-    !byte 30                                                                            ; 4b13: 1e          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-diamond_score_after_enough_obtained_for_each_cave
-    !byte 15                                                                            ; 4b14: 0f          .              ; Cave A
-    !byte 50                                                                            ; 4b15: 32          2              ; Cave B
-    !byte 0                                                                             ; 4b16: 00          .              ; Cave C
-    !byte 0                                                                             ; 4b17: 00          .              ; Cave D
-    !byte 90                                                                            ; 4b18: 5a          Z              ; Cave E
-    !byte 60                                                                            ; 4b19: 3c          <              ; Cave F
-    !byte 20                                                                            ; 4b1a: 14          .              ; Cave G
-    !byte 20                                                                            ; 4b1b: 14          .              ; Cave H
-    !byte 10                                                                            ; 4b1c: 0a          .              ; Cave I
-    !byte 60                                                                            ; 4b1d: 3c          <              ; Cave J
-    !byte 0                                                                             ; 4b1e: 00          .              ; Cave K
-    !byte 0                                                                             ; 4b1f: 00          .              ; Cave L
-    !byte 8                                                                             ; 4b20: 08          .              ; Cave M
-    !byte 20                                                                            ; 4b21: 14          .              ; Cave N
-    !byte 20                                                                            ; 4b22: 14          .              ; Cave O
-    !byte 20                                                                            ; 4b23: 14          .              ; Cave P
-    !byte 0                                                                             ; 4b24: 00          .              ; Cave Q
-    !byte 0                                                                             ; 4b25: 00          .              ; Cave R
-    !byte 0                                                                             ; 4b26: 00          .              ; Cave S
-    !byte 0                                                                             ; 4b27: 00          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-required_diamonds_for_each_cave_difficulty_level_1
-    !byte 12                                                                            ; 4b28: 0c          .              ; Cave A
-    !byte 10                                                                            ; 4b29: 0a          .              ; Cave B
-    !byte 24                                                                            ; 4b2a: 18          .              ; Cave C
-    !byte 36                                                                            ; 4b2b: 24          $              ; Cave D
-    !byte 4                                                                             ; 4b2c: 04          .              ; Cave E
-    !byte 4                                                                             ; 4b2d: 04          .              ; Cave F
-    !byte 15                                                                            ; 4b2e: 0f          .              ; Cave G
-    !byte 10                                                                            ; 4b2f: 0a          .              ; Cave H
-    !byte 75                                                                            ; 4b30: 4b          K              ; Cave I
-    !byte 12                                                                            ; 4b31: 0c          .              ; Cave J
-    !byte 6                                                                             ; 4b32: 06          .              ; Cave K
-    !byte 19                                                                            ; 4b33: 13          .              ; Cave L
-    !byte 50                                                                            ; 4b34: 32          2              ; Cave M
-    !byte 30                                                                            ; 4b35: 1e          .              ; Cave N
-    !byte 20                                                                            ; 4b36: 14          .              ; Cave O
-    !byte 12                                                                            ; 4b37: 0c          .              ; Cave P
-    !byte 6                                                                             ; 4b38: 06          .              ; Cave Q
-    !byte 16                                                                            ; 4b39: 10          .              ; Cave R
-    !byte 14                                                                            ; 4b3a: 0e          .              ; Cave S
-    !byte 6                                                                             ; 4b3b: 06          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-time_limit_for_each_cave_difficulty_level_1
-    !byte 150                                                                           ; 4b3c: 96          .              ; Cave A
-    !byte 150                                                                           ; 4b3d: 96          .              ; Cave B
-    !byte 150                                                                           ; 4b3e: 96          .              ; Cave C
-    !byte 120                                                                           ; 4b3f: 78          x              ; Cave D
-    !byte 150                                                                           ; 4b40: 96          .              ; Cave E
-    !byte 150                                                                           ; 4b41: 96          .              ; Cave F
-    !byte 120                                                                           ; 4b42: 78          x              ; Cave G
-    !byte 120                                                                           ; 4b43: 78          x              ; Cave H
-    !byte 150                                                                           ; 4b44: 96          .              ; Cave I
-    !byte 150                                                                           ; 4b45: 96          .              ; Cave J
-    !byte 120                                                                           ; 4b46: 78          x              ; Cave K
-    !byte 180                                                                           ; 4b47: b4          .              ; Cave L
-    !byte 160                                                                           ; 4b48: a0          .              ; Cave M
-    !byte 150                                                                           ; 4b49: 96          .              ; Cave N
-    !byte 120                                                                           ; 4b4a: 78          x              ; Cave O
-    !byte 150                                                                           ; 4b4b: 96          .              ; Cave P
-    !byte 15                                                                            ; 4b4c: 0f          .              ; Cave Q
-    !byte 15                                                                            ; 4b4d: 0f          .              ; Cave R
-    !byte 20                                                                            ; 4b4e: 14          .              ; Cave S
-    !byte 20                                                                            ; 4b4f: 14          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-required_diamonds_for_each_cave_difficulty_level_2
-    !byte 12                                                                            ; 4b50: 0c          .              ; Cave A
-    !byte 11                                                                            ; 4b51: 0b          .              ; Cave B
-    !byte 23                                                                            ; 4b52: 17          .              ; Cave C
-    !byte 36                                                                            ; 4b53: 24          $              ; Cave D
-    !byte 5                                                                             ; 4b54: 05          .              ; Cave E
-    !byte 5                                                                             ; 4b55: 05          .              ; Cave F
-    !byte 20                                                                            ; 4b56: 14          .              ; Cave G
-    !byte 15                                                                            ; 4b57: 0f          .              ; Cave H
-    !byte 75                                                                            ; 4b58: 4b          K              ; Cave I
-    !byte 12                                                                            ; 4b59: 0c          .              ; Cave J
-    !byte 6                                                                             ; 4b5a: 06          .              ; Cave K
-    !byte 19                                                                            ; 4b5b: 13          .              ; Cave L
-    !byte 55                                                                            ; 4b5c: 37          7              ; Cave M
-    !byte 35                                                                            ; 4b5d: 23          #              ; Cave N
-    !byte 20                                                                            ; 4b5e: 14          .              ; Cave O
-    !byte 15                                                                            ; 4b5f: 0f          .              ; Cave P
-    !byte 6                                                                             ; 4b60: 06          .              ; Cave Q
-    !byte 16                                                                            ; 4b61: 10          .              ; Cave R
-    !byte 14                                                                            ; 4b62: 0e          .              ; Cave S
-    !byte 6                                                                             ; 4b63: 06          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-time_limit_for_each_cave_difficulty_level_2
-    !byte 110                                                                           ; 4b64: 6e          n              ; Cave A
-    !byte 110                                                                           ; 4b65: 6e          n              ; Cave B
-    !byte 100                                                                           ; 4b66: 64          d              ; Cave C
-    !byte 100                                                                           ; 4b67: 64          d              ; Cave D
-    !byte 120                                                                           ; 4b68: 78          x              ; Cave E
-    !byte 120                                                                           ; 4b69: 78          x              ; Cave F
-    !byte 120                                                                           ; 4b6a: 78          x              ; Cave G
-    !byte 110                                                                           ; 4b6b: 6e          n              ; Cave H
-    !byte 150                                                                           ; 4b6c: 96          .              ; Cave I
-    !byte 130                                                                           ; 4b6d: 82          .              ; Cave J
-    !byte 120                                                                           ; 4b6e: 78          x              ; Cave K
-    !byte 170                                                                           ; 4b6f: aa          .              ; Cave L
-    !byte 155                                                                           ; 4b70: 9b          .              ; Cave M
-    !byte 145                                                                           ; 4b71: 91          .              ; Cave N
-    !byte 120                                                                           ; 4b72: 78          x              ; Cave O
-    !byte 150                                                                           ; 4b73: 96          .              ; Cave P
-    !byte 10                                                                            ; 4b74: 0a          .              ; Cave Q
-    !byte 15                                                                            ; 4b75: 0f          .              ; Cave R
-    !byte 20                                                                            ; 4b76: 14          .              ; Cave S
-    !byte 20                                                                            ; 4b77: 14          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-required_diamonds_for_each_cave_difficulty_level_3
-    !byte 12                                                                            ; 4b78: 0c          .              ; Cave A
-    !byte 9                                                                             ; 4b79: 09          .              ; Cave B
-    !byte 24                                                                            ; 4b7a: 18          .              ; Cave C
-    !byte 36                                                                            ; 4b7b: 24          $              ; Cave D
-    !byte 6                                                                             ; 4b7c: 06          .              ; Cave E
-    !byte 6                                                                             ; 4b7d: 06          .              ; Cave F
-    !byte 25                                                                            ; 4b7e: 19          .              ; Cave G
-    !byte 20                                                                            ; 4b7f: 14          .              ; Cave H
-    !byte 80                                                                            ; 4b80: 50          P              ; Cave I
-    !byte 12                                                                            ; 4b81: 0c          .              ; Cave J
-    !byte 6                                                                             ; 4b82: 06          .              ; Cave K
-    !byte 14                                                                            ; 4b83: 0e          .              ; Cave L
-    !byte 60                                                                            ; 4b84: 3c          <              ; Cave M
-    !byte 40                                                                            ; 4b85: 28          (              ; Cave N
-    !byte 20                                                                            ; 4b86: 14          .              ; Cave O
-    !byte 15                                                                            ; 4b87: 0f          .              ; Cave P
-    !byte 6                                                                             ; 4b88: 06          .              ; Cave Q
-    !byte 16                                                                            ; 4b89: 10          .              ; Cave R
-    !byte 14                                                                            ; 4b8a: 0e          .              ; Cave S
-    !byte 6                                                                             ; 4b8b: 06          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-time_limit_for_each_cave_difficulty_level_3
-    !byte 70                                                                            ; 4b8c: 46          F              ; Cave A
-    !byte 70                                                                            ; 4b8d: 46          F              ; Cave B
-    !byte 90                                                                            ; 4b8e: 5a          Z              ; Cave C
-    !byte 80                                                                            ; 4b8f: 50          P              ; Cave D
-    !byte 90                                                                            ; 4b90: 5a          Z              ; Cave E
-    !byte 100                                                                           ; 4b91: 64          d              ; Cave F
-    !byte 120                                                                           ; 4b92: 78          x              ; Cave G
-    !byte 100                                                                           ; 4b93: 64          d              ; Cave H
-    !byte 130                                                                           ; 4b94: 82          .              ; Cave I
-    !byte 120                                                                           ; 4b95: 78          x              ; Cave J
-    !byte 150                                                                           ; 4b96: 96          .              ; Cave K
-    !byte 160                                                                           ; 4b97: a0          .              ; Cave L
-    !byte 150                                                                           ; 4b98: 96          .              ; Cave M
-    !byte 140                                                                           ; 4b99: 8c          .              ; Cave N
-    !byte 120                                                                           ; 4b9a: 78          x              ; Cave O
-    !byte 150                                                                           ; 4b9b: 96          .              ; Cave P
-    !byte 10                                                                            ; 4b9c: 0a          .              ; Cave Q
-    !byte 15                                                                            ; 4b9d: 0f          .              ; Cave R
-    !byte 20                                                                            ; 4b9e: 14          .              ; Cave S
-    !byte 20                                                                            ; 4b9f: 14          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-required_diamonds_for_each_cave_difficulty_level_4
-    !byte 12                                                                            ; 4ba0: 0c          .              ; Cave A
-    !byte 13                                                                            ; 4ba1: 0d          .              ; Cave B
-    !byte 23                                                                            ; 4ba2: 17          .              ; Cave C
-    !byte 36                                                                            ; 4ba3: 24          $              ; Cave D
-    !byte 7                                                                             ; 4ba4: 07          .              ; Cave E
-    !byte 7                                                                             ; 4ba5: 07          .              ; Cave F
-    !byte 20                                                                            ; 4ba6: 14          .              ; Cave G
-    !byte 20                                                                            ; 4ba7: 14          .              ; Cave H
-    !byte 85                                                                            ; 4ba8: 55          U              ; Cave I
-    !byte 12                                                                            ; 4ba9: 0c          .              ; Cave J
-    !byte 6                                                                             ; 4baa: 06          .              ; Cave K
-    !byte 16                                                                            ; 4bab: 10          .              ; Cave L
-    !byte 70                                                                            ; 4bac: 46          F              ; Cave M
-    !byte 42                                                                            ; 4bad: 2a          *              ; Cave N
-    !byte 25                                                                            ; 4bae: 19          .              ; Cave O
-    !byte 15                                                                            ; 4baf: 0f          .              ; Cave P
-    !byte 6                                                                             ; 4bb0: 06          .              ; Cave Q
-    !byte 16                                                                            ; 4bb1: 10          .              ; Cave R
-    !byte 14                                                                            ; 4bb2: 0e          .              ; Cave S
-    !byte 6                                                                             ; 4bb3: 06          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-time_limit_for_each_cave_difficulty_level_4
-    !byte 40                                                                            ; 4bb4: 28          (              ; Cave A
-    !byte 70                                                                            ; 4bb5: 46          F              ; Cave B
-    !byte 80                                                                            ; 4bb6: 50          P              ; Cave C
-    !byte 60                                                                            ; 4bb7: 3c          <              ; Cave D
-    !byte 60                                                                            ; 4bb8: 3c          <              ; Cave E
-    !byte 90                                                                            ; 4bb9: 5a          Z              ; Cave F
-    !byte 120                                                                           ; 4bba: 78          x              ; Cave G
-    !byte 90                                                                            ; 4bbb: 5a          Z              ; Cave H
-    !byte 130                                                                           ; 4bbc: 82          .              ; Cave I
-    !byte 110                                                                           ; 4bbd: 6e          n              ; Cave J
-    !byte 150                                                                           ; 4bbe: 96          .              ; Cave K
-    !byte 160                                                                           ; 4bbf: a0          .              ; Cave L
-    !byte 145                                                                           ; 4bc0: 91          .              ; Cave M
-    !byte 135                                                                           ; 4bc1: 87          .              ; Cave N
-    !byte 120                                                                           ; 4bc2: 78          x              ; Cave O
-    !byte 150                                                                           ; 4bc3: 96          .              ; Cave P
-    !byte 10                                                                            ; 4bc4: 0a          .              ; Cave Q
-    !byte 15                                                                            ; 4bc5: 0f          .              ; Cave R
-    !byte 20                                                                            ; 4bc6: 14          .              ; Cave S
-    !byte 20                                                                            ; 4bc7: 14          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-required_diamonds_for_each_cave_difficulty_level_5
-    !byte 12                                                                            ; 4bc8: 0c          .              ; Cave A
-    !byte 10                                                                            ; 4bc9: 0a          .              ; Cave B
-    !byte 21                                                                            ; 4bca: 15          .              ; Cave C
-    !byte 36                                                                            ; 4bcb: 24          $              ; Cave D
-    !byte 8                                                                             ; 4bcc: 08          .              ; Cave E
-    !byte 8                                                                             ; 4bcd: 08          .              ; Cave F
-    !byte 25                                                                            ; 4bce: 19          .              ; Cave G
-    !byte 20                                                                            ; 4bcf: 14          .              ; Cave H
-    !byte 90                                                                            ; 4bd0: 5a          Z              ; Cave I
-    !byte 12                                                                            ; 4bd1: 0c          .              ; Cave J
-    !byte 6                                                                             ; 4bd2: 06          .              ; Cave K
-    !byte 21                                                                            ; 4bd3: 15          .              ; Cave L
-    !byte 80                                                                            ; 4bd4: 50          P              ; Cave M
-    !byte 45                                                                            ; 4bd5: 2d          -              ; Cave N
-    !byte 30                                                                            ; 4bd6: 1e          .              ; Cave O
-    !byte 12                                                                            ; 4bd7: 0c          .              ; Cave P
-    !byte 6                                                                             ; 4bd8: 06          .              ; Cave Q
-    !byte 16                                                                            ; 4bd9: 10          .              ; Cave R
-    !byte 14                                                                            ; 4bda: 0e          .              ; Cave S
-    !byte 6                                                                             ; 4bdb: 06          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-time_limit_for_each_cave_difficulty_level_5
-    !byte 30                                                                            ; 4bdc: 1e          .              ; Cave A
-    !byte 70                                                                            ; 4bdd: 46          F              ; Cave B
-    !byte 70                                                                            ; 4bde: 46          F              ; Cave C
-    !byte 50                                                                            ; 4bdf: 32          2              ; Cave D
-    !byte 30                                                                            ; 4be0: 1e          .              ; Cave E
-    !byte 80                                                                            ; 4be1: 50          P              ; Cave F
-    !byte 120                                                                           ; 4be2: 78          x              ; Cave G
-    !byte 80                                                                            ; 4be3: 50          P              ; Cave H
-    !byte 120                                                                           ; 4be4: 78          x              ; Cave I
-    !byte 100                                                                           ; 4be5: 64          d              ; Cave J
-    !byte 240                                                                           ; 4be6: f0          .              ; Cave K
-    !byte 160                                                                           ; 4be7: a0          .              ; Cave L
-    !byte 140                                                                           ; 4be8: 8c          .              ; Cave M
-    !byte 130                                                                           ; 4be9: 82          .              ; Cave N
-    !byte 140                                                                           ; 4bea: 8c          .              ; Cave O
-    !byte 150                                                                           ; 4beb: 96          .              ; Cave P
-    !byte 10                                                                            ; 4bec: 0a          .              ; Cave Q
-    !byte 15                                                                            ; 4bed: 0f          .              ; Cave R
-    !byte 20                                                                            ; 4bee: 14          .              ; Cave S
-    !byte 20                                                                            ; 4bef: 14          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-start_y
-    !byte 2                                                                             ; 4bf0: 02          .              ; Cave A
-    !byte $13                                                                           ; 4bf1: 13          .              ; Cave B
-    !byte 2                                                                             ; 4bf2: 02          .              ; Cave C
-    !byte 1                                                                             ; 4bf3: 01          .              ; Cave D
-    !byte 1                                                                             ; 4bf4: 01          .              ; Cave E
-    !byte $12                                                                           ; 4bf5: 12          .              ; Cave F
-    !byte 1                                                                             ; 4bf6: 01          .              ; Cave G
-    !byte 1                                                                             ; 4bf7: 01          .              ; Cave H
-    !byte $0a                                                                           ; 4bf8: 0a          .              ; Cave I
-    !byte 1                                                                             ; 4bf9: 01          .              ; Cave J
-    !byte $12                                                                           ; 4bfa: 12          .              ; Cave K
-    !byte $12                                                                           ; 4bfb: 12          .              ; Cave L
-    !byte 1                                                                             ; 4bfc: 01          .              ; Cave M
-    !byte 1                                                                             ; 4bfd: 01          .              ; Cave N
-    !byte 1                                                                             ; 4bfe: 01          .              ; Cave O
-    !byte 1                                                                             ; 4bff: 01          .              ; Cave P
-    !byte 3                                                                             ; 4c00: 03          .              ; Cave Q
-    !byte 2                                                                             ; 4c01: 02          .              ; Cave R
-    !byte 1                                                                             ; 4c02: 01          .              ; Cave S
-    !byte 1                                                                             ; 4c03: 01          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-start_x
-    !byte 3                                                                             ; 4c04: 03          .              ; Cave A
-    !byte $12                                                                           ; 4c05: 12          .              ; Cave B
-    !byte 3                                                                             ; 4c06: 03          .              ; Cave C
-    !byte 1                                                                             ; 4c07: 01          .              ; Cave D
-    !byte 1                                                                             ; 4c08: 01          .              ; Cave E
-    !byte 3                                                                             ; 4c09: 03          .              ; Cave F
-    !byte $14                                                                           ; 4c0a: 14          .              ; Cave G
-    !byte $14                                                                           ; 4c0b: 14          .              ; Cave H
-    !byte 8                                                                             ; 4c0c: 08          .              ; Cave I
-    !byte $0d                                                                           ; 4c0d: 0d          .              ; Cave J
-    !byte $14                                                                           ; 4c0e: 14          .              ; Cave K
-    !byte 3                                                                             ; 4c0f: 03          .              ; Cave L
-    !byte $12                                                                           ; 4c10: 12          .              ; Cave M
-    !byte 3                                                                             ; 4c11: 03          .              ; Cave N
-    !byte $14                                                                           ; 4c12: 14          .              ; Cave O
-    !byte 1                                                                             ; 4c13: 01          .              ; Cave P
-    !byte 3                                                                             ; 4c14: 03          .              ; Cave Q
-    !byte 1                                                                             ; 4c15: 01          .              ; Cave R
-    !byte 8                                                                             ; 4c16: 08          .              ; Cave S
-    !byte 3                                                                             ; 4c17: 03          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-end_y
-    !byte $10                                                                           ; 4c18: 10          .              ; Cave A
-    !byte $14                                                                           ; 4c19: 14          .              ; Cave B
-    !byte $12                                                                           ; 4c1a: 12          .              ; Cave C
-    !byte $14                                                                           ; 4c1b: 14          .              ; Cave D
-    !byte $14                                                                           ; 4c1c: 14          .              ; Cave E
-    !byte $12                                                                           ; 4c1d: 12          .              ; Cave F
-    !byte 5                                                                             ; 4c1e: 05          .              ; Cave G
-    !byte 3                                                                             ; 4c1f: 03          .              ; Cave H
-    !byte $0a                                                                           ; 4c20: 0a          .              ; Cave I
-    !byte $14                                                                           ; 4c21: 14          .              ; Cave J
-    !byte $0f                                                                           ; 4c22: 0f          .              ; Cave K
-    !byte $14                                                                           ; 4c23: 14          .              ; Cave L
-    !byte 1                                                                             ; 4c24: 01          .              ; Cave M
-    !byte $14                                                                           ; 4c25: 14          .              ; Cave N
-    !byte $14                                                                           ; 4c26: 14          .              ; Cave O
-    !byte 2                                                                             ; 4c27: 02          .              ; Cave P
-    !byte $0a                                                                           ; 4c28: 0a          .              ; Cave Q
-    !byte 2                                                                             ; 4c29: 02          .              ; Cave R
-    !byte 5                                                                             ; 4c2a: 05          .              ; Cave S
-    !byte 8                                                                             ; 4c2b: 08          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-end_x
-    !byte $26                                                                           ; 4c2c: 26          &              ; Cave A
-    !byte $12                                                                           ; 4c2d: 12          .              ; Cave B
-    !byte $27                                                                           ; 4c2e: 27          '              ; Cave C
-    !byte $26                                                                           ; 4c2f: 26          &              ; Cave D
-    !byte $27                                                                           ; 4c30: 27          '              ; Cave E
-    !byte $26                                                                           ; 4c31: 26          &              ; Cave F
-    !byte $27                                                                           ; 4c32: 27          '              ; Cave G
-    !byte 0                                                                             ; 4c33: 00          .              ; Cave H
-    !byte 9                                                                             ; 4c34: 09          .              ; Cave I
-    !byte $27                                                                           ; 4c35: 27          '              ; Cave J
-    !byte $26                                                                           ; 4c36: 26          &              ; Cave K
-    !byte $27                                                                           ; 4c37: 27          '              ; Cave L
-    !byte $0a                                                                           ; 4c38: 0a          .              ; Cave M
-    !byte $27                                                                           ; 4c39: 27          '              ; Cave N
-    !byte $14                                                                           ; 4c3a: 14          .              ; Cave O
-    !byte $27                                                                           ; 4c3b: 27          '              ; Cave P
-    !byte $12                                                                           ; 4c3c: 12          .              ; Cave Q
-    !byte $12                                                                           ; 4c3d: 12          .              ; Cave R
-    !byte $12                                                                           ; 4c3e: 12          .              ; Cave S
-    !byte 9                                                                             ; 4c3f: 09          .              ; Cave T
-cave_play_order
-    !byte 1                                                                             ; 4c40: 01          .              ; Cave A
-    !byte 2                                                                             ; 4c41: 02          .              ; Cave B
-    !byte 3                                                                             ; 4c42: 03          .              ; Cave C
-    !byte 16                                                                            ; 4c43: 10          .              ; Cave D
-    !byte 5                                                                             ; 4c44: 05          .              ; Cave E
-    !byte 6                                                                             ; 4c45: 06          .              ; Cave F
-    !byte 7                                                                             ; 4c46: 07          .              ; Cave G
-    !byte 17                                                                            ; 4c47: 11          .              ; Cave H
-    !byte 9                                                                             ; 4c48: 09          .              ; Cave I
-    !byte 10                                                                            ; 4c49: 0a          .              ; Cave J
-    !byte 11                                                                            ; 4c4a: 0b          .              ; Cave K
-    !byte 18                                                                            ; 4c4b: 12          .              ; Cave L
-    !byte 13                                                                            ; 4c4c: 0d          .              ; Cave M
-    !byte 14                                                                            ; 4c4d: 0e          .              ; Cave N
-    !byte 15                                                                            ; 4c4e: 0f          .              ; Cave O
-    !byte 19                                                                            ; 4c4f: 13          .              ; Cave P
-    !byte 4                                                                             ; 4c50: 04          .              ; Cave Q
-    !byte 8                                                                             ; 4c51: 08          .              ; Cave R
-    !byte 12                                                                            ; 4c52: 0c          .              ; Cave S
-    !byte 0                                                                             ; 4c53: 00          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-amoeba_growth_intervals_for_cave
-    !byte 0                                                                             ; 4c54: 00          .              ; Cave A
-    !byte 0                                                                             ; 4c55: 00          .              ; Cave B
-    !byte 0                                                                             ; 4c56: 00          .              ; Cave C
-    !byte 0                                                                             ; 4c57: 00          .              ; Cave D
-    !byte 0                                                                             ; 4c58: 00          .              ; Cave E
-    !byte 0                                                                             ; 4c59: 00          .              ; Cave F
-    !byte 40                                                                            ; 4c5a: 28          (              ; Cave G
-    !byte 25                                                                            ; 4c5b: 19          .              ; Cave H
-    !byte 0                                                                             ; 4c5c: 00          .              ; Cave I
-    !byte 0                                                                             ; 4c5d: 00          .              ; Cave J
-    !byte 0                                                                             ; 4c5e: 00          .              ; Cave K
-    !byte 0                                                                             ; 4c5f: 00          .              ; Cave L
-    !byte 32                                                                            ; 4c60: 20                         ; Cave M
-    !byte 0                                                                             ; 4c61: 00          .              ; Cave N
-    !byte 10                                                                            ; 4c62: 0a          .              ; Cave O
-    !byte 20                                                                            ; 4c63: 14          .              ; Cave P
-    !byte 0                                                                             ; 4c64: 00          .              ; Cave Q
-    !byte 0                                                                             ; 4c65: 00          .              ; Cave R
-    !byte 0                                                                             ; 4c66: 00          .              ; Cave S
-    !byte 4                                                                             ; 4c67: 04          .              ; Cave T
 ;Updated - all caves, all difficulty levels are selectable from the menu by default
 number_of_difficuly_levels_available_in_menu_for_each_cave
     !byte 5                                                                             ; 4c68: 05          .              ; Cave A
@@ -5691,139 +4937,28 @@ number_of_difficuly_levels_available_in_menu_for_each_cave
     !byte $80                                                                           ; 4c79: 80          .              ; Cave R
     !byte $80                                                                           ; 4c7a: 80          .              ; Cave S
     !byte $80                                                                           ; 4c7b: 80          .              ; Cave T
-; !!! data no longer being used
-length_of_strip_data_for_each_cave
-    !byte 8                                                                             ; 4c7c: 08          .              ; Cave A
-    !byte $44                                                                           ; 4c7d: 44          D              ; Cave B
-    !byte 2                                                                             ; 4c7e: 02          .              ; Cave C
-    !byte $0a                                                                           ; 4c7f: 0a          .              ; Cave D
-    !byte $43                                                                           ; 4c80: 43          C              ; Cave E
-    !byte $54                                                                           ; 4c81: 54          T              ; Cave F
-    !byte $21                                                                           ; 4c82: 21          !              ; Cave G
-    !byte $25                                                                           ; 4c83: 25          %              ; Cave H
-    !byte $37                                                                           ; 4c84: 37          7              ; Cave I
-    !byte $69                                                                           ; 4c85: 69          i              ; Cave J
-    !byte $64                                                                           ; 4c86: 64          d              ; Cave K
-    !byte $33                                                                           ; 4c87: 33          3              ; Cave L
-    !byte $14                                                                           ; 4c88: 14          .              ; Cave M
-    !byte $59                                                                           ; 4c89: 59          Y              ; Cave N
-    !byte $3c                                                                           ; 4c8a: 3c          <              ; Cave O
-    !byte $2a                                                                           ; 4c8b: 2a          *              ; Cave P
-    !byte $11                                                                           ; 4c8c: 11          .              ; Cave Q
-    !byte $67                                                                           ; 4c8d: 67          g              ; Cave R
-    !byte $14                                                                           ; 4c8e: 14          .              ; Cave S
-    !byte $26                                                                           ; 4c8f: 26          &              ; Cave T
-; !!! data no longer being used
-fill_cell_in_lower_nybble_strip_value_to_skip_in_upper_nybble_for_each_cave
-    !byte $11                                                                           ; 4c90: 11          .              ; Cave A
-    !byte $11                                                                           ; 4c91: 11          .              ; Cave B
-    !byte $11                                                                           ; 4c92: 11          .              ; Cave C
-    !byte $11                                                                           ; 4c93: 11          .              ; Cave D
-    !byte $11                                                                           ; 4c94: 11          .              ; Cave E
-    !byte $31                                                                           ; 4c95: 31          1              ; Cave F
-    !byte $11                                                                           ; 4c96: 11          .              ; Cave G
-    !byte 1                                                                             ; 4c97: 01          .              ; Cave H
-    !byte $35                                                                           ; 4c98: 35          5              ; Cave I
-    !byte $11                                                                           ; 4c99: 11          .              ; Cave J
-    !byte $11                                                                           ; 4c9a: 11          .              ; Cave K
-    !byte $11                                                                           ; 4c9b: 11          .              ; Cave L
-    !byte 1                                                                             ; 4c9c: 01          .              ; Cave M
-    !byte $11                                                                           ; 4c9d: 11          .              ; Cave N
-    !byte 1                                                                             ; 4c9e: 01          .              ; Cave O
-    !byte $11                                                                           ; 4c9f: 11          .              ; Cave P
-    !byte 0                                                                             ; 4ca0: 00          .              ; Cave Q
-    !byte $11                                                                           ; 4ca1: 11          .              ; Cave R
-    !byte 0                                                                             ; 4ca2: 00          .              ; Cave S
-    !byte $11                                                                           ; 4ca3: 11          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-colour_1_in_lower_nybble_cell_type_1_in_upper_nybble_for_each_cave
-    !byte $15                                                                           ; 4ca4: 15          .              ; Cave A
-    !byte $15                                                                           ; 4ca5: 15          .              ; Cave B
-    !byte $23                                                                           ; 4ca6: 23          #              ; Cave C
-    !byte $15                                                                           ; 4ca7: 15          .              ; Cave D
-    !byte 6                                                                             ; 4ca8: 06          .              ; Cave E
-    !byte $15                                                                           ; 4ca9: 15          .              ; Cave F
-    !byte 2                                                                             ; 4caa: 02          .              ; Cave G
-    !byte 3                                                                             ; 4cab: 03          .              ; Cave H
-    !byte $41                                                                           ; 4cac: 41          A              ; Cave I
-    !byte 3                                                                             ; 4cad: 03          .              ; Cave J
-    !byte $56                                                                           ; 4cae: 56          V              ; Cave K
-    !byte $15                                                                           ; 4caf: 15          .              ; Cave L
-    !byte $12                                                                           ; 4cb0: 12          .              ; Cave M
-    !byte 6                                                                             ; 4cb1: 06          .              ; Cave N
-    !byte $51                                                                           ; 4cb2: 51          Q              ; Cave O
-    !byte $16                                                                           ; 4cb3: 16          .              ; Cave P
-    !byte 2                                                                             ; 4cb4: 02          .              ; Cave Q
-    !byte 5                                                                             ; 4cb5: 05          .              ; Cave R
-    !byte 4                                                                             ; 4cb6: 04          .              ; Cave S
-    !byte 5                                                                             ; 4cb7: 05          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-colour_2_in_lower_nybble_cell_type_2_in_upper_nybble_for_each_cave
-    !byte $41                                                                           ; 4cb8: 41          A              ; Cave A
-    !byte $44                                                                           ; 4cb9: 44          D              ; Cave B
-    !byte $42                                                                           ; 4cba: 42          B              ; Cave C
-    !byte $14                                                                           ; 4cbb: 14          .              ; Cave D
-    !byte 4                                                                             ; 4cbc: 04          .              ; Cave E
-    !byte $51                                                                           ; 4cbd: 51          Q              ; Cave F
-    !byte $54                                                                           ; 4cbe: 54          T              ; Cave G
-    !byte $51                                                                           ; 4cbf: 51          Q              ; Cave H
-    !byte $45                                                                           ; 4cc0: 45          E              ; Cave I
-    !byte 2                                                                             ; 4cc1: 02          .              ; Cave J
-    !byte $52                                                                           ; 4cc2: 52          R              ; Cave K
-    !byte $42                                                                           ; 4cc3: 42          B              ; Cave L
-    !byte $14                                                                           ; 4cc4: 14          .              ; Cave M
-    !byte 4                                                                             ; 4cc5: 04          .              ; Cave N
-    !byte $54                                                                           ; 4cc6: 54          T              ; Cave O
-    !byte $55                                                                           ; 4cc7: 55          U              ; Cave P
-    !byte 4                                                                             ; 4cc8: 04          .              ; Cave Q
-    !byte 2                                                                             ; 4cc9: 02          .              ; Cave R
-    !byte 1                                                                             ; 4cca: 01          .              ; Cave S
-    !byte 4                                                                             ; 4ccb: 04          .              ; Cave T
-; !!! data no longer being used - replaced with load of cave parameters
-colour_3_in_lower_nybble_cell_type_3_in_upper_nybble_for_each_cave
-    !byte $57                                                                           ; 4ccc: 57          W              ; Cave A
-    !byte $57                                                                           ; 4ccd: 57          W              ; Cave B
-    !byte $57                                                                           ; 4cce: 57          W              ; Cave C
-    !byte $13                                                                           ; 4ccf: 13          .              ; Cave D
-    !byte 7                                                                             ; 4cd0: 07          .              ; Cave E
-    !byte $57                                                                           ; 4cd1: 57          W              ; Cave F
-    !byte $57                                                                           ; 4cd2: 57          W              ; Cave G
-    !byte $57                                                                           ; 4cd3: 57          W              ; Cave H
-    !byte $47                                                                           ; 4cd4: 47          G              ; Cave I
-    !byte 7                                                                             ; 4cd5: 07          .              ; Cave J
-    !byte $57                                                                           ; 4cd6: 57          W              ; Cave K
-    !byte $57                                                                           ; 4cd7: 57          W              ; Cave L
-    !byte $57                                                                           ; 4cd8: 57          W              ; Cave M
-    !byte 7                                                                             ; 4cd9: 07          .              ; Cave N
-    !byte $57                                                                           ; 4cda: 57          W              ; Cave O
-    !byte $57                                                                           ; 4cdb: 57          W              ; Cave P
-    !byte 6                                                                             ; 4cdc: 06          .              ; Cave Q
-    !byte 7                                                                             ; 4cdd: 07          .              ; Cave R
-    !byte 7                                                                             ; 4cde: 07          .              ; Cave S
-    !byte 7                                                                             ; 4cdf: 07          .              ; Cave T
-; !!! data no longer being used
-; each cave can have a data set, which helps define the level
-cave_to_data_set
-    !byte 0                                                                             ; 4ce0: 00          .              ; Cave A
-    !byte 1                                                                             ; 4ce1: 01          .              ; Cave B
-    !byte 2                                                                             ; 4ce2: 02          .              ; Cave C
-    !byte 3                                                                             ; 4ce3: 03          .              ; Cave D
-    !byte $ff                                                                           ; 4ce4: ff          .              ; Cave E
-    !byte 4                                                                             ; 4ce5: 04          .              ; Cave F
-    !byte 5                                                                             ; 4ce6: 05          .              ; Cave G
-    !byte 6                                                                             ; 4ce7: 06          .              ; Cave H
-    !byte 7                                                                             ; 4ce8: 07          .              ; Cave I
-    !byte $ff                                                                           ; 4ce9: ff          .              ; Cave J
-    !byte 8                                                                             ; 4cea: 08          .              ; Cave K
-    !byte 9                                                                             ; 4ceb: 09          .              ; Cave L
-    !byte 10                                                                            ; 4cec: 0a          .              ; Cave M
-    !byte $ff                                                                           ; 4ced: ff          .              ; Cave N
-    !byte 11                                                                            ; 4cee: 0b          .              ; Cave O
-    !byte 12                                                                            ; 4cef: 0c          .              ; Cave P
-    !byte $ff                                                                           ; 4cf0: ff          .              ; Cave Q
-    !byte $ff                                                                           ; 4cf1: ff          .              ; Cave R
-    !byte $ff                                                                           ; 4cf2: ff          .              ; Cave S
-    !byte $ff                                                                           ; 4cf3: ff          .              ; Cave T
+
+cave_play_order
+    !byte 1                                                                             ; 4c40: 01          .              ; Cave A
+    !byte 2                                                                             ; 4c41: 02          .              ; Cave B
+    !byte 3                                                                             ; 4c42: 03          .              ; Cave C
+    !byte 16                                                                            ; 4c43: 10          .              ; Cave D
+    !byte 5                                                                             ; 4c44: 05          .              ; Cave E
+    !byte 6                                                                             ; 4c45: 06          .              ; Cave F
+    !byte 7                                                                             ; 4c46: 07          .              ; Cave G
+    !byte 17                                                                            ; 4c47: 11          .              ; Cave H
+    !byte 9                                                                             ; 4c48: 09          .              ; Cave I
+    !byte 10                                                                            ; 4c49: 0a          .              ; Cave J
+    !byte 11                                                                            ; 4c4a: 0b          .              ; Cave K
+    !byte 18                                                                            ; 4c4b: 12          .              ; Cave L
+    !byte 13                                                                            ; 4c4c: 0d          .              ; Cave M
+    !byte 14                                                                            ; 4c4d: 0e          .              ; Cave N
+    !byte 15                                                                            ; 4c4e: 0f          .              ; Cave O
+    !byte 19                                                                            ; 4c4f: 13          .              ; Cave P
+    !byte 4                                                                             ; 4c50: 04          .              ; Cave Q
+    !byte 8                                                                             ; 4c51: 08          .              ; Cave R
+    !byte 12                                                                            ; 4c52: 0c          .              ; Cave S
+    !byte 0                                                                             ; 4c53: 00          .              ; Cave T
 
 ; ****************************************************************************************************
 ; Populate the cave with tiles using the pseudo-random method
@@ -5927,10 +5062,6 @@ populate_row_counter
 
 tile_override
     !byte 0
-
-;version2_unused
-    !byte 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0
 
 ; ****************************************************************************************************
 ; Pseudo-random function
@@ -6089,8 +5220,12 @@ param_slime_permeability
     !byte $0a                          ; Slime permeability used in Boulder Dash 2 engine
 param_tile_for_prob_below
     !byte 0, 0, 0, 0                   ; For Boulder Dash 2 caves C, K. Additional tile below the one generated by pseudo-random routine
+param_bombs                            ; New element used to control use of bombs or not
+    !byte 0                            ; 0 = no bombs, otherwise allow use of bombs
+param_zero_gravity_time                ; New feature used to control use of gravity (whether rocks/diamonds fall)
+    !byte 0                            ; 0 = no zero-gravity time (always gravity/normal), 1-$fe = time until gravity back on, $ff = always zero gravity
 param_unused
-    !byte 0, 0, 0, 0, 0, 0, 0, 0       ; Currently unused, potential future use (cannot be removed)
+    !byte 0, 0, 0, 0, 0, 0             ; Currently unused, potential future use (cannot be removed)
 
 cave_map_data                          ; Empty cave (earth and side steel walls)
     !byte $31, $11, $11, $10, $11, $41, $50, $11, $11, $15, $15, $11, $11, $11, $10, $11  ; 4e70
@@ -6632,13 +5767,10 @@ move_to_next_tune_channel
     rts                                                                                 ; 5795: 60          `
 
 tile_below_store_row
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 unused80
     !byte   0,   0,   0,   0, $cb, $36,   5, $ff, $85, $18,   0,   0,   0, $85, $18     ; 57c3: 00 00 00... ...
@@ -6795,18 +5927,20 @@ pydis_end
     !error "Assertion failed: 64-40 == $18"
 }
 !if (<(in_game_sound_block)) != $24 {
+    !error <(in_game_sound_block)
     !error "Assertion failed: <(in_game_sound_block) == $24"
 }
 !if (<(palette_block)) != $29 {
     !error "Assertion failed: <(palette_block) == $29"
 }
-!if (<(set_clock_value)) != $70 {
-    !error "Assertion failed: <(set_clock_value) == $70"
-}
+;!if (<(set_clock_value)) != $70 {
+;    !error "Assertion failed: <(set_clock_value) == $70"
+;}
 !if (<(sprite_addr_space)) != $00 {
     !error "Assertion failed: <(sprite_addr_space) == $00"
 }
 !if (<(tile_map_row_1-1)) != $3f {
+    !error <(tile_map_row_1-1)
     !error "Assertion failed: <(tile_map_row_1-1) == $3f"
 }
 !if (<big_rockford_destination_screen_address) != $00 {
@@ -6815,12 +5949,12 @@ pydis_end
 !if (<bonus_life_text) != $64 {
     !error "Assertion failed: <bonus_life_text == $64"
 }
-!if (<cell_types_that_will_turn_into_diamonds) != $30 {
-    !error "Assertion failed: <cell_types_that_will_turn_into_diamonds == $30"
-}
-!if (<cell_types_that_will_turn_into_large_explosion) != $40 {
-    !error "Assertion failed: <cell_types_that_will_turn_into_large_explosion == $40"
-}
+;!if (<cell_types_that_will_turn_into_diamonds) != $30 {
+;    !error "Assertion failed: <cell_types_that_will_turn_into_diamonds == $30"
+;}
+;!if (<cell_types_that_will_turn_into_large_explosion) != $40 {
+;    !error "Assertion failed: <cell_types_that_will_turn_into_large_explosion == $40"
+;}
 !if (<current_status_bar_sprites) != $28 {
     !error "Assertion failed: <current_status_bar_sprites == $28"
 }
@@ -6833,29 +5967,8 @@ pydis_end
 !if (<grid_of_currently_displayed_sprites) != $00 {
     !error "Assertion failed: <grid_of_currently_displayed_sprites == $00"
 }
-!if (<handler_basics) != $a5 {
-    !error "Assertion failed: <handler_basics == $a5"
-}
 !if (<handler_slime) != $c0 {
     !error "Assertion failed: <handler_slime == $c0"
-}
-!if (<handler_firefly_or_butterfly) != $00 {
-    !error "Assertion failed: <handler_firefly_or_butterfly == $00"
-}
-!if (<handler_growing_wall) != $dc {
-    !error "Assertion failed: <handler_growing_wall == $dc"
-}
-!if (<handler_amoeba) != $9e {
-    !error "Assertion failed: <handler_amoeba == $9e"
-}
-!if (<handler_magic_wall) != $ae {
-    !error "Assertion failed: <handler_magic_wall == $ae"
-}
-!if (<handler_rockford) != $00 {
-    !error "Assertion failed: <handler_rockford == $00"
-}
-!if (<handler_rockford_intro_or_exit) != $e3 {
-    !error "Assertion failed: <handler_rockford_intro_or_exit == $e3"
 }
 !if (<highscore_for_player_2) != $5e {
     !error "Assertion failed: <highscore_for_player_2 == $5e"
@@ -7169,9 +6282,6 @@ pydis_end
 !if (<start_of_grid_screen_address) != $c0 {
     !error "Assertion failed: <start_of_grid_screen_address == $c0"
 }
-!if (<strip_data) != $00 {
-    !error "Assertion failed: <strip_data == $00"
-}
 !if (<tile_map_row_0) != $00 {
     !error "Assertion failed: <tile_map_row_0 == $00"
 }
@@ -7184,9 +6294,9 @@ pydis_end
 !if (>(palette_block)) != $2a {
     !error "Assertion failed: >(palette_block) == $2a"
 }
-!if (>(set_clock_value)) != $1e {
-    !error "Assertion failed: >(set_clock_value) == $1e"
-}
+;!if (>(set_clock_value)) != $1e {
+;    !error "Assertion failed: >(set_clock_value) == $1e"
+;}
 !if (>(sprite_addr_space)) != $13 {
     !error "Assertion failed: >(sprite_addr_space) == $13"
 }
@@ -7204,30 +6314,6 @@ pydis_end
 }
 !if (>grid_of_currently_displayed_sprites) != $0c {
     !error "Assertion failed: >grid_of_currently_displayed_sprites == $0c"
-}
-!if (>handler_basics) != $22 {
-    !error "Assertion failed: >handler_basics == $22"
-}
-!if (>handler_slime) != $2b {
-    !error "Assertion failed: >handler_slime == $2b"
-}
-!if (>handler_firefly_or_butterfly) != $25 {
-    !error "Assertion failed: >handler_firefly_or_butterfly == $25"
-}
-!if (>handler_growing_wall) != $23 {
-    !error "Assertion failed: >handler_growing_wall == $23"
-}
-!if (>handler_amoeba) != $25 {
-    !error "Assertion failed: >handler_amoeba == $25"
-}
-!if (>handler_magic_wall) != $26 {
-    !error "Assertion failed: >handler_magic_wall == $26"
-}
-!if (>handler_rockford) != $26 {
-    !error "Assertion failed: >handler_rockford == $26"
-}
-!if (>handler_rockford_intro_or_exit) != $26 {
-    !error "Assertion failed: >handler_rockford_intro_or_exit == $26"
 }
 !if (>regular_status_bar) != $32 {
     !error "Assertion failed: >regular_status_bar == $32"
@@ -7520,9 +6606,6 @@ pydis_end
 !if (>start_of_grid_screen_address) != $5b {
     !error "Assertion failed: >start_of_grid_screen_address == $5b"
 }
-!if (>strip_data) != $47 {
-    !error "Assertion failed: >strip_data == $47"
-}
 !if (>tile_map_row_0) != $50 {
     !error "Assertion failed: >tile_map_row_0 == $50"
 }
@@ -7553,9 +6636,9 @@ pydis_end
 !if (command_pitch-200) != $560e {
     !error "Assertion failed: command_pitch-200 == $560e"
 }
-!if (handler_table_high+12) != $21dc {
-    !error "Assertion failed: handler_table_high+12 == $21dc"
-}
+;!if (handler_table_high+12) != $21dc {
+;    !error "Assertion failed: handler_table_high+12 == $21dc"
+;}
 !if (in_game_sound_data+1) != $2c01 {
     !error "Assertion failed: in_game_sound_data+1 == $2c01"
 }
@@ -7565,9 +6648,9 @@ pydis_end
 !if (in_game_sound_data+3) != $2c03 {
     !error "Assertion failed: in_game_sound_data+3 == $2c03"
 }
-!if (initial_values_of_variables_from_0x50) != $1e60 {
-    !error "Assertion failed: initial_values_of_variables_from_0x50 == $1e60"
-}
+;!if (initial_values_of_variables_from_0x50) != $1e60 {
+;    !error "Assertion failed: initial_values_of_variables_from_0x50 == $1e60"
+;}
 !if (inkey_key_b) != $9b {
     !error "Assertion failed: inkey_key_b == $9b"
 }
@@ -7688,12 +6771,12 @@ pydis_end
 !if (map_unprocessed | map_space) != $80 {
     !error "Assertion failed: map_unprocessed | map_space == $80"
 }
-!if (map_vertical_strip) != $0b {
-    !error "Assertion failed: map_vertical_strip == $0b"
+!if (map_bomb) != $0b {
+    !error "Assertion failed: map_bomb == $0b"
 }
-!if (mark_cell_above_as_processed_and_move_to_next_cell - branch_instruction - 2) != $26 {
-    !error "Assertion failed: mark_cell_above_as_processed_and_move_to_next_cell - branch_instruction - 2 == $26"
-}
+;!if (mark_cell_above_as_processed_and_move_to_next_cell - branch_instruction - 2) != $26 {
+;    !error "Assertion failed: mark_cell_above_as_processed_and_move_to_next_cell - branch_instruction - 2 == $26"
+;}
 !if (opcode_dex) != $ca {
     !error "Assertion failed: opcode_dex == $ca"
 }
@@ -7877,6 +6960,6 @@ pydis_end
 !if (total_caves) != $14 {
     !error "Assertion failed: total_caves == $14"
 }
-!if (update_rock_or_diamond_that_can_fall - branch_instruction - 2) != $5f {
-    !error "Assertion failed: update_rock_or_diamond_that_can_fall - branch_instruction - 2 == $5f"
-}
+;!if (update_rock_or_diamond_that_can_fall - branch_instruction - 2) != $5f {
+;    !error "Assertion failed: update_rock_or_diamond_that_can_fall - branch_instruction - 2 == $5f"
+;}

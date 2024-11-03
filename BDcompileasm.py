@@ -17,7 +17,8 @@ import image
 CAVE_LETTERS = ['A','B','C','D','Q','E','F','G','H','R','I','J','K','L','S','M','N','O','P','T']
 ASM_SOURCE = "main.asm"
 #SSD_NAME = "BoulderDash01"
-SSD_NAME = "BoulderDash02"
+#SSD_NAME = "BoulderDash02"
+SSD_NAME = "BoulderDashP1"
 INCLUDE_CAVES = True
 
 ################################################################################
@@ -66,6 +67,10 @@ if __name__ == '__main__':
     BD_sourcecaves_folder = path.join(base_path, "BDoriginalcaves")  #Boulder Dash 1
     if SSD_NAME == "BoulderDash02":
         BD_sourcecaves_folder = path.join(base_path, "BD2originalcaves")  #Boulder Dash 2
+    else:
+        if SSD_NAME == "BoulderDashP1":
+            BD_sourcecaves_folder = path.join(base_path, "BDplus1caves")  #Boulder Dash +1
+
     output_subfolder = path.join(base_path, "output", "build")
     BD_filename = SSD_NAME
 

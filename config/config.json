@@ -1,5 +1,5 @@
 {
-    "valid_parameters": ["DiamondValue", "DiamondsRequired", "CaveTime", "AmoebaTime", "MagicWallTime", "Intermission", "Colors", "InitialFill", "RandSeed", "RandomFill", "SlimePermeability"],
+    "valid_parameters": ["DiamondValue", "DiamondsRequired", "CaveTime", "AmoebaTime", "MagicWallTime", "Intermission", "Colors", "InitialFill", "RandSeed", "RandomFill", "SlimePermeability", "Bombs", "ZeroGravityTime"],
     "element_map": {
         " ": {"value": 0, "element": "space"},
         ".": {"value": 1, "element": "earth"},
@@ -9,9 +9,10 @@
         "r": {"value": 5, "element": "rock"},
         "q": {"value": 6, "element": "firefly"},
         "a": {"value": 7, "element": "amoeba"},
+        "P": {"value": 8, "element": "start point"},
         "s": {"value": 9, "element": "slime"},
-        "P": {"value": 10, "element": "start point"},
-        "X": {"value": 11, "element": "exit"},
+        "X": {"value": 10, "element": "exit"},
+        "!": {"value": 11, "element": "bomb"},
         "x": {"value": 12, "element": "expanding wall"},
         "M": {"value": 13, "element": "magic wall"},
         "c": {"value": 14, "element": "butterfly"},
@@ -97,7 +98,9 @@
         "RockfordStart": 31,
         "RockfordExit": 33,
         "SlimePermeability": 35,
-        "RandomFillBelow": 36
+        "RandomFillBelow": 36,
+        "Bombs": 40,
+        "ZeroGravityTime": 41
     },
     "ssd_file_settings": {
         "BDSH1": {"load": "1900", "exec": "0", "size": "300"},
