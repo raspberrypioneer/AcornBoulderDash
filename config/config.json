@@ -1,5 +1,5 @@
 {
-    "valid_parameters": ["DiamondValue", "DiamondsRequired", "CaveTime", "AmoebaTime", "MagicWallTime", "Intermission", "Colors", "InitialFill", "RandSeed", "RandomFill", "SlimePermeability", "Bombs", "ZeroGravityTime"],
+    "valid_parameters": ["DiamondValue", "DiamondsRequired", "CaveTime", "AmoebaTime", "MagicWallTime", "Intermission", "Colors", "InitialFill", "RandSeed", "RandomFill", "SlimePermeability", "Bombs", "ZeroGravityTime", "BorderTile"],
     "element_map": {
         " ": {"value": 0, "element": "space"},
         ".": {"value": 1, "element": "earth"},
@@ -100,7 +100,8 @@
         "SlimePermeability": 35,
         "RandomFillBelow": 36,
         "Bombs": 40,
-        "ZeroGravityTime": 41
+        "ZeroGravityTime": 41,
+        "BorderTile": 42
     },
     "ssd_file_settings": {
         "BDSH1": {"load": "1900", "exec": "0", "size": "300"},

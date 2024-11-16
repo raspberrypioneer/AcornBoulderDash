@@ -42,9 +42,27 @@
 ;     A, F, H which still play in much the same way as the original game
 ;   - None of this affects the original Boulder Dash game
 ;
-; As a result of these changes there are many unused bytes which could be removed if 
-; necessary.
-;
+; Additions to support the Boulder Dash +1 game
+;   - New bomb element and new zero-gravity behaviour introduced 
+;   - Bombs are set by Rockford by pressing return + direction in an empty cell. The bombs run 
+;     on a short timer and clear the surrounding tiles when they detonate (except for steel 
+;     walls, start/exit). They can be used to clear tiles, destroy butterflies, fireflies and
+;     the amoeba. They are lethal to Rockford if standing too close! They fall just like rocks, 
+;     diamonds do, pausing the timer when this happens. They explode if something lands on them
+;   - The number of bombs available to Rockford are defined in the cave parameters. Each time  
+;     Rockford uses a bomb, the number remaining is briefly shown in the status bar 
+;   - Zero-gravity behaviour means rocks, diamonds and bombs do not fall; they remain suspended 
+;     instead. Diamonds can still be collected and bombs used, but rocks turn into bubbles which 
+;     can be pushed around in all directions. Rocks switch to a transitional state when 
+;     zero-gravity is about to run out
+;   - A cave parameter is used for this behaviour. For normal mode (with gravity) it is 0, for 
+;     continuous zero-gravity 255, and numbers between are a timer when zero-gravity is in effect
+;   - For asthetics, the cave borders can now be changed. The cave side-borders defined in the 
+;     cave map are used now, previously being replaced with the steelwall border. The cave 
+;     top and bottom borders are not held in the cave map file but can now be defined by setting 
+;     the border tile cave parameter
+;   - New caves have been created with these new features.
+;   - These changes do not affect the Boulder Dash 1 or 2 game engines.
 ;
 ; Cave file structure
 ; -------------------
@@ -855,7 +873,7 @@ sprite_to_next_sprite
     !byte sprite_explosion3                                                             ; 1f0e: 0e          .
 
 ; *************************************************************************************
-used_for_unknown1
+needed1_do_not_reclaim
     !byte $0f, $11, $12, $13, $10, $14, $15, $17, $18, $62, $1a, $1b, $1c, $1a, $1d     ; 1f0f: 0f 11 12... ...
     !byte $68, $1f, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2b, $2c, $2d     ; 1f1e: 68 1f 20... h.
     !byte $63, $2f, $30, $31, $65                                                       ; 1f2d: 63 2f 30... c/0
@@ -1148,12 +1166,6 @@ sprite_titanium_addressA
     !byte <sprite_addr_bomb2
     !byte <sprite_addr_bomb1
     !byte <sprite_addr_bubble2
-unused4
-;    !byte $60                                                                           ; 205b: 60          `
-;    !byte $80                                                                           ; 205c: 80          .
-;    !byte $a0                                                                           ; 205d: a0          .
-;    !byte $c0                                                                           ; 205e: c0          .
-;    !byte $e0                                                                           ; 205f: e0          .
 sprite_titanium_addressB
     !byte <sprite_addr_titanium_wall1                                                   ; 2060: e0          .
 unused5
@@ -1259,15 +1271,8 @@ sprite_addresses_high
     !byte >sprite_addr_bomb2
     !byte >sprite_addr_bomb1
     !byte >sprite_addr_bubble2
-unused6
-;    !byte $1e                                                                           ; 20db: 1e          .
-;    !byte $1e                                                                           ; 20dc: 1e          .
-;    !byte $1e                                                                           ; 20dd: 1e          .
-;    !byte $1e                                                                           ; 20de: 1e          .
-;    !byte $1e                                                                           ; 20df: 1e          .
 sprite_titanium_addressC
     !byte >sprite_addr_titanium_wall1                                                   ; 20e0: 13          .
-
 unused7
     !byte $14, $15, $18, $18, $19, $18, $14, $14, $20, $20, $20, $20, $20, $20, $20     ; 20e1: 14 15 18... ...
     !byte $21, $21, $21, $21, $21, $21, $21, $21, $22, $22, $22, $22, $22, $22, $22     ; 20f0: 21 21 21... !!!
@@ -2385,10 +2390,16 @@ read_keys_loop
     ldx cell_current                                                                    ; 2691: a6 77       .w
     lda inkey_keys_table,x                                                              ; 2693: bd 28 22    .("
     tax                                                                                 ; 2696: aa          .
+;To detect individual keys, x is the key to check and y is usually set to #$ff and checked afterwards
+;However os code for OSBYTE 129 (read key with time limit) just checks for negative y (>128) which it is, so 'tay' is fine
+;See https://tobylobster.github.io/mos/mos/S-s15.html#SP16
     tay                                                                                 ; 2697: a8          .
     lda #osbyte_inkey                                                                   ; 2698: a9 81       ..
     jsr osbyte                                                                          ; 269a: 20 f4 ff     ..            ; Read key within time limit, or read a specific key, or read machine type
-    inx                                                                                 ; 269d: e8          .
+    inx                                                                                 ; 269d: e8          .  ;Not needed
+;Continuing from above, the carry flag is set to 1 if the key was pressed, otherwise is 0
+;So with 'rol real_keys_pressed', real_keys_pressed is built into an 8 bit number using the carry flag for each of the 8 keys tested
+;E.g. slash (down) and z (left) are both pressed, real_keys_pressed is 01010000 (starts checking keys in the inkey_keys_table bottom to top)
     rol real_keys_pressed                                                               ; 269e: 26 7c       &|
     dec cell_current                                                                    ; 26a0: c6 77       .w
     bpl read_keys_loop                                                                  ; 26a2: 10 ed       ..
@@ -2781,10 +2792,12 @@ check_if_pause_is_available
     bpl gameplay_loop_local                                                             ; 27d9: 10 11       ..
     ; check for up, down, and right keys pressed together. If all pressed, don't check
     ; for SPACE BAR for pause [is this protection against ghost key matrix presses?]
-    lda previous_direction_keys                                                         ; 27db: a5 5d       .]
-    and #$b0                                                                            ; 27dd: 29 b0       ).
-    eor #$b0                                                                            ; 27df: 49 b0       I.
-    beq gameplay_loop_local                                                             ; 27e1: f0 09       ..
+;TRIAL: Not sure why needed, works fine without this
+;    lda previous_direction_keys                                                         ; 27db: a5 5d       .]
+;    and #$b0                                                                            ; 27dd: 29 b0       ).
+;    eor #$b0                                                                            ; 27df: 49 b0       I.
+;    beq gameplay_loop_local                                                             ; 27e1: f0 09       ..
+;
     ; check if pause pressed
     lda keys_to_process                                                                 ; 27e3: a5 62       .b
     and #2                                                                              ; 27e5: 29 02       ).
@@ -2795,6 +2808,9 @@ gameplay_loop_local
 
 return5
     rts                                                                                 ; 27ef: 60          `
+
+unused_gameplay
+    !byte 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 update_grid_animations
@@ -2857,6 +2873,9 @@ extract_lower_nybble
 ; *************************************************************************************
 read_keys_and_resolve_direction_keys
     jsr read_keys                                                                       ; 2860: 20 89 26     .&
+;TRIAL: Not sure why needed, bypassing is fine
+    rts
+;
     ; just get the direction keys (top nybble)
     lda keys_to_process                                                                 ; 2863: a5 62       .b
     and #$f0                                                                            ; 2865: 29 f0       ).
@@ -2928,11 +2947,6 @@ increment_number_loop
 finished_add
     ldy real_keys_pressed                                                               ; 28d1: a4 7c       .|
     rts                                                                                 ; 28d3: 60          `
-
-; *************************************************************************************
-
-unused13
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 ; Set palette using cave parameter values
@@ -3176,9 +3190,6 @@ return8
 rle_bytes_table
     !byte $85, $48, $10, $ec, $ff, $0f,   0                                             ; 2af8: 85 48 10... .H.
 
-unused34
-    !byte 0, 0, 0, 0, 0
-
 ; *************************************************************************************
 map_address_to_map_xy_position
     lda map_address_high                                                                ; 2b00: a5 8d       ..
@@ -3268,9 +3279,6 @@ skip_bonus_stage
     sta tile_map_ptr_high                                                               ; 2b82: 85 86       ..
     rts                                                                                 ; 2b84: 60          `
 
-unused35
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-
 ; *************************************************************************************
 wait_for_13_centiseconds_and_read_keys
     lda #$0d                                                                            ; 2b90: a9 0d       ..
@@ -3288,15 +3296,20 @@ wait_loop
     lda set_clock_value                                                                 ; 2ba4: ad 70 1e    .p.
     cmp wait_delay_centiseconds                                                         ; 2ba7: c5 84       ..
     bmi wait_loop                                                                       ; 2ba9: 30 ed       0.
-    lda keys_to_process                                                                 ; 2bab: a5 62       .b
-    and #$f0                                                                            ; 2bad: 29 f0       ).
-    sta keys_to_process                                                                 ; 2baf: 85 62       .b
+;TRIAL: Not sure why needed, seems that keys are less over-responsive now
+;    lda keys_to_process                                                                 ; 2bab: a5 62       .b
+;    and #$f0                                                                            ; 2bad: 29 f0       ).
+;    sta keys_to_process                                                                 ; 2baf: 85 62       .b
+;
     jsr read_keys_and_resolve_direction_keys                                            ; 2bb1: 20 60 28     `(
     jsr animate_flashing_spaces_and_check_for_bonus_life                                ; 2bb4: 20 56 2a     V*
     jsr reset_clock                                                                     ; 2bb7: 20 4d 2a     M*
     ldx #0                                                                              ; 2bba: a2 00       ..
     txa                                                                                 ; 2bbc: 8a          .
     jmp set_palette_colour_ax                                                           ; 2bbd: 4c 35 2a    L5*
+
+unused_13_centiseconds
+    !byte 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 handler_slime
@@ -3335,9 +3348,6 @@ slime_return
 
 item_allowed
     !byte 0
-
-unused37
-    !byte 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 ; Sound data packed into single bytes: channel, amplitude, pitch, duration
@@ -3410,9 +3420,6 @@ skip_using_default_pitch2
     ldx #<(in_game_sound_block)                                                         ; 2c6a: a2 24       .$
     lda #osword_sound                                                                   ; 2c6c: a9 07       ..
     jmp osword                                                                          ; 2c6e: 4c f1 ff    L..            ; SOUND command
-
-unused38
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                                   ; 2c71: 00 00 00... ...
 
 ; *************************************************************************************
 update_sounds
@@ -3495,7 +3502,14 @@ unused39
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 play_one_life
@@ -3539,31 +3553,28 @@ skip_setting_variable
     ; Populate the cave map using the pseudo-random method, using applicable cave parameters
     jsr populate_cave_tiles_pseudo_random
 
-    ; map complete: draw titanium wall borders
+    ; map complete: draw cave borders
     jsr set_ptr_to_start_of_map                                                         ; 2e3c: 20 1a 2a     .*
-    ; loop over all rows
+    ; loop over all rows, plotting side borders from the cave file
     ldx #22                                                                             ; 2e3f: a2 16       ..
 write_left_and_right_borders_loop
     ldy #39                                                                             ; 2e41: a0 27       .'
-    ; write the right hand border
-    lda #$83                                                                            ; 2e43: a9 83       ..
-    sta (ptr_low),y                                                                     ; 2e45: 91 8c       ..
-    dey                                                                                 ; 2e47: 88          .
 hide_cells_loop
     lda (ptr_low),y                                                                     ; 2e48: b1 8c       ..
     ora #$80                                                                            ; 2e4a: 09 80       ..
     sta (ptr_low),y                                                                     ; 2e4c: 91 8c       ..
     dey                                                                                 ; 2e4e: 88          .
     bne hide_cells_loop                                                                 ; 2e4f: d0 f7       ..
-    ; write the left hand border
-    lda #$83                                                                            ; 2e51: a9 83       ..
+    lda (ptr_low),y
+    ora #$80
     sta (ptr_low),y                                                                     ; 2e53: 91 8c       ..
     lda #$40                                                                            ; 2e55: a9 40       .@
     jsr add_a_to_ptr                                                                    ; 2e57: 20 40 22     @"
     dex                                                                                 ; 2e5a: ca          .
     bne write_left_and_right_borders_loop                                               ; 2e5b: d0 e4       ..
-    ; write the top and bottom borders
-    lda #$83                                                                            ; 2e5d: a9 83       ..
+    ; write the top and bottom borders using param_border_tile (steelwall if zero)
+    lda param_border_tile
+    ora #$80
     ldx #39                                                                             ; 2e5f: a2 27       .'
 write_top_and_bottom_borders_loop
     sta tile_map_row_0,x                                                                ; 2e61: 9d 00 50    ..P
@@ -3636,11 +3647,6 @@ screen_dissolve_loop
     dec tick_counter                                                                    ; 2edf: c6 5a       .Z
     bpl screen_dissolve_loop                                                            ; 2ee1: 10 e6       ..
     rts                                                                                 ; 2ee3: 60          `
-
-unused45
-    !byte 0, 0, 0, 0, 0, 0, 0
-    !byte $60, $20, $c6, $5a, $10, $e6, $60, $28, $25, $26, $25, $28, $25, $26, $27     ; 2ee4: 60 20 c6... ` .
-    !byte $28, $25, $25, $25, $26, $20, $20, $23, $24, $24, $24, $23, $20               ; 2ef3: 28 25 25... (%%
 
 ; *************************************************************************************
 got_diamond_so_update_status_bar
@@ -3813,10 +3819,6 @@ check_for_amoeba_timeout
 return13
     rts                                                                                 ; 302b: 60          `
 
-unused48
-    !byte $85, $57, $60, $1c, $1f, $1f, $1f, $1f, $1f, $1f, $1f, $1f, $1f, $1f, $1f     ; 302c: 85 57 60... .W`
-    !byte $1f, $1f, $1f, $1f, $1f                                                       ; 303b: 1f 1f 1f... ...
-
 ; *************************************************************************************
 ; 
 ; update while paused, or out of time, or at end position (i.e. when gameplay started
@@ -3930,10 +3932,6 @@ update_during_pause_mode
     and #2                                                                              ; 30e9: 29 02       ).
     rts                                                                                 ; 30eb: 60          `
 
-unused49
-    !byte $62, $29,   2, $60,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0     ; 30ec: 62 29 02... b).
-    !byte   0,   0,   0,   0,   0                                                       ; 30fb: 00 00 00... ...
-
 ; *************************************************************************************
 demonstration_keys
     !byte   0,   0,   8,   0, $10, $80,   0, $20,   0, $10, $80, $20, $40,   0, $80     ; 3100: 00 00 08... ...
@@ -3983,7 +3981,7 @@ show_credits_loop
     bne show_credits_loop                                                               ; 31e2: d0 f6       ..
     jmp main_menu_loop                                                                  ; 31e4: 4c cb 31    L.1
 
-unused50
+needed2_do_not_reclaim
     !byte $31, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff     ; 31e7: 31 ff ff... 1..
     !byte $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff                              ; 31f6: ff ff ff... ...
 
@@ -4400,16 +4398,6 @@ big_rockford_sprite
 ; *************************************************************************************
 show_menu
 
-    ;TODO: check this
-    ; set the keyboard auto repeat rate to 20 centiseconds
-    ;lda #11
-    ;ldx #64
-    ;jsr osbyte
-
-    ;lda #12
-    ;ldx #50
-    ;jsr osbyte
-
     jsr draw_big_rockford                                                               ; 3a00: 20 b5 2a     .*
     jsr reset_tune                                                                      ; 3a03: 20 00 57     .W
     jsr reset_clock                                                                     ; 3a06: 20 4d 2a     M*
@@ -4539,10 +4527,6 @@ show_rockford_again_and_play_game
 
 return15
     rts                                                                                 ; 3ae1: 60          `
-
-unused51
-    !byte $65, $20,   0, $3b, $4c,   0, $3a, $60, $ff, $ff, $ff, $ff, $ff, $ff, $ff     ; 3ae2: 65 20 00... e .
-    !byte $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff     ; 3af1: ff ff ff... ...
 
 ; *************************************************************************************
 initialise_and_play_game
@@ -4938,7 +4922,9 @@ unused_following_replacement_with_load_cave_file
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 ;Updated - all caves, all difficulty levels are selectable from the menu by default
 number_of_difficuly_levels_available_in_menu_for_each_cave
@@ -5249,8 +5235,10 @@ param_bombs                            ; New element used to control use of bomb
     !byte 0                            ; 0 = no bombs, otherwise allow use of bombs
 param_zero_gravity_time                ; New feature used to control use of gravity (whether rocks/diamonds fall)
     !byte 0                            ; 0 = no zero-gravity time (always gravity/normal), 1-$fe = time until gravity back on, $ff = always zero gravity
-param_unused
-    !byte 0, 0, 0, 0, 0, 0             ; Currently unused, potential future use (cannot be removed)
+param_border_tile                      ; Border tile, will be the steelwall if 0
+    !byte 0                            ; Is just applied to the top and bottom rows as the side borders are specified in the cave file
+param_future_use
+    !byte 0, 0, 0, 0, 0                ; For potential future use (cannot be removed)
 
 cave_map_data                          ; Empty cave (earth and side steel walls)
     !byte $31, $11, $11, $10, $11, $41, $50, $11, $11, $15, $15, $11, $11, $11, $10, $11  ; 4e70
@@ -5332,7 +5320,7 @@ tile_map_row_2
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $81                              ; 5094: 81 81 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 509e: 81 81 81... ...
 
-unused61
+tile_map_row_2_not_used_do_not_reclaim
     !byte   1, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 50a8: 01 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 50b7: 83 83 83... ...
 
@@ -5343,7 +5331,7 @@ tile_map_row_3
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $81                              ; 50d4: 81 81 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 50de: 81 81 81... ...
 
-unused62
+tile_map_row_3_not_used_do_not_reclaim
     !byte   1, $83, $83, $83, $83, $83, $83,   8, $83, $83,   2, $83, $83, $83, $83     ; 50e8: 01 83 83... ...
     !byte $83,   5, $83,   5,   4, $83, $83, $83, $83                                   ; 50f7: 83 05 83... ...
 
@@ -5354,10 +5342,9 @@ tile_map_row_4
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $81                              ; 5114: 81 81 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 511e: 81 81 81... ...
 
-unused_fragment_of_basic1
-    !text "|M|N"                                                                        ; 5128: 7c 4d 7c... |M|
-    !byte $0d,   0, $1e, $23                                                            ; 512c: 0d 00 1e... ...
-    !text "*KEY7 *SAVE C.GA"                                                            ; 5130: 2a 4b 45... *KE
+tile_map_row_4_not_used_do_not_reclaim
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 tile_map_row_5
@@ -5366,11 +5353,9 @@ tile_map_row_5
     !byte $81, $81, $96, $81, $96, $81, $96, $81, $96, $81                              ; 5154: 81 81 96... ...
     !byte $96, $81, $96, $81, $81, $81, $81, $81, $81, $83                              ; 515e: 96 81 96... ...
 
-unused_fragment_of_basic2
-    !text ";0;"                                                                         ; 5168: 3b 30 3b    ;0;
-    !byte $0d,   0, $3c, $10                                                            ; 516b: 0d 00 3c... ..<
-    !text " *FX 178,0,0"                                                                ; 516f: 20 2a 46...  *F
-    !byte $0d,   0, $46, $0c, $20                                                       ; 517b: 0d 00 46... ..F
+tile_map_row_5_not_used_do_not_reclaim
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 tile_map_row_6
@@ -5379,7 +5364,7 @@ tile_map_row_6
     !byte $80, $81, $85, $81, $85, $81, $85, $81, $85, $81                              ; 5194: 80 81 85... ...
     !byte $85, $81, $85, $81, $81, $81, $81, $81, $81, $83                              ; 519e: 85 81 85... ...
 
-unused63
+tile_map_row_6_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 51a8: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 51b7: 83 83 83... ...
 
@@ -5390,7 +5375,7 @@ tile_map_row_7
     !byte $80, $81, $81, $81, $81, $81, $81, $81, $81, $81                              ; 51d4: 80 81 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 51de: 81 81 81... ...
 
-unused64
+tile_map_row_7_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 51e8: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 51f7: 83 83 83... ...
 
@@ -5401,7 +5386,7 @@ tile_map_row_8
     !byte $80, $81, $81, $81, $81, $81, $81, $81, $81, $81                              ; 5214: 80 81 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 521e: 81 81 81... ...
 
-unused65
+tile_map_row_8_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 5228: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 5237: 83 83 83... ...
 
@@ -5412,7 +5397,7 @@ tile_map_row_9
     !byte $84, $80, $81, $81, $81, $81, $81, $81, $81, $81                              ; 5254: 84 80 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 525e: 81 81 81... ...
 
-unused66
+tile_map_row_9_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 5268: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 5277: 83 83 83... ...
 
@@ -5423,7 +5408,7 @@ tile_map_row_10
     !byte $81, $80, $81, $81, $81, $81, $81, $81, $81, $81                              ; 5294: 81 80 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 529e: 81 81 81... ...
 
-unused67
+tile_map_row_10_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 52a8: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 52b7: 83 83 83... ...
 
@@ -5434,7 +5419,7 @@ tile_map_row_11
     !byte $81, $80, $81, $81, $81, $81, $81, $81, $81, $81                              ; 52d4: 81 80 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 52de: 81 81 81... ...
 
-unused68
+tile_map_row_11_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 52e8: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 52f7: 83 83 83... ...
 
@@ -5445,7 +5430,7 @@ tile_map_row_12
     !byte $81, $80, $81, $81, $81, $81, $81, $81, $81, $81                              ; 5314: 81 80 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 531e: 81 81 81... ...
 
-unused69
+tile_map_row_12_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 5328: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 5337: 83 83 83... ...
 
@@ -5456,7 +5441,7 @@ tile_map_row_13
     !byte $81, $80, $81, $81, $81, $81, $81, $81, $81, $81                              ; 5354: 81 80 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 535e: 81 81 81... ...
 
-unused70
+tile_map_row_13_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 5368: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 5377: 83 83 83... ...
 
@@ -5467,7 +5452,7 @@ tile_map_row_14
     !byte $81, $80, $81, $81, $81, $81, $81, $81, $81, $81                              ; 5394: 81 80 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 539e: 81 81 81... ...
 
-unused71
+tile_map_row_14_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 53a8: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 53b7: 83 83 83... ...
 
@@ -5478,7 +5463,7 @@ tile_map_row_15
     !byte $81, $80, $81, $81, $81, $81, $81, $81, $81, $81                              ; 53d4: 81 80 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 53de: 81 81 81... ...
 
-unused72
+tile_map_row_15_not_used_do_not_reclaim
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 53e8: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 53f7: 83 83 83... ...
 
@@ -5593,7 +5578,7 @@ tile_map_row_20
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $81                              ; 5514: 81 81 81... ...
     !byte $81, $81, $81, $81, $81, $81, $81, $81, $81, $83                              ; 551e: 81 81 81... ...
 
-unused73
+tile_map_row_20_not_used_do_not_reclaim
     !byte   1, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83, $83     ; 5528: 01 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83                                   ; 5537: 83 83 83... ...
 
@@ -5604,22 +5589,9 @@ tile_map_row_21
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83                              ; 5554: 83 83 83... ...
     !byte $83, $83, $83, $83, $83, $83, $83, $83, $83, $83                              ; 555e: 83 83 83... ...
 
-
-; unused copy of routine at $5700
-unused74
-    lda #osbyte_flush_buffer_class                                                      ; 5568: a9 0f       ..
-    ldx #0                                                                              ; 556a: a2 00       ..
-    jsr osbyte                                                                          ; 556c: 20 f4 ff     ..            ; Flush all buffers (X=0)
-    ldx #5                                                                              ; 556f: a2 05       ..
-unused77
-    lda tune_start_position_per_channel,x                                               ; 5571: bd e8 56    ..V
-    sta tune_position_per_channel,x                                                     ; 5574: 9d d0 56    ..V
-    dex                                                                                 ; 5577: ca          .
-    bpl unused77                                                                        ; 5578: 10 f7       ..
-    rts                                                                                 ; 557a: 60          `
-
-unused78
-    !byte $a9,   0, $85, $8e, $a9                                                       ; 557b: a9 00 85... ...
+tile_map_row_21_not_used_do_not_reclaim
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 tile_map_row_22
@@ -5628,7 +5600,7 @@ tile_map_row_22
     !byte $8a, $85, $8f, $bd, $d0, $d6, $a8, $e0, $80, $d0                              ; 5594: 8a 85 8f... ...
     !byte $84, $c0, $c1, $f0, $c5, $b9, $80, $d6, $c9, $83                              ; 559e: 84 c0 c1... ...
 
-unused75
+tile_map_row_22_not_used_do_not_reclaim
     !byte $90, $1a, $a8, $bd, $d3, $56, $d0,   6, $b9, $1a, $56, $9d, $d3, $56, $b9     ; 55a8: 90 1a a8... ...
     !byte $0e, $56, $48, $b9, $14, $56, $a8, $68, $de                                   ; 55b7: 0e 56 48... .VH
 
@@ -5639,7 +5611,7 @@ tile_map_row_23
     !byte   9,   1, $48, $bd, $d3, $56, $d0,   3, $fe, $d0                              ; 55d4: 09 01 48... ..H
     !byte $56, $68, $a6, $8f, $9d, $bc, $56, $98, $9d, $be                              ; 55de: 56 68 a6... Vh.
 
-unused76
+tile_map_row_23_not_used_do_not_reclaim
     !byte $56, $8a, $18, $69, $b8, $aa, $a0, $56, $a9,   7, $20, $f1, $ff, $e6, $8e     ; 55e8: 56 8a 18... V..
     !byte $26, $8e, $e0,   3, $d0, $82, $60, $83, $83                                   ; 55f7: 26 8e e0... &..
 
@@ -5951,16 +5923,12 @@ pydis_end
 !if (64-40) != $18 {
     !error "Assertion failed: 64-40 == $18"
 }
-!if (<(in_game_sound_block)) != $24 {
-    !error <(in_game_sound_block)
-    !error "Assertion failed: <(in_game_sound_block) == $24"
+!if (<(in_game_sound_block)) != $04 {
+    !error "Assertion failed: <(in_game_sound_block) == $04"
 }
-!if (<(palette_block)) != $29 {
-    !error "Assertion failed: <(palette_block) == $29"
+!if (<(palette_block)) != $20 {
+    !error "Assertion failed: <(palette_block) == $20"
 }
-;!if (<(set_clock_value)) != $70 {
-;    !error "Assertion failed: <(set_clock_value) == $70"
-;}
 !if (<(sprite_addr_space)) != $00 {
     !error "Assertion failed: <(sprite_addr_space) == $00"
 }
@@ -5974,12 +5942,6 @@ pydis_end
 !if (<bonus_life_text) != $64 {
     !error "Assertion failed: <bonus_life_text == $64"
 }
-;!if (<cell_types_that_will_turn_into_diamonds) != $30 {
-;    !error "Assertion failed: <cell_types_that_will_turn_into_diamonds == $30"
-;}
-;!if (<cell_types_that_will_turn_into_large_explosion) != $40 {
-;    !error "Assertion failed: <cell_types_that_will_turn_into_large_explosion == $40"
-;}
 !if (<current_status_bar_sprites) != $28 {
     !error "Assertion failed: <current_status_bar_sprites == $28"
 }
@@ -5991,9 +5953,6 @@ pydis_end
 }
 !if (<grid_of_currently_displayed_sprites) != $00 {
     !error "Assertion failed: <grid_of_currently_displayed_sprites == $00"
-}
-!if (<handler_slime) != $c0 {
-    !error "Assertion failed: <handler_slime == $c0"
 }
 !if (<highscore_for_player_2) != $5e {
     !error "Assertion failed: <highscore_for_player_2 == $5e"
@@ -6319,9 +6278,6 @@ pydis_end
 !if (>(palette_block)) != $2a {
     !error "Assertion failed: >(palette_block) == $2a"
 }
-;!if (>(set_clock_value)) != $1e {
-;    !error "Assertion failed: >(set_clock_value) == $1e"
-;}
 !if (>(sprite_addr_space)) != $13 {
     !error "Assertion failed: >(sprite_addr_space) == $13"
 }
@@ -6661,21 +6617,6 @@ pydis_end
 !if (command_pitch-200) != $560e {
     !error "Assertion failed: command_pitch-200 == $560e"
 }
-;!if (handler_table_high+12) != $21dc {
-;    !error "Assertion failed: handler_table_high+12 == $21dc"
-;}
-!if (in_game_sound_data+1) != $2c01 {
-    !error "Assertion failed: in_game_sound_data+1 == $2c01"
-}
-!if (in_game_sound_data+2) != $2c02 {
-    !error "Assertion failed: in_game_sound_data+2 == $2c02"
-}
-!if (in_game_sound_data+3) != $2c03 {
-    !error "Assertion failed: in_game_sound_data+3 == $2c03"
-}
-;!if (initial_values_of_variables_from_0x50) != $1e60 {
-;    !error "Assertion failed: initial_values_of_variables_from_0x50 == $1e60"
-;}
 !if (inkey_key_b) != $9b {
     !error "Assertion failed: inkey_key_b == $9b"
 }
@@ -6799,9 +6740,6 @@ pydis_end
 !if (map_bomb) != $0b {
     !error "Assertion failed: map_bomb == $0b"
 }
-;!if (mark_cell_above_as_processed_and_move_to_next_cell - branch_instruction - 2) != $26 {
-;    !error "Assertion failed: mark_cell_above_as_processed_and_move_to_next_cell - branch_instruction - 2 == $26"
-;}
 !if (opcode_dex) != $ca {
     !error "Assertion failed: opcode_dex == $ca"
 }
@@ -6985,6 +6923,3 @@ pydis_end
 !if (total_caves) != $14 {
     !error "Assertion failed: total_caves == $14"
 }
-;!if (update_rock_or_diamond_that_can_fall - branch_instruction - 2) != $5f {
-;    !error "Assertion failed: update_rock_or_diamond_that_can_fall - branch_instruction - 2 == $5f"
-;}

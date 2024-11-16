@@ -37,6 +37,7 @@ SPRITES_FILE = ""
 #SPRITES_FILE = "Bubble_Bobble_sprites.bin"
 #SPRITES_FILE = "Pacman_sprites.bin"
 #SPRITES_FILE = "Easter_sprites.bin"
+COPY_FOLDER_FOR_ASM_BUILD = "BDplus1caves"
 TIDY_OUTPUT_FOLDER = False
 
 ################################################################################
@@ -112,7 +113,7 @@ def add_cave_map_row(cave_count, cave_line_count, line, output_cave_json, output
 
     last_value = 0
     char_count = 0
-    for c in line.strip():
+    for c in line.strip('\n'):
 
         e = 0
         if c in element_map:
@@ -211,8 +212,11 @@ def generate_caves(all_input_lines, output_subfolder):
             for i in range(48):
                 output_cave_params.append(0)
 
-            #Set the initial fill tile to earth, this maybe changed in some caves
+            #Set the initial fill tile to earth, this may be changed in some caves
             output_cave_params[addresses.get("InitialFill")] = 1
+
+            #Set the border tile to steelwall, this may be changed in some caves
+            output_cave_params[addresses.get("BorderTile")] = 3
 
         #End of a cave
         elif line == "[/cave]\n":
@@ -332,7 +336,7 @@ def generate_caves(all_input_lines, output_subfolder):
                         add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", intermission_cave)
 
                     #Decode Initial fill element if present
-                    elif line_param[0] == "InitialFill":
+                    elif line_param[0] in ["InitialFill","BorderTile"]:
                         add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", get_map_value(line_param[1]))
 
                     elif line_param[0] == "Colors":
@@ -372,7 +376,7 @@ def generate_caves(all_input_lines, output_subfolder):
         #Within the map section
         elif within_map:
 
-            map_line = line.strip()
+            map_line = line.strip('\n')
             cave_line_count += 1
             add_cave_map_row(cave_count, cave_line_count, map_line, output_cave_json, output_cave_params, output_cave_map_bytes, unsupported_elements)
             output_cave_json["Map"].append(map_line)  #Add line to json file
@@ -495,6 +499,10 @@ if __name__ == '__main__':
             #Use the BD file contents to generate caves
             print(f"Generating caves for {BD_filename}")
             generate_caves(all_input_lines, output_subfolder)
+
+            #Shortcut way to get caves into next compiled asm build / ssd build
+            if COPY_FOLDER_FOR_ASM_BUILD != "":
+                copy_tree(output_subfolder, path.join(base_path, COPY_FOLDER_FOR_ASM_BUILD))
 
             #Copy the source code for updating sprites and creation of SSD file
             copy_tree(BD_code_folder, output_subfolder)
