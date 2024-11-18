@@ -329,6 +329,14 @@ def generate_caves(all_input_lines, output_subfolder):
                     #These parameters may have up to 5 values for each level, space delimited
                     elif line_param[0] in ["DiamondsRequired", "CaveTime", "RandSeed"]:
                         line_values = [safe_byte(int(x)) for x in line_param[1].strip().split(" ")]
+
+                        #If less than 5 line values, use the last value for the missing ones
+                        param_count = len(line_values)
+                        if param_count < 5:
+                            last_value = line_values[param_count-1]
+                            for n in range(param_count,5):
+                                line_values.append(last_value)
+
                         add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", line_values)
 
                     #AmoebaTime and MagicWallTime are optionally present, if there use it, single value per cave

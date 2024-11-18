@@ -210,6 +210,7 @@
         ]
     },
     {
+        "Bombs": 2,
         "CaveLetter": "D",
         "CaveNumber": 4,
         "CaveTime": [
@@ -289,6 +290,10 @@
         "CaveLetter": "Q",
         "CaveNumber": 5,
         "CaveTime": [
+            45,
+            45,
+            45,
+            45,
             45
         ],
         "Colors": [
@@ -299,6 +304,10 @@
         "DiamondExtraValue": 1,
         "DiamondValue": 1,
         "DiamondsRequired": [
+            35,
+            35,
+            35,
+            35,
             35
         ],
         "Intermission": true,
@@ -418,6 +427,10 @@
         "DiamondExtraValue": 30,
         "DiamondValue": 30,
         "DiamondsRequired": [
+            5,
+            5,
+            5,
+            5,
             5
         ],
         "InitialFill": 1,
@@ -624,6 +637,10 @@
         "CaveLetter": "R",
         "CaveNumber": 10,
         "CaveTime": [
+            60,
+            60,
+            60,
+            60,
             60
         ],
         "Colors": [
@@ -634,6 +651,10 @@
         "DiamondExtraValue": 15,
         "DiamondValue": 15,
         "DiamondsRequired": [
+            15,
+            15,
+            15,
+            15,
             15
         ],
         "Intermission": true,
@@ -680,6 +701,10 @@
         "DiamondExtraValue": 25,
         "DiamondValue": 25,
         "DiamondsRequired": [
+            4,
+            4,
+            4,
+            4,
             4
         ],
         "InitialFill": 1,
@@ -949,6 +974,10 @@
         "CaveLetter": "S",
         "CaveNumber": 15,
         "CaveTime": [
+            60,
+            60,
+            60,
+            60,
             60
         ],
         "Colors": [
@@ -959,6 +988,10 @@
         "DiamondExtraValue": 20,
         "DiamondValue": 20,
         "DiamondsRequired": [
+            50,
+            50,
+            50,
+            50,
             50
         ],
         "Intermission": true,
@@ -1082,6 +1115,10 @@
         "DiamondExtraValue": 50,
         "DiamondValue": 50,
         "DiamondsRequired": [
+            5,
+            5,
+            5,
+            5,
             5
         ],
         "InitialFill": 1,
@@ -1292,6 +1329,10 @@
         "CaveLetter": "T",
         "CaveNumber": 20,
         "CaveTime": [
+            30,
+            30,
+            30,
+            30,
             30
         ],
         "Colors": [
@@ -1302,6 +1343,10 @@
         "DiamondExtraValue": 14,
         "DiamondValue": 14,
         "DiamondsRequired": [
+            1,
+            1,
+            1,
+            1,
             1
         ],
         "Intermission": true,

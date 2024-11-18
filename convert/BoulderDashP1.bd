@@ -124,6 +124,7 @@ DiamondsRequired=14 15 16 18 20
 DiamondValue=15
 MagicWallTime=150
 SlimePermeability=10
+Bombs=2
 Colors=Black Cyan Blue White
 InitialFill=SPACE
 RandSeed=0 4 102 151 100
