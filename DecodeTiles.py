@@ -20,8 +20,9 @@ WHITE = "\033[1;37m"
 NEGATIVE = "\033[7m"
 END = "\033[0m"
 
-NUM_SPRITE_BYTES = 2912
 NUM_BYTES_PER_TILE = 32
+#NUM_SPRITE_BYTES = 2912  #For BD1,2,3
+NUM_SPRITE_BYTES = 2912 + (5 * NUM_BYTES_PER_TILE) #For BD+1 with additional sprites
 #palette = [BLACK, PURPLE, RED, WHITE]
 palette = [BLACK, GREEN, RED, WHITE]
 
@@ -32,7 +33,7 @@ OUTPUT_SPRITES_TO_FILE = False
 #This is at the start address in the source code, not need to position to a location - input_source_file.seek(pos)
 base_path = path.dirname(path.abspath(__file__))
 if USE_INPUT_SPRITES_FILE:
-    BD_input_sprites_folder = path.join(base_path, "BDconvert", "sprites")
+    BD_input_sprites_folder = path.join(base_path, "convert", "sprites")
     sprites_bytes = []
     for i in range(32):  #First 32 bytes are the space character, all zeros
         sprites_bytes.append(0)
@@ -42,7 +43,7 @@ if USE_INPUT_SPRITES_FILE:
                 if byte != '':
                     sprites_bytes.append(int(byte))
 else:
-    BD_code_folder = path.join(base_path, "BDcode")
+    BD_code_folder = path.join(base_path, "code")
     input_source_file = open(path.join(BD_code_folder, "BDSH3"), "rb")  #Open the file as binary
     sprites_bytes = input_source_file.read(NUM_SPRITE_BYTES)
     input_source_file.close()

@@ -253,7 +253,7 @@ class DiskImage:
         print("-help -?, -disk -d, -type -t, -side -s, -cat -c, -extract -e")
         print("-extract* -e*, -insert -i, -insert* -i*, -delete -del, -compact -com\n")
 
-    def verbose(i):
+    def verbose(self, i):
         self.verbose_level = i
 
     def set_disk(self, disk):

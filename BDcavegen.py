@@ -37,7 +37,11 @@ SPRITES_FILE = ""
 #SPRITES_FILE = "Bubble_Bobble_sprites.bin"
 #SPRITES_FILE = "Pacman_sprites.bin"
 #SPRITES_FILE = "Easter_sprites.bin"
-COPY_FOLDER_FOR_ASM_BUILD = "BDplus1caves"
+#COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDashP1"
+#COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDash01"
+#COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDash02"
+#COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDash03"
+COPY_FOLDER_FOR_ASM_BUILD = ""
 TIDY_OUTPUT_FOLDER = False
 
 ################################################################################
@@ -476,8 +480,8 @@ if __name__ == '__main__':
     ssd_file_settings = config_settings["ssd_file_settings"]
     config_file.close()
 
-    BD_code_folder = path.join(base_path, "BDcode")
-    BD_files_folder = path.join(base_path, "BDconvert")
+    BD_code_folder = path.join(base_path, "code")
+    BD_files_folder = path.join(base_path, "convert")
 
     ### Process each BD file in the conversion folder
     for filename in os.listdir(BD_files_folder):
@@ -511,7 +515,7 @@ if __name__ == '__main__':
             if SPRITES_FILE != "":
                 print(f"Updating sprites for {BD_filename} using {SPRITES_FILE}")
                 #Note sprites are defined at the start of the file (position 0)
-                bd_sprites_file = path.join(base_path, "BDsprites", SPRITES_FILE)
+                bd_sprites_file = path.join(base_path, "sprites", SPRITES_FILE)
                 poke_source_code_sprites(bd_sprites_file, 0, output_subfolder)
 
             #Move BD file and cave definition json file to completed folder
