@@ -3,6 +3,10 @@
         "CaveLetter": "A",
         "CaveNumber": 1,
         "CaveTime": [
+            120,
+            120,
+            120,
+            120,
             120
         ],
         "Colors": [
@@ -13,6 +17,10 @@
         "DiamondExtraValue": 20,
         "DiamondValue": 15,
         "DiamondsRequired": [
+            18,
+            18,
+            18,
+            18,
             18
         ],
         "Map": [
@@ -52,16 +60,24 @@
         "CaveLetter": "B",
         "CaveNumber": 2,
         "CaveTime": [
+            100,
+            100,
+            100,
+            100,
             100
         ],
         "Colors": [
-            5,
-            4,
+            6,
+            2,
             7
         ],
         "DiamondExtraValue": 40,
         "DiamondValue": 35,
         "DiamondsRequired": [
+            8,
+            8,
+            8,
+            8,
             8
         ],
         "MagicWallAmoebaTime": 16,
@@ -102,16 +118,24 @@
         "CaveLetter": "C",
         "CaveNumber": 3,
         "CaveTime": [
+            180,
+            180,
+            180,
+            180,
             180
         ],
         "Colors": [
-            3,
-            2,
+            4,
+            5,
             7
         ],
         "DiamondExtraValue": 20,
         "DiamondValue": 20,
         "DiamondsRequired": [
+            12,
+            16,
+            24,
+            28,
             32
         ],
         "Map": [
@@ -151,16 +175,24 @@
         "CaveLetter": "D",
         "CaveNumber": 4,
         "CaveTime": [
+            180,
+            180,
+            180,
+            180,
             180
         ],
         "Colors": [
-            5,
+            6,
             4,
-            3
+            7
         ],
         "DiamondExtraValue": 12,
         "DiamondValue": 10,
         "DiamondsRequired": [
+            16,
+            18,
+            20,
+            22,
             25
         ],
         "MagicWallAmoebaTime": 130,
@@ -201,16 +233,24 @@
         "CaveLetter": "Q",
         "CaveNumber": 5,
         "CaveTime": [
-            10
+            30,
+            30,
+            30,
+            30,
+            30
         ],
         "Colors": [
             6,
-            4,
+            1,
             7
         ],
         "DiamondExtraValue": 45,
         "DiamondValue": 35,
         "DiamondsRequired": [
+            11,
+            12,
+            13,
+            14,
             15
         ],
         "Intermission": true,
@@ -242,16 +282,24 @@
         "CaveLetter": "E",
         "CaveNumber": 6,
         "CaveTime": [
+            200,
+            200,
+            200,
+            200,
             200
         ],
         "Colors": [
-            5,
             1,
+            2,
             7
         ],
         "DiamondExtraValue": 26,
         "DiamondValue": 26,
         "DiamondsRequired": [
+            9,
+            10,
+            11,
+            12,
             13
         ],
         "Map": [
@@ -262,7 +310,7 @@
             "W...rw.....wwwwww...rw. .rrw.rr.wr.r.r.W",
             "W.r..wd..r..rw....r..wr.r.rw.rdw r.r.r W",
             "W ...wr .w.r...r  rrrwrr.. w.rwrw ..rrrW",
-            "W r.rw....w.. .rr..r.w..r.r..wr..w.rrr.W",
+            "W r r ....w.. .rr..r.w..r.r..wr..w.rrr.W",
             "Wwrwwwwwr..w..r.wwwwwwwww...w.rr.rw..rrW",
             "W...rw..r...wrr.rrrr.w..d..w.. r.r.w.r.W",
             "W.r .w.r.rr.wwr rr.. ......rr..r....w..W",
@@ -271,7 +319,7 @@
             "W.w..w... ..wrd.w. r.wwwwwwrwwwwwwww.rrW",
             "Wdrw....rr.rw.rr.w ....w..rrr..w.qr. rrW",
             "W.q.w.r..r.rw... rw.r.rwr .r.  wrr....rW",
-            "Wrrr.w. .. .wr.r.wrw..rwqr....rwrr..r.rW",
+            "Wrrr.w. .. .wr.r.wrw..rwqr....rwrr....rW",
             "W.r.. w.rr..w.r.w. . .wwwwwrwwwwwwww.r.W",
             "Wr. ...wr... ..w.r..r.rw...rr.dw.r.r. .W",
             "Wrr..rr.w..  .w.dr....rwr...r .w.rr. ..W",
@@ -291,16 +339,24 @@
         "CaveLetter": "F",
         "CaveNumber": 7,
         "CaveTime": [
+            130,
+            130,
+            130,
+            130,
             130
         ],
         "Colors": [
-            2,
             4,
+            2,
             7
         ],
         "DiamondExtraValue": 6,
         "DiamondValue": 5,
         "DiamondsRequired": [
+            54,
+            61,
+            68,
+            77,
             90
         ],
         "Map": [
@@ -340,16 +396,24 @@
         "CaveLetter": "G",
         "CaveNumber": 8,
         "CaveTime": [
+            200,
+            200,
+            200,
+            200,
             200
         ],
         "Colors": [
-            3,
-            1,
+            6,
+            5,
             7
         ],
         "DiamondExtraValue": 5,
         "DiamondValue": 4,
         "DiamondsRequired": [
+            80,
+            80,
+            80,
+            80,
             80
         ],
         "Map": [
@@ -389,41 +453,49 @@
         "CaveLetter": "H",
         "CaveNumber": 9,
         "CaveTime": [
+            200,
+            200,
+            200,
+            200,
             200
         ],
         "Colors": [
+            2,
             1,
-            4,
-            3
+            7
         ],
         "DiamondExtraValue": 5,
         "DiamondValue": 4,
         "DiamondsRequired": [
+            59,
+            69,
+            79,
+            89,
             99
         ],
-        "MagicWallAmoebaTime": 160,
+        "MagicWallAmoebaTime": 80,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-            "X................r..........aaa..P.....W",
-            "W......................................W",
-            "W.................r...............r..rrW",
-            "W......................................W",
-            "W........r......................r......W",
-            "W..............................r.......W",
-            "W......................r.......r.rr....W",
+            "X................r........aaaaa..P.....W",
+            "W.......r.................aaaaa........W",
+            "W..r........r.....r...............r..rrW",
+            "W...........r..........................W",
+            "W........r..........r...........r......W",
+            "W....r............r........r...r.......W",
+            "W............r.........r.......r.rr....W",
             "Wr.......r......r......................W",
             "W..r...................r...............W",
-            "W.....r................................W",
+            "W.....r......................r.........W",
             "W........r.......................r.....W",
             "W.......r................r..........r..W",
             "W......................................W",
             "W......................r..r......r.....W",
             "Wwwwwwww.wwwwwwww.wwwwwwww.wwwwwwww.wwwW",
-            "Wc cwcccccc cwcccccc cwcccccc cwcccccc W",
-            "Wc cccccwwc cccccwwc cccccwwc cccccwwc W",
-            "Wc cwccccwc cwccccwc cwccccwc cwccccwc W",
-            "Wc cwwccccc cwwccccc cwwccccc cwwccccc W",
-            "Wc ccccccwc ccccccwc ccccccwc ccccccwc W",
+            "W  cwcccccc cwcccccc cwcccccc cwcccccc W",
+            "W  c    wwc c    wwc c    wwc c    wwc W",
+            "W  cw    wc cw    wc cw    wc cw    wc W",
+            "W  cww    c cww    c cww    c cww    c W",
+            "W  ccccccwc ccccccwc ccccccwc ccccccwc W",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -439,16 +511,24 @@
         "CaveLetter": "R",
         "CaveNumber": 10,
         "CaveTime": [
-            10
+            20,
+            20,
+            20,
+            20,
+            20
         ],
         "Colors": [
             4,
             2,
-            7
+            3
         ],
         "DiamondExtraValue": 35,
         "DiamondValue": 35,
         "DiamondsRequired": [
+            14,
+            14,
+            14,
+            14,
             14
         ],
         "Intermission": true,
@@ -479,16 +559,24 @@
         "CaveLetter": "I",
         "CaveNumber": 11,
         "CaveTime": [
+            180,
+            180,
+            180,
+            180,
             180
         ],
         "Colors": [
-            6,
-            2,
-            7
+            1,
+            4,
+            3
         ],
         "DiamondExtraValue": 25,
         "DiamondValue": 22,
         "DiamondsRequired": [
+            10,
+            12,
+            14,
+            16,
             18
         ],
         "MagicWallAmoebaTime": 10,
@@ -506,14 +594,14 @@
             "Wrr....w...r..rw... ..........MMMMMMMM.W",
             "Wr...r..w.rr....wrq...... ...r        rW",
             "Wwr ....rw..r..q w..r .r .....        .W",
-            "W.wr.rr...w.......w..q.r...q..        .W",
+            "W.wr.rr...w.......w..r.r...r..        .W",
             "W.rw..q.r..w... ...w..........        .W",
             "W...wr......w.rrr...w.. .r....        rW",
             "W... w .r.r..w.r...r.wr.......        .W",
             "W...r.w. r. ..w..r....w ......MMMMMMMM.W",
             "W. ....w..r....w.......w.. ..r...... .qW",
             "W.P... ......r..w... .. .r...r...rr...rW",
-            "W.r....rq.. r.r. w..... r..qr...rr..rr.W",
+            "W.r....r... r.r. w..... r..qr...rr..rr.W",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -529,29 +617,37 @@
         "CaveLetter": "J",
         "CaveNumber": 12,
         "CaveTime": [
-            120
+            160,
+            160,
+            160,
+            160,
+            160
         ],
         "Colors": [
-            5,
             2,
-            7
+            5,
+            6
         ],
         "DiamondExtraValue": 30,
         "DiamondValue": 30,
         "DiamondsRequired": [
+            9,
+            10,
+            11,
+            12,
             13
         ],
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "W......................................W",
-            "W......................................W",
-            "W......................................W",
-            "W......................................W",
-            "W......................................W",
-            "W......................................W",
-            "W......................................W",
-            "W......................................W",
-            "W......................................W",
+            "W......r....r..........................W",
+            "W..r....................r.......rr.....W",
+            "W.........r....r.....r..............r..W",
+            "W......r...........r.r........r.....r..W",
+            "W....r....r.....r....r.r...............W",
+            "W.........rr..............r.......r....W",
+            "W.............r..............r.........W",
+            "W.....r................................W",
             "W......................................W",
             "W......................................W",
             "Wwwwwwwwwwwwwwwwwww.wwwwwwwwwwwwwwwwww.W",
@@ -578,40 +674,48 @@
         "CaveLetter": "K",
         "CaveNumber": 13,
         "CaveTime": [
+            180,
+            175,
+            170,
+            165,
             160
         ],
         "Colors": [
-            2,
-            4,
-            7
+            5,
+            1,
+            6
         ],
         "DiamondExtraValue": 21,
         "DiamondValue": 21,
         "DiamondsRequired": [
+            15,
+            16,
+            17,
+            18,
             19
         ],
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-            "W....r..w. .   .r.w.q..rw....r..w.d..r.W",
+            "W....r..w. .   .rrw.q..rw....r..w.d..r.W",
             "W ...r .w.........wr....w.....d.w...r.rW",
-            "W r.......d.r.  .rw...r.w. .. . .. ....W",
-            "W... ...w.d.q.. ..w ....wd .....w.qr.d.W",
-            "W....r..w....... .w.. ..wr...q..w....r.W",
-            "Wwwwwwwwwwwwwwwwwwwww.wwwwwwwwwwwwwwwwwW",
-            "Wq  . ..w... .....wr. ..w ......w.r....W",
+            "W r.........r. .. w...r.w. .. . .. ....W",
+            "W... ...w.d.q ... w ..d.wd .....w.qr.d.W",
+            "W....r..w....     w.. ..wr...q..w....r.W",
+            "Wwwwww wwwwwwwwwwwwwwwwwwwwwwwwwwwwwww W",
+            "Wq  . ..w... .....wr. ..w ......w.r... W",
             "W....... .d....r.. ...r...... .... .r..W",
             "Wr......w...r.....w.PXr.w....dr.w. .r .W",
             "W..d....w....r.. .w.....w.. ....w .....W",
             "Wwwwwwwwwwwwwwwwwwwww.wwwwwwwwwwwwwwwwwW",
-            "W.. . . wr...r....wr....w...r...w.. .rrW",
-            "W..r..q.w........rw..d. wq..r...w.d..r W",
-            "W..... .... ....d.w... rw..........d..rW",
-            "W. .....wr... r...w.. q w....d..wr.... W",
-            "Wwww.wwwwwwww.wwwww.....wwww.wwwwwww.wwW",
-            "W.d...r w.r...r...wr...dw.... ..w.. ...W",
-            "W..d.rr.w....rr...wr.q. w.r...r.w. .d. W",
-            "W.......w ....r.r.w.....w.r.. .qw......W",
-            "Wr...r..w..d. ....wrr...wr . ...w....q.W",
+            "W..     wr...r....wr....w...r...w.. .rrW",
+            "W..r..q.w........rw..d.rwq..r...w.d..r W",
+            "W..... .... ....d.w .. .w..........d..rW",
+            "W. .....wr... r...w . q w....d..wr.... W",
+            "Wwww.wwwwwwww.wwwww ... wwww.wwwwwww.wwW",
+            "W.d...r w.r...r...w ... w.... ..w.. ...W",
+            "W..d.rr.w....rr...w  q. w.r...r.w. .d. W",
+            "W.......w ....r.r.w ... w.r.. .qw......W",
+            "Wr...r..w..d. ....w r.  wr .d...w....q.W",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -627,16 +731,24 @@
         "CaveLetter": "L",
         "CaveNumber": 14,
         "CaveTime": [
-            100
+            150,
+            150,
+            150,
+            150,
+            150
         ],
         "Colors": [
             6,
-            4,
-            7
+            2,
+            3
         ],
         "DiamondExtraValue": 10,
         "DiamondValue": 10,
         "DiamondsRequired": [
+            22,
+            28,
+            34,
+            38,
             42
         ],
         "Map": [
@@ -676,6 +788,10 @@
         "CaveLetter": "S",
         "CaveNumber": 15,
         "CaveTime": [
+            40,
+            40,
+            40,
+            40,
             40
         ],
         "Colors": [
@@ -686,6 +802,10 @@
         "DiamondExtraValue": 30,
         "DiamondValue": 20,
         "DiamondsRequired": [
+            20,
+            21,
+            22,
+            23,
             24
         ],
         "Intermission": true,
@@ -716,19 +836,26 @@
         "CaveLetter": "M",
         "CaveNumber": 16,
         "CaveTime": [
+            170,
+            165,
+            160,
+            155,
             150
         ],
         "Colors": [
-            1,
+            2,
             5,
-            3
+            7
         ],
         "DiamondExtraValue": 20,
         "DiamondValue": 15,
         "DiamondsRequired": [
+            22,
+            24,
+            26,
+            28,
             30
         ],
-        "MagicWallAmoebaTime": 255,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "W..r.......d.. raa.......d.....d..d. ..X",
@@ -748,9 +875,9 @@
             "W............ ..aa.......d...........d.W",
             "W..r...r.r......aa .... ........r...r..W",
             "W....rr.........aa.d.. .....d. ...r. ..W",
-            "W......... .....aawwwwwwwwwwwwwwwwwwww.W",
-            "W.......d .....raawqqqqqqqqqqqqqqqqqqq W",
-            "W .......dd....daawqqqqqqqqqqqqqqqqqqq.W",
+            "W......... .....aawwwwwwwwwwwwwwwwwwww W",
+            "W.......d .....raawq q q q q q q q q q W",
+            "W .......dd....daawq q q q q q q q q q W",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -766,36 +893,44 @@
         "CaveLetter": "N",
         "CaveNumber": 17,
         "CaveTime": [
-            120
+            160,
+            160,
+            160,
+            160,
+            160
         ],
         "Colors": [
-            2,
-            4,
-            6
+            5,
+            1,
+            3
         ],
         "DiamondExtraValue": 9,
         "DiamondValue": 9,
         "DiamondsRequired": [
+            34,
+            37,
+            40,
+            43,
             46
         ],
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "W......................................W",
-            "W.wwwwrr..rrwwww.w  q  w.wwwwwwwwww.rw.W",
-            "W.w  q......q  w.w ... w.w.......rw..w.W",
+            "W.wwwwr....rwwww.w     w.wwwwwwwwww.rw.W",
+            "W.w  q......q  w.w rrr w.w.......rw..w.W",
             "W.w wwwwwwwwww w.w .d. w.w.....wqwwwcw.W",
             "W.w w  dddd  w w.w ... w.w.....w wdw w.W",
             "W.w w wdwwdw w w.w     w.w.....w wdw w.W",
             "W.w w wdwwdw w w.w.....w.w.....w wdw w.W",
-            "W.w   wddddw   w.w  q  w.w.....w wdw w.W",
-            "W.w wwwwwwwwww w.w ... w.wr.d..w wdw w.W",
+            "W.w   wddddw   w.w     w.w.....w wdw w.W",
+            "W.w wwwwwwwwww w.w rrr w.w..d..w wdw w.W",
             "W.w            w.w .d. w.wwrwwwwwwww w.W",
             "W.wwww wwww wwww.w ... w.w.d.......w w.W",
             "W.w    wddw    w.w     w.wwwwwwwww.w w.W",
             "W.w wwwwddwwww w.w.....w.w......rw.w w.W",
             "W.w w  dddd  w w.w  q  w.w.......w.w w.W",
-            "W.w w wwwwww w w.w ... w.wq......w.w w.W",
-            "W.w w  dddd  w w.w .d. w.wr.d....wdw w.W",
+            "W.w w wwwwww w w.w rrr w.wq......w.w w.W",
+            "W.w w  dddd  w w.w .d. w.w..d....wdw w.W",
             "W.w w wwwwww w w.w ... w.wwrwwwwwwww w.W",
             "W.w            w.w     w.w.d.......w w.W",
             "W.wwwwwwwwwwwwww.w.....w.wwwwwwwwwwwww.W",
@@ -815,41 +950,49 @@
         "CaveLetter": "O",
         "CaveNumber": 18,
         "CaveTime": [
+            200,
+            200,
+            200,
+            200,
             200
         ],
         "Colors": [
-            5,
+            1,
             2,
-            7
+            3
         ],
         "DiamondExtraValue": 90,
         "DiamondValue": 18,
         "DiamondsRequired": [
+            20,
+            22,
+            24,
+            26,
             28
         ],
-        "MagicWallAmoebaTime": 60,
+        "MagicWallAmoebaTime": 160,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-            "W.......w.d........r.r...r.w...........W",
+            "W.......wrd........r.r...r.w...........W",
             "W.rrrrr.w...............d..w.......d...W",
             "W.rrrrr.w...........w qw...w....r.....wW",
-            "W.......ww.....d...w  w....w.d.......w.W",
-            "W.MMMMM.w.w.r.....w  w.....w........w..W",
-            "W.     .wr.w.....w  w......w.......wq..W",
-            "W.     .w...w...w  w.......w.....rw...rW",
-            "Wwwwwwwww....w.w  w.....r..w.....w.....W",
+            "W.......w......d...w  w....w.d.......w.W",
+            "W.MMMMM.w...r.....w  w.....w........w..W",
+            "W.     .w........w  w......w.......wd..W",
+            "W.     .w.......w  w.......w.....rw...rW",
+            "Wwwwwwwww......w  w.....r..w.....w.....W",
             "W..d..........w  w.r.......w..w.w..r...W",
             "W.........r..w  w..........w...M......PW",
-            "W...........w  ww.....r.......w.w......W",
-            "Wr.........w  w..w......d....w...wd....W",
-            "W.........w  w..r.w.........w.....w....W",
-            "W....r....w w......w...............w..rW",
-            "W.......d.w w.....d.w...........r...w..W",
-            "W.........w w.d......w...............w.W",
-            "W.........w w.......q.w...............wW",
-            "W..r......w w.r........w.............d.W",
-            "W.....d...wMw.....r.....w.r....d....r..W",
-            "WX......... w.........d..w.............W",
+            "W........ ..w  wwd....r.......w.w......W",
+            "Wr....... .w  w..w......d....w...wd....W",
+            "W....d... w  w..r.w.........w.....w....W",
+            "W....r... w w......w...............w..rW",
+            "W.......d w w.....d.w...........r...w..W",
+            "W........ w w.d......w...............w.W",
+            "W........ w w.......q.w................W",
+            "W..r.....qwMw.r........w.............d.W",
+            "W.....d...   .....r.....w.r....d....r..W",
+            "WX........   .........d..w.............W",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -865,41 +1008,49 @@
         "CaveLetter": "P",
         "CaveNumber": 19,
         "CaveTime": [
-            160
+            180,
+            180,
+            180,
+            180,
+            180
         ],
         "Colors": [
+            5,
             4,
-            1,
             7
         ],
         "DiamondExtraValue": 15,
         "DiamondValue": 10,
         "DiamondsRequired": [
-            45
+            30,
+            35,
+            40,
+            45,
+            50
         ],
-        "MagicWallAmoebaTime": 5,
+        "MagicWallAmoebaTime": 60,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "WP.....................................W",
-            "W.........................rwwwwwwww....W",
+            "W..............r...r...r..rwwwwwwww....W",
             "W....wwwwwwwr..............wddddddw....W",
-            "W....wqdddqw...............wdrrrrdw....W",
-            "W....wqdd.qw...............wddddddw....W",
-            "W....wqdddqw...............wwwwwwww....W",
-            "W....wqdd.qw...........................W",
+            "W....w.ddd.w.....r...r.....wdrrrrdw....W",
+            "W....w.ddd.w...............wddddddw....W",
+            "W....w.ddd.w...............wwwwwwww....W",
+            "W....w.ddd.w...........................W",
             "W....wwwwwww....wwwwwwwww..............W",
-            "W..............rw.rrrrrrw..............W",
+            "W..............rw..rrrrrw..............W",
             "W...............w.......w....wwwwwwww..W",
-            "W..wwwwwww......w.      w...rw.rw.r w..W",
-            "W..wrrrrrw......w. c c cw....w..w.. w..W",
-            "W..wrrrrrwr.....w.      w....w. w.w w..W",
-            "W..w.....w......wwwwwwwww....w. w.wqw..W",
-            "W..wMMMMMw...................w. w.www..W",
-            "W..w     w...................w.qw.wXw..W",
-            "W..w     w...................wwwwwwww..W",
-            "W..wwwwwww.............................W",
-            "W............ q. q. q. q. q............W",
-            "W............  .  .  .  .  ............W",
+            "W..wwwwwww......w.. . . w...rw.rw.r w..W",
+            "W..wrrrrrw......w..c.c.cw....w..w.. w..W",
+            "W..wrrrrrwr.....w.. . . w....w. w.w w..W",
+            "W..w.....w......wwwwwwwww....w. w.w w..W",
+            "W..wMMMMMw...................w. w.wqw..W",
+            "W..w     w... .. .. .. .. ...w.qw.wXw..W",
+            "W..w     w... .. .. .. .. ...wwwwwwww..W",
+            "W..wwwwwww... .. .. .. .. .............W",
+            "W............ .. .. .. .. .............W",
+            "W............q..q..q..q..q.............W",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -915,16 +1066,24 @@
         "CaveLetter": "T",
         "CaveNumber": 20,
         "CaveTime": [
-            20
+            44,
+            42,
+            40,
+            38,
+            36
         ],
         "Colors": [
+            1,
             5,
-            4,
             7
         ],
         "DiamondExtraValue": 14,
         "DiamondValue": 14,
         "DiamondsRequired": [
+            36,
+            36,
+            36,
+            36,
             36
         ],
         "Intermission": true,
