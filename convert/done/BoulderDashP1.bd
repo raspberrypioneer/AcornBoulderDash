@@ -692,7 +692,7 @@ BorderTile=SPACE
 Colors=Black Red Purple White
 
 [map]
---------------------
+                    
    wwwwwwwwwwwww    
   w       P.....w   
  w  wwwwwwwwwww..w  
@@ -703,7 +703,7 @@ wqw..wwwwwwww..w..w
   w..wwwwwwwwww..w  
    w............w   
     wwwwwwwwwwww    
---------------------
+                    
 [/map]
 [/cave]
 

@@ -1351,7 +1351,7 @@
         ],
         "Intermission": true,
         "Map": [
-            "--------------------",
+            "                    ",
             "   wwwwwwwwwwwww    ",
             "  w       P.....w   ",
             " w  wwwwwwwwwww..w  ",
@@ -1362,7 +1362,7 @@
             "  w..wwwwwwwwww..w  ",
             "   w............w   ",
             "    wwwwwwwwwwww    ",
-            "--------------------"
+            "                    "
         ],
         "RockfordExit": [
             6,

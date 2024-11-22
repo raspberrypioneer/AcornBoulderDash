@@ -2631,8 +2631,10 @@ back_to_show_diamonds_required
     sta regular_status_bar+1
     jmp end_change_status_bar
 add_diamonds_required
+    ldy difficulty_level
+    dey
+    lda param_diamonds_required, y
     ldy #1
-    lda param_diamonds_required
     jsr add_a_to_status_bar_number_at_y  ;show the diamonds required again
 end_change_status_bar
     lda #0
@@ -2809,7 +2811,7 @@ return5
     rts                                                                                 ; 27ef: 60          `
 
 unused_gameplay
-    !byte 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 update_grid_animations
