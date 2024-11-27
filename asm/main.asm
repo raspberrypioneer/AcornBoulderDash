@@ -1,65 +1,66 @@
 ; *************************************************************************************
 ; Boulder Dash version 2 by raspberrypioneer 2024
+; Keyboard input precision fixes by TobyLobster Nov 2024
 ;
 ; This version enhances the disassembly of Boulderdash, by TobyLobster 2024
 ; See https://github.com/TobyLobster/Boulderdash for the original version
 ;
 ; It includes the following three main features:
 ; Loading caves from files
-;   - Cave parameters (diamonds needed, cave time etc) and the map layout are loaded from 
+;   - Cave parameters (diamonds needed, cave time etc) and the map layout are loaded from
 ;     individual cave files, one for each of the caves A-T (credit to billcarr2005 for this)
-;   - Each cave file contains everything needed to use that cave with the game engine. The  
+;   - Each cave file contains everything needed to use that cave with the game engine. The
 ;     cave definition has the structure described below
-;   - This approach allows new caves to be developed and used with the main game engine, 
+;   - This approach allows new caves to be developed and used with the main game engine,
 ;     including caves developed by Boulder Dash fans, see https://www.boulder-dash.nl/
 ;
 ; Preservation of the original version of the game
-;   - The original version is preserved by having the difficulty levels use the 'standard' 
-;     pseudo-random method of plotting boulders, diamonds, etc in a cave (same method used 
+;   - The original version is preserved by having the difficulty levels use the 'standard'
+;     pseudo-random method of plotting boulders, diamonds, etc in a cave (same method used
 ;     by the original Boulder Dash developer, Peter Liepa)
-;   - Cave files are used for the basic essential tiles needed to form the map and are drawn 
-;     first. They include 'null' tiles which are replaced by the tiles produced by the random 
+;   - Cave files are used for the basic essential tiles needed to form the map and are drawn
+;     first. They include 'null' tiles which are replaced by the tiles produced by the random
 ;     plotting method which happens next
 ;
 ; Additions to support the Boulder Dash 2 game
 ;   - New elements introduced, slime and growing wall
-;   - Slime allows rocks and diamonds to pass through it but nothing else. It requires a new 
-;     slime permeability cave parameter to control how quickly those elements permeate. 
+;   - Slime allows rocks and diamonds to pass through it but nothing else. It requires a new
+;     slime permeability cave parameter to control how quickly those elements permeate.
 ;     Used in caves E (random delay) and M (no pass-through delay)
-;   - Growing wall allows a wall to extend horizontally if the item beside it is empty space. 
+;   - Growing wall allows a wall to extend horizontally if the item beside it is empty space.
 ;     Used in cave O only
-;   - Caves G and K require two tiles to be plotted using the pseudo-random method instead 
-;     of just one. These tiles may differ, and the second one is plotted below the first one. 
+;   - Caves G and K require two tiles to be plotted using the pseudo-random method instead
+;     of just one. These tiles may differ, and the second one is plotted below the first one.
 ;     The cave parameters include the 4 tiles needed to populate the second tile
-;   - Cave tiles are now plotted by applying the basic essential tiles from the cave file 
-;     first, followed by random ones if allowed by use of the 'null' tile 
+;   - Cave tiles are now plotted by applying the basic essential tiles from the cave file
+;     first, followed by random ones if allowed by use of the 'null' tile
 ;     (previously the other way around). Needed to support the two-tile random plot above
-;   - The starting position of butterflies and fireflies in some caves has needed slight 
-;     adjustment. Those elements can sometimes attempt to travel in a different default 
-;     direction in the original game (e.g. right instead of left). Support for an extra 3 
-;     versions of butterflies and fireflies would be required to replicate this, however 
-;     setting different starting positions is a great substitute. This affects caves 
+;   - The starting position of butterflies and fireflies in some caves has needed slight
+;     adjustment. Those elements can sometimes attempt to travel in a different default
+;     direction in the original game (e.g. right instead of left). Support for an extra 3
+;     versions of butterflies and fireflies would be required to replicate this, however
+;     setting different starting positions is a great substitute. This affects caves
 ;     A, F, H which still play in much the same way as the original game
 ;   - None of this affects the original Boulder Dash game
 ;
 ; Additions to support the Boulder Dash +1 game
-;   - New bomb element and new zero-gravity behaviour introduced 
-;   - Bombs are set by Rockford by pressing return + direction in an empty cell. The bombs run 
-;     on a short timer and clear the surrounding tiles when they detonate (except for steel 
+;   - New bomb element and new zero-gravity behaviour introduced
+;   - Bombs are set by Rockford by pressing return + direction in an empty cell. The bombs run
+;     on a short timer and clear the surrounding tiles when they detonate (except for steel
 ;     walls, start/exit). They can be used to clear tiles, destroy butterflies, fireflies and
-;     the amoeba. They are lethal to Rockford if standing too close! They fall just like rocks, 
+;     the amoeba. They are lethal to Rockford if standing too close! They fall just like rocks,
 ;     diamonds do, pausing the timer when this happens. They explode if something lands on them
-;   - The number of bombs available to Rockford are defined in the cave parameters. Each time  
-;     Rockford uses a bomb, the number remaining is briefly shown in the status bar 
-;   - Zero-gravity behaviour means rocks, diamonds and bombs do not fall; they remain suspended 
-;     instead. Diamonds can still be collected and bombs used, but rocks turn into bubbles which 
-;     can be pushed around in all directions. Rocks switch to a transitional state when 
+;   - The number of bombs available to Rockford are defined in the cave parameters. Each time
+;     Rockford uses a bomb, the number remaining is briefly shown in the status bar
+;   - Zero-gravity behaviour means rocks, diamonds and bombs do not fall; they remain suspended
+;     instead. Diamonds can still be collected and bombs used, but rocks turn into bubbles which
+;     can be pushed around in all directions. Rocks switch to a transitional state when
 ;     zero-gravity is about to run out
-;   - A cave parameter is used for this behaviour. For normal mode (with gravity) it is 0, for 
+;   - A cave parameter is used for this behaviour. For normal mode (with gravity) it is 0, for
 ;     continuous zero-gravity 255, and numbers between are a timer when zero-gravity is in effect
-;   - For asthetics, the cave borders can now be changed. The cave side-borders defined in the 
-;     cave map are used now, previously being replaced with the steelwall border. The cave 
-;     top and bottom borders are not held in the cave map file but can now be defined by setting 
+;   - For asthetics, the cave borders can now be changed. The cave side-borders defined in the
+;     cave map are used now, previously being replaced with the steelwall border. The cave
+;     top and bottom borders are not held in the cave map file but can now be defined by setting
 ;     the border tile cave parameter
 ;   - New caves have been created with these new features.
 ;   - These changes do not affect the Boulder Dash 1 or 2 game engines.
@@ -360,7 +361,10 @@ ptr_low                                 = $8c
 map_address_high                        = $8d
 ptr_high                                = $8d
 sound_channel                           = $8e
+temp_keys                               = $8e
 offset_to_sound                         = $8f
+keys_to_test                            = $8f
+
 
 grid_of_currently_displayed_sprites     = $0c00
 start_of_grid_screen_address            = $5bc0
@@ -916,13 +920,13 @@ needed1_do_not_reclaim
     !byte $78, $79, $7a, $7b, $7c, $7d, $7e, $7f                                        ; 1f78: 78 79 7a... xyz
 
 ; *************************************************************************************
-; 
+;
 ; Table to convert a cell type 0-$7f into a sprite number.
-; 
+;
 ; Not all possible cell types are used (see the top of file for the valid cell types).
 ; By changing the entries of this table on the fly, this table allows the sprite to
 ; animate without the underlying cell type needing to change.
-; 
+;
 ; *************************************************************************************
 cell_type_to_sprite
     !byte sprite_space                                                                  ; 1f80: 00          .              ; cell type $00 = map_space
@@ -1860,17 +1864,17 @@ return2
     rts                                                                                 ; 23db: 60          `
 
 ; *************************************************************************************
-; 
+;
 ; This is the map processing that happens every tick during gameplay.
 ; The map is scanned to handle any changes required.
-; 
+;
 ; The offsets within the map are stored in the Y register, with the current entry
 ; having offset $41:
-; 
+;
 ;     00 01 02
 ;     40 41 42
 ;     80 81 82
-; 
+;
 ; *************************************************************************************
     ; set branch offset (self modifying code)
 update_map
@@ -1951,10 +1955,10 @@ handler_high = jsr_handler_instruction+2
     bpl move_to_next_cell                                                               ; 245f: 10 06       ..             ; ALWAYS branch
 
 ; *************************************************************************************
-; 
+;
 ; This is part of the preprocessing step prior to gameplay, when we find a space in the
 ; map
-; 
+;
 ; *************************************************************************************
 mark_cell_above_as_processed_and_move_to_next_cell
     ldy #1                                                                              ; 2461: a0 01       ..
@@ -2379,34 +2383,6 @@ store_rockford_cell_value_without_return_pressed
     ldx #$80                                                                            ; 2685: a2 80       ..
     bne play_movement_sound_and_update_current_position_address                         ; 2687: d0 8f       ..             ; ALWAYS branch
 
-; *************************************************************************************
-read_keys
-    ldx #7                                                                              ; 2689: a2 07       ..
-    stx cell_current                                                                    ; 268b: 86 77       .w
-    ldx #0                                                                              ; 268d: a2 00       ..
-    stx real_keys_pressed                                                               ; 268f: 86 7c       .|
-read_keys_loop
-    ldx cell_current                                                                    ; 2691: a6 77       .w
-    lda inkey_keys_table,x                                                              ; 2693: bd 28 22    .("
-    tax                                                                                 ; 2696: aa          .
-;To detect individual keys, x is the key to check and y is usually set to #$ff and checked afterwards
-;However os code for OSBYTE 129 (read key with time limit) just checks for negative y (>128) which it is, so 'tay' is fine
-;See https://tobylobster.github.io/mos/mos/S-s15.html#SP16
-    tay                                                                                 ; 2697: a8          .
-    lda #osbyte_inkey                                                                   ; 2698: a9 81       ..
-    jsr osbyte                                                                          ; 269a: 20 f4 ff     ..            ; Read key within time limit, or read a specific key, or read machine type
-    inx                                                                                 ; 269d: e8          .  ;Not needed
-;Continuing from above, the carry flag is set to 1 if the key was pressed, otherwise is 0
-;So with 'rol real_keys_pressed', real_keys_pressed is built into an 8 bit number using the carry flag for each of the 8 keys tested
-;E.g. slash (down) and z (left) are both pressed, real_keys_pressed is 01010000 (starts checking keys in the inkey_keys_table bottom to top)
-    rol real_keys_pressed                                                               ; 269e: 26 7c       &|
-    dec cell_current                                                                    ; 26a0: c6 77       .w
-    bpl read_keys_loop                                                                  ; 26a2: 10 ed       ..
-    lda keys_to_process                                                                 ; 26a4: a5 62       .b
-    ora real_keys_pressed                                                               ; 26a6: 05 7c       .|
-    sta keys_to_process                                                                 ; 26a8: 85 62       .b
-    rts                                                                                 ; 26aa: 60          `
-
 ;Subroutine to allow Rockford to push a rock upwards
 ;Needs to check there is a free space above the rock being pushed, allow for the push delay, then continue like other direction pushes
 check_push_up
@@ -2791,14 +2767,6 @@ check_if_pause_is_available
     lda cave_number                                                                     ; 27d5: a5 87       ..
     cmp #16                                                                             ; 27d7: c9 10       ..
     bpl gameplay_loop_local                                                             ; 27d9: 10 11       ..
-    ; check for up, down, and right keys pressed together. If all pressed, don't check
-    ; for SPACE BAR for pause [is this protection against ghost key matrix presses?]
-;TRIAL: Not sure why needed, works fine without this
-;    lda previous_direction_keys                                                         ; 27db: a5 5d       .]
-;    and #$b0                                                                            ; 27dd: 29 b0       ).
-;    eor #$b0                                                                            ; 27df: 49 b0       I.
-;    beq gameplay_loop_local                                                             ; 27e1: f0 09       ..
-;
     ; check if pause pressed
     lda keys_to_process                                                                 ; 27e3: a5 62       .b
     and #2                                                                              ; 27e5: 29 02       ).
@@ -2809,9 +2777,6 @@ gameplay_loop_local
 
 return5
     rts                                                                                 ; 27ef: 60          `
-
-unused_gameplay
-    !byte 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 update_grid_animations
@@ -2871,43 +2836,42 @@ extract_lower_nybble
     inc ticks_since_last_direction_key_pressed                                          ; 284f: e6 58       .X
     rts                                                                                 ; 2851: 60          `
 
-; *************************************************************************************
-read_keys_and_resolve_direction_keys
-    jsr read_keys                                                                       ; 2860: 20 89 26     .&
-;TRIAL: Not sure why needed, bypassing is fine
-    rts
-;
-    ; just get the direction keys (top nybble)
-    lda keys_to_process                                                                 ; 2863: a5 62       .b
-    and #$f0                                                                            ; 2865: 29 f0       ).
-    tax                                                                                 ; 2867: aa          .
-    tay                                                                                 ; 2868: a8          .
-    ; look for any changes of direction. If so use the just pressed directions as input
-    eor previous_direction_keys                                                         ; 2869: 45 5d       E]
-    bne direction_keys_changed                                                          ; 286b: d0 05       ..
-    ; no new directions were pressed, so use the previous directions from last time.
-    lda just_pressed_direction_keys                                                     ; 286d: a5 5e       .^
-    jmp store_active_direction_keys                                                     ; 286f: 4c 77 28    Lw(
+keys_pressed_last_tick
+    !byte 0
 
-direction_keys_changed
-    and keys_to_process                                                                 ; 2872: 25 62       %b
-    bne store_active_direction_keys                                                     ; 2874: d0 01       ..
-    ; nothing was just pressed, so just use the currently pressed keys
-    txa                                                                                 ; 2876: 8a          .
-store_active_direction_keys
-    tax                                                                                 ; 2877: aa          .
-    stx just_pressed_direction_keys                                                     ; 2878: 86 5e       .^
-    ; remember the special (non-direction keys) only
-    lda keys_to_process                                                                 ; 287a: a5 62       .b
-    and #$0f                                                                            ; 287c: 29 0f       ).
-    sta keys_to_process                                                                 ; 287e: 85 62       .b
-    ; recall the active direction keys, and combine with the special keys
-    txa                                                                                 ; 2880: 8a          .
-    and #$f0                                                                            ; 2881: 29 f0       ).
-    ora keys_to_process                                                                 ; 2883: 05 62       .b
-    sta keys_to_process                                                                 ; 2885: 85 62       .b
-    sty previous_direction_keys                                                         ; 2887: 84 5d       .]
-    rts                                                                                 ; 2889: 60          `
+; *************************************************************************************
+read_repeat_keys
+    lda keys_pressed_last_tick        ; a mask of the keys to look for - in this case any keys pressed on the previous game tick
+
+read_some_keys
+    sta temp_keys
+    ldx #7
+    stx cell_current
+    ldx #0
+    stx real_keys_pressed
+read_some_keys_loop
+    ldx cell_current
+    asl temp_keys
+    bcc next_key
+    lda inkey_keys_table,x
+    tax
+;To detect individual keys, x is the key to check and y is usually set to #$ff and checked afterwards
+;However os code for OSBYTE 129 (read key with time limit) just checks for negative y (>127) which it is, so 'tay' is fine
+;See https://tobylobster.github.io/mos/mos/S-s15.html#SP16
+    tay
+    lda #osbyte_inkey
+    jsr osbyte
+;Continuing from above, the carry flag is set to 1 if the key was pressed, otherwise is 0
+;So with 'rol real_keys_pressed', real_keys_pressed is built into an 8 bit number using the carry flag for each of the 8 keys tested
+;E.g. slash (down) and z (left) are both pressed, real_keys_pressed is 01010000 (starts checking keys in the inkey_keys_table bottom to top)
+next_key
+    rol real_keys_pressed
+    dec cell_current
+    bpl read_some_keys_loop
+    lda keys_to_process
+    ora real_keys_pressed
+    sta keys_to_process
+    rts
 
 ; *************************************************************************************
 increment_status_bar_number
@@ -3056,11 +3020,11 @@ reset_clock
     jmp osword                                                                          ; 2a53: 4c f1 ff    L..            ; Write system clock
 
 ; *************************************************************************************
-; 
+;
 ; Animate the flashing spaces on the grid.
 ; Calculate and set palette colour 3 over a number of frames
 ; Also checks for awarding a bonus life.
-; 
+;
 ; Sequence of colours to show.
 ; countdown_while_changing_palette    physical colour to set
 ;     7                                       7 (white)
@@ -3071,7 +3035,7 @@ reset_clock
 ;     2                                       6 (cyan)
 ;     1                                       5 (magenta)
 ;     0                                       -
-; 
+;
 animate_flashing_spaces_and_check_for_bonus_life
     lda countdown_while_switching_palette                                               ; 2a56: a5 59       .Y
     beq check_for_bonus_life                                                            ; 2a58: f0 1f       ..
@@ -3286,31 +3250,31 @@ wait_for_13_centiseconds_and_read_keys
 wait_for_a_centiseconds_and_read_keys
     sta wait_delay_centiseconds                                                         ; 2b92: 85 84       ..
 wait_for_centiseconds_and_read_keys
-    lda #0                                                                              ; 2b94: a9 00       ..
-    sta keys_to_process                                                                 ; 2b96: 85 62       .b
-wait_loop
-    jsr read_keys_and_resolve_direction_keys                                            ; 2b98: 20 60 28     `(
-    ldy #>(set_clock_value)                                                             ; 2b9b: a0 1e       ..
-    ldx #<(set_clock_value)                                                             ; 2b9d: a2 70       .p
-    lda #osword_read_clock                                                              ; 2b9f: a9 01       ..
-    jsr osword                                                                          ; 2ba1: 20 f1 ff     ..            ; Read system clock
-    lda set_clock_value                                                                 ; 2ba4: ad 70 1e    .p.
-    cmp wait_delay_centiseconds                                                         ; 2ba7: c5 84       ..
-    bmi wait_loop                                                                       ; 2ba9: 30 ed       0.
-;TRIAL: Not sure why needed, seems that keys are less over-responsive now
-;    lda keys_to_process                                                                 ; 2bab: a5 62       .b
-;    and #$f0                                                                            ; 2bad: 29 f0       ).
-;    sta keys_to_process                                                                 ; 2baf: 85 62       .b
-;
-    jsr read_keys_and_resolve_direction_keys                                            ; 2bb1: 20 60 28     `(
-    jsr animate_flashing_spaces_and_check_for_bonus_life                                ; 2bb4: 20 56 2a     V*
-    jsr reset_clock                                                                     ; 2bb7: 20 4d 2a     M*
-    ldx #0                                                                              ; 2bba: a2 00       ..
-    txa                                                                                 ; 2bbc: 8a          .
-    jmp set_palette_colour_ax                                                           ; 2bbd: 4c 35 2a    L5*
+    ; look for *new* keypresses, i.e. keys that are not already down from the previous game update
+    jsr invert_keys_to_test
 
-unused_13_centiseconds
-    !byte 0, 0, 0, 0, 0, 0
+    ; start the loop with no keys pressed, and OR in bits as we find new keypresses
+    lda #0
+    sta keys_to_process
+wait_loop
+    ; read any new keypresses
+    lda keys_to_test            ; a mask of the keys to look for - in this case any keys not pressed in the previous game tick
+    jsr read_some_keys
+    ldy #>(set_clock_value)
+    ldx #<(set_clock_value)
+    lda #osword_read_clock
+    jsr osword
+    lda set_clock_value
+    cmp wait_delay_centiseconds
+    bmi wait_loop
+    jsr reset_clock
+    jsr animate_flashing_spaces_and_check_for_bonus_life
+    ldx #0
+    txa
+    jsr set_palette_colour_ax
+
+    ; read any keys that were already pressed on the previous game update
+    jmp read_repeat_keys
 
 ; *************************************************************************************
 handler_slime
@@ -3483,6 +3447,13 @@ play_sound_if_needed
 return10
     rts                                                                                 ; 2cef: 60          `
 
+invert_keys_to_test
+    lda keys_to_process         ; get which keys were down on the previous tick of the game
+    sta keys_pressed_last_tick
+    eor #255                    ; invert the bits so we test only the keys that were not down last tick
+    sta keys_to_test
+    rts
+
 unused39
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -3510,7 +3481,9 @@ unused39
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    !byte 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 ; *************************************************************************************
 play_one_life
@@ -3821,10 +3794,10 @@ return13
     rts                                                                                 ; 302b: 60          `
 
 ; *************************************************************************************
-; 
+;
 ; update while paused, or out of time, or at end position (i.e. when gameplay started
 ; but is not currently active)
-; 
+;
 ; *************************************************************************************
     ; check for pause key
 update_with_gameplay_not_active
@@ -3952,9 +3925,9 @@ demonstration_key_durations
     !byte   1, $14, $64, $ff, $ff, $ff                                                  ; 31ba: 01 14 64... ..d
 
 ; *************************************************************************************
-; 
+;
 ; Entry point
-; 
+;
 ; *************************************************************************************
     ; copy 256 bytes which is the credits text into a different location. Since both
     ; source and destination are within the bounds of this file, there is no reason why
@@ -4233,17 +4206,17 @@ zeroed_status_bar
     !byte sprite_0                                                                      ; 32ff: 32          2
 
 ; *************************************************************************************
-; 
+;
 ; Basic program for debugging purposes. Starts the game.
 ; On startup, this is immediately overwritten by the credits text.
-; 
+;
 ; 10*KEY 1 MO.4|M PAGE=13056 |M|N
 ; 20 MODE 5
 ; 30 VDU 23;8202;0;0;0;       (turns off the cursor)
 ; 40 *FX 178,0,0              (disables keyboard interrupts)
 ; 50 CALL 12736               (start the code at the regular entry_point)
 ; 60 *FX 178,255,0            (enables keyboard interrupts)
-; 
+;
 copy_of_credits
     !byte $0d,   0, $0a                                                                 ; 3300: 0d 00 0a    ...
     !text " *KEY1 MO.4|M PAGE=13056 |M|N"                                               ; 3303: 20 2a 4b...  *K
@@ -4257,18 +4230,18 @@ copy_of_credits
     !text " *FX 178,255,0"                                                              ; 335c: 20 2a 46...  *F
     !byte $0d, $ff                                                                      ; 336a: 0d ff       ..
 
-; 
+;
 ; A fragment of the original source code.
-; 
+;
 ; 80 JSR 10829
 ; 90 JSR 8850:LDA #220:STA 105
 ; 100 LDA #123:LDY #0:JSR 9001
 ; 110 JSR 8850:LDA #80:STA 105
 ; 120 LDA #125:LDY #128:JSR 9001
 ; 130 JSR 8850:LDX
-; 
+;
 ; Note there are no hex literals, everything's decimal. Which is unusual.
-; 
+;
 ; Translating this to hex form, we see this is the code at &3a06
 ; 80 JSR &2A4D
 ; 90 JSR &2292:LDA #&DC:STA &69
@@ -4276,7 +4249,7 @@ copy_of_credits
 ; 110 JSR &2292:LDA #&50:STA &69
 ; 120 LDA #&7D:LDY #&80:JSR &2329
 ; 130 JSR &2292:LDX
-; 
+;
     !byte $50, $0e                                                                      ; 336c: 50 0e       P.
     !text " JSR 10829"                                                                  ; 336e: 20 4a 53...  JS
     !byte $0d,   0, $5a, $1e                                                            ; 3378: 0d 00 5a... ..Z
@@ -4988,7 +4961,7 @@ populate_cave_tiles_pseudo_random
 
     ldx difficulty_level               ; Use difficulty_level (values 1 to 5) for the random seed value to use
     dex
-    lda param_random_seeds,x           ; Set random_seed2 to cave random seed       
+    lda param_random_seeds,x           ; Set random_seed2 to cave random seed
     sta random_seed2
     lda #$00                           ; Set random_seed1 to 0
     sta random_seed1
@@ -5096,7 +5069,7 @@ pseudo_random
     ror
     ror
     and #$80
-    clc 
+    clc
     adc random_seed2
     adc #$13
     sta random_seed2
@@ -5924,11 +5897,11 @@ pydis_end
 !if (64-40) != $18 {
     !error "Assertion failed: 64-40 == $18"
 }
-!if (<(in_game_sound_block)) != $04 {
-    !error "Assertion failed: <(in_game_sound_block) == $04"
+!if (<(in_game_sound_block)) != $dc {
+    !error "Assertion failed: <(in_game_sound_block) == $dc"
 }
-!if (<(palette_block)) != $20 {
-    !error "Assertion failed: <(palette_block) == $20"
+!if (<(palette_block)) != $f9 {
+    !error "Assertion failed: <(palette_block) == $f9"
 }
 !if (<(sprite_addr_space)) != $00 {
     !error "Assertion failed: <(sprite_addr_space) == $00"
@@ -6273,11 +6246,11 @@ pydis_end
 !if (<tile_map_row_1) != $40 {
     !error "Assertion failed: <tile_map_row_1 == $40"
 }
-!if (>(in_game_sound_block)) != $2c {
-    !error "Assertion failed: >(in_game_sound_block) == $2c"
+!if (>(in_game_sound_block)) != $2b {
+    !error "Assertion failed: >(in_game_sound_block) == $2b"
 }
-!if (>(palette_block)) != $2a {
-    !error "Assertion failed: >(palette_block) == $2a"
+!if (>(palette_block)) != $29 {
+    !error "Assertion failed: >(palette_block) == $29"
 }
 !if (>(sprite_addr_space)) != $13 {
     !error "Assertion failed: >(sprite_addr_space) == $13"
