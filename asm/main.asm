@@ -4973,7 +4973,7 @@ populate_cave_tiles_pseudo_random
     lda #>tile_map_row_1               ; Point to start of map (high)
     sta map_address_high
 populate_cave_row
-    ldy #$00                           ; Set column start to 1 (skip first column - steel wall)
+    ldy #$00                           ; Set column start to 0
 populate_cave_tile
     lda tile_below_store_row,y         ; Needed for BD2 caves G, K, get previously stored tile
     sta tile_override                  ; The override tile might need to replace the random tile

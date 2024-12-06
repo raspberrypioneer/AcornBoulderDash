@@ -10,9 +10,9 @@
             120
         ],
         "Colors": [
-            5,
-            1,
-            7
+            "purple",
+            "red",
+            "white"
         ],
         "DiamondExtraValue": 20,
         "DiamondValue": 15,
@@ -67,9 +67,9 @@
             100
         ],
         "Colors": [
-            6,
-            2,
-            7
+            "cyan",
+            "green",
+            "white"
         ],
         "DiamondExtraValue": 40,
         "DiamondValue": 35,
@@ -80,7 +80,7 @@
             8,
             8
         ],
-        "MagicWallAmoebaTime": 16,
+        "MagicWallTime": 16,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "WXP. ...... rr.r......r ..r.. ..rr..r..W",
@@ -125,9 +125,9 @@
             180
         ],
         "Colors": [
-            4,
-            5,
-            7
+            "blue",
+            "purple",
+            "white"
         ],
         "DiamondExtraValue": 20,
         "DiamondValue": 20,
@@ -172,6 +172,7 @@
         ]
     },
     {
+        "AmoebaTime": 130,
         "CaveLetter": "D",
         "CaveNumber": 4,
         "CaveTime": [
@@ -182,9 +183,9 @@
             180
         ],
         "Colors": [
-            6,
-            4,
-            7
+            "cyan",
+            "blue",
+            "white"
         ],
         "DiamondExtraValue": 12,
         "DiamondValue": 10,
@@ -195,7 +196,6 @@
             22,
             25
         ],
-        "MagicWallAmoebaTime": 130,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "W...r..qr.....rrr. .r..r...r.....rr..rrX",
@@ -230,6 +230,7 @@
         ]
     },
     {
+        "AmoebaTime": 255,
         "CaveLetter": "Q",
         "CaveNumber": 5,
         "CaveTime": [
@@ -240,9 +241,9 @@
             30
         ],
         "Colors": [
-            6,
-            1,
-            7
+            "cyan",
+            "red",
+            "white"
         ],
         "DiamondExtraValue": 45,
         "DiamondValue": 35,
@@ -254,7 +255,6 @@
             15
         ],
         "Intermission": true,
-        "MagicWallAmoebaTime": 255,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWW",
             "Wrrrrrrrrrrrrrrrrr.W",
@@ -289,9 +289,9 @@
             200
         ],
         "Colors": [
-            1,
-            2,
-            7
+            "red",
+            "green",
+            "white"
         ],
         "DiamondExtraValue": 26,
         "DiamondValue": 26,
@@ -346,9 +346,9 @@
             130
         ],
         "Colors": [
-            4,
-            2,
-            7
+            "blue",
+            "green",
+            "white"
         ],
         "DiamondExtraValue": 6,
         "DiamondValue": 5,
@@ -403,9 +403,9 @@
             200
         ],
         "Colors": [
-            6,
-            5,
-            7
+            "cyan",
+            "purple",
+            "white"
         ],
         "DiamondExtraValue": 5,
         "DiamondValue": 4,
@@ -450,6 +450,7 @@
         ]
     },
     {
+        "AmoebaTime": 80,
         "CaveLetter": "H",
         "CaveNumber": 9,
         "CaveTime": [
@@ -460,9 +461,9 @@
             200
         ],
         "Colors": [
-            2,
-            1,
-            7
+            "green",
+            "red",
+            "white"
         ],
         "DiamondExtraValue": 5,
         "DiamondValue": 4,
@@ -473,7 +474,6 @@
             89,
             99
         ],
-        "MagicWallAmoebaTime": 80,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "X................r........aaaaa..P.....W",
@@ -518,9 +518,9 @@
             20
         ],
         "Colors": [
-            4,
-            2,
-            3
+            "blue",
+            "green",
+            "yellow"
         ],
         "DiamondExtraValue": 35,
         "DiamondValue": 35,
@@ -566,9 +566,9 @@
             180
         ],
         "Colors": [
-            1,
-            4,
-            3
+            "red",
+            "blue",
+            "yellow"
         ],
         "DiamondExtraValue": 25,
         "DiamondValue": 22,
@@ -579,7 +579,7 @@
             16,
             18
         ],
-        "MagicWallAmoebaTime": 10,
+        "MagicWallTime": 10,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "W.....wXq..r.......q. .r....q..q..r....W",
@@ -624,9 +624,9 @@
             160
         ],
         "Colors": [
-            2,
-            5,
-            6
+            "green",
+            "purple",
+            "cyan"
         ],
         "DiamondExtraValue": 30,
         "DiamondValue": 30,
@@ -681,9 +681,9 @@
             160
         ],
         "Colors": [
-            5,
-            1,
-            6
+            "purple",
+            "red",
+            "cyan"
         ],
         "DiamondExtraValue": 21,
         "DiamondValue": 21,
@@ -738,9 +738,9 @@
             150
         ],
         "Colors": [
-            6,
-            2,
-            3
+            "cyan",
+            "green",
+            "yellow"
         ],
         "DiamondExtraValue": 10,
         "DiamondValue": 10,
@@ -795,9 +795,9 @@
             40
         ],
         "Colors": [
-            1,
-            4,
-            7
+            "red",
+            "blue",
+            "white"
         ],
         "DiamondExtraValue": 30,
         "DiamondValue": 20,
@@ -843,9 +843,9 @@
             150
         ],
         "Colors": [
-            2,
-            5,
-            7
+            "green",
+            "purple",
+            "white"
         ],
         "DiamondExtraValue": 20,
         "DiamondValue": 15,
@@ -900,9 +900,9 @@
             160
         ],
         "Colors": [
-            5,
-            1,
-            3
+            "purple",
+            "red",
+            "yellow"
         ],
         "DiamondExtraValue": 9,
         "DiamondValue": 9,
@@ -957,9 +957,9 @@
             200
         ],
         "Colors": [
-            1,
-            2,
-            3
+            "red",
+            "green",
+            "yellow"
         ],
         "DiamondExtraValue": 90,
         "DiamondValue": 18,
@@ -970,7 +970,7 @@
             26,
             28
         ],
-        "MagicWallAmoebaTime": 160,
+        "MagicWallTime": 160,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "W.......wrd........r.r...r.w...........W",
@@ -1015,9 +1015,9 @@
             180
         ],
         "Colors": [
-            5,
-            4,
-            7
+            "purple",
+            "blue",
+            "white"
         ],
         "DiamondExtraValue": 15,
         "DiamondValue": 10,
@@ -1028,7 +1028,7 @@
             45,
             50
         ],
-        "MagicWallAmoebaTime": 60,
+        "MagicWallTime": 60,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "WP.....................................W",
@@ -1073,9 +1073,9 @@
             36
         ],
         "Colors": [
-            1,
-            5,
-            7
+            "red",
+            "purple",
+            "white"
         ],
         "DiamondExtraValue": 14,
         "DiamondValue": 14,

@@ -20,7 +20,7 @@
 #
 #   There are 3 definable colour groups applied to each cave used to paint the elements (black is always present).
 #   -  Group 1 for most of titanium walls, rocks, amoeba; part of rockford, diamonds
-#   -  Group 2 earth
+#   -  Group 2 dirt
 #   -  Group 3 most of walls, rockford; part of rocks, diamonds
 #   The butterflies and fireflies contain a bit of each.
 #
@@ -57,30 +57,24 @@ def safe_byte(value):
     else:
         return value
 
-def get_map_value(object_element):
-    if object_element in object_version_element_map:
-        value = int(object_version_element_map[object_element]['value'])
-    else:
-        print(f"No mapping found for {object_element}")
-        value = 99
-    return value
+def get_object_map_value(element):
 
-def get_object_map_value(object_element, mapped_elements):
-    if object_element in object_version_element_map:
-        element = object_version_element_map[object_element]['element']
-        symbol = object_version_element_map[object_element]['symbol']
-        value = object_version_element_map[object_element]['value']
-        
-        #Add to list of mapped elements for use later
-        if value not in mapped_elements:
-            mapped_elements[value] = symbol
-
+    if element in object_element_map:
+        value = object_element_map[element]["value"]
         value_int = int(value)
     else:
-        print(f"No mapping found for {object_element}")
-        element = object_element
+        print(f"No element value found for {element}")
         value_int = 99
-    return element, value_int
+    return value_int
+
+def get_object_map_symbol(element):
+
+    if element in object_element_map:
+        symbol = object_element_map[element]['symbol']
+    else:
+        print(f"No element symbol found for {element}")
+        symbol = "?"
+    return symbol
 
 def plot_diagonal_line(object_cave_map, row1, col1, row2, col2, value):
 
@@ -101,7 +95,8 @@ def plot_diagonal_line(object_cave_map, row1, col1, row2, col2, value):
     object_cave_map[row1:row1+1,col1:col1+1] = value  #Draw single point for last point, values are equal
 
 def add_cave_parameter(output_cave_json, output_cave_params, param_name, value):
-    output_cave_json[param_name] = value
+    if param_name not in ["Colors", "InitialFill", "BorderTile", "TileForProbability", "RandomFillBelow"]:   #Some parameters are added to JSON separately
+        output_cave_json[param_name] = value
 
     i = addresses.get(param_name)
     if type(value) == bool:
@@ -210,18 +205,19 @@ def generate_caves(all_input_lines, output_subfolder):
             output_cave_params = []
             output_cave_map_bytes = []
             unsupported_elements = []
-
             last_tile_for_probability = []
 
             #Initialise the cave parameter bytes
             for i in range(48):
                 output_cave_params.append(0)
 
-            #Set the initial fill tile to earth, this may be changed in some caves
-            output_cave_params[addresses.get("InitialFill")] = 1
+            #Set the parameter initial fill to dirt "." and border to steelwall "W", these paramters may be changed in some caves
+            output_cave_params[addresses.get("InitialFill")] = element_map["."]["value"]
+            output_cave_params[addresses.get("BorderTile")] = element_map["W"]["value"]
 
-            #Set the border tile to steelwall, this may be changed in some caves
-            output_cave_params[addresses.get("BorderTile")] = 3
+            #The cave is filled with the null time, border with the steelwall
+            cave_fill_tile = "-"  #The game engine will replace null tiles with pseudo-random tiles or the initial fill time
+            border_tile = "W"
 
         #End of a cave
         elif line == "[/cave]\n":
@@ -282,31 +278,31 @@ def generate_caves(all_input_lines, output_subfolder):
         elif line == "[objects]\n":
             within_objects = True
 
-            mapped_elements = {}
-            fill_element, fill_value = get_object_map_value("STEELWALL", mapped_elements)  #Assume cave has titanium / steel outer walls
-            fill_element, fill_value = get_object_map_value("DIRT", mapped_elements)  #Assume cave likely to contain dirt
-            fill_element, fill_value = get_object_map_value("NULL", mapped_elements)  #Object caves are base caves for the pseudo-random routine, so they are filled with nulls
-
             if intermission_cave:
-                object_cave_map = np.full((12, 20), 3)  #3 is the titanium / steel wall
-                object_cave_map[1:11,1:19] = fill_value  #fill value from default or "InitialFill" parameter
+                object_cave_map = np.full((12, 20), border_tile, dtype = np.str_)  #String datatype for tile symbols
+                object_cave_map[1:11,1:19] = cave_fill_tile
             else:
-                object_cave_map = np.full((22, 40), 3)  #3 is the titanium / steel wall
-                object_cave_map[1:21,1:39] = fill_value  #fill value from default or "InitialFill" parameter
+                object_cave_map = np.full((22, 40), border_tile, dtype = np.str_)  #String datatype for tile symbols
+                object_cave_map[1:21,1:39] = cave_fill_tile
 
         #End of the objects section within a cave
         elif line == "[/objects]\n":
             within_objects = False
 
-            #Map numpy array integers to character equivalents and write an output cave line and also append JSON Map
+            #Map numpy array integer values to tile symbols, write an output cave line and append line to JSON map
             cave_line_count = 0
-            for l in object_cave_map:
+            for object_map_line in object_cave_map:
                 map_line = ""
-                for v in l:
-                    if int(v) in mapped_elements:
-                        map_line += mapped_elements[int(v)]
+                for tile in object_map_line:
+
+                    #If a null tile is used in a cave without pseudo-random cave parameters, replace null with dirt tile
+                    if tile == '-' and last_tile_for_probability == []:
+                        map_line += "."
                     else:
-                        map_line += "?"
+                        if tile in element_map:
+                            map_line += tile
+                        else:
+                            map_line += "?"
 
                 cave_line_count += 1
                 add_cave_map_row(cave_count, cave_line_count, map_line, output_cave_json, output_cave_params, output_cave_map_bytes, unsupported_elements)
@@ -316,7 +312,7 @@ def generate_caves(all_input_lines, output_subfolder):
         elif within_cave and not within_map and not within_objects:
             if "=" in line:
                 line_param = line.strip().split("=")  #e.g. CaveTime=120
-                if line_param[0] in config_settings["valid_parameters"]:
+                if line_param[0] in config_settings["parameters"] or line_param[0] == "RandomFill":  #RandomFill is a special case replaced with "TileProbability", "TileForProbability"
 
                     #DiamondValue may have 2 values, DiamondValue and DiamondExtraValue, space delimited
                     if line_param[0] == "DiamondValue":
@@ -342,36 +338,50 @@ def generate_caves(all_input_lines, output_subfolder):
 
                     #AmoebaTime and MagicWallTime are optionally present, if there use it, single value per cave
                     elif line_param[0] in ["AmoebaTime","MagicWallTime"]:
-                        add_cave_parameter(output_cave_json, output_cave_params, "MagicWallAmoebaTime", safe_byte(int(line_param[1])))
+                        add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", safe_byte(int(line_param[1])))
 
                     elif line_param[0] == "Intermission":
                         intermission_cave = True if line_param[1].upper() == "TRUE" else False
                         add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", intermission_cave)
 
                     #Decode Initial fill element if present
-                    elif line_param[0] in ["InitialFill","BorderTile"]:
-                        add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", get_map_value(line_param[1]))
+                    elif line_param[0] == "InitialFill":
+                        cave_fill_tile = get_object_map_symbol(line_param[1])
+                        add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", element_map[cave_fill_tile]["value"])
+                        output_cave_json[line_param[0]] = element_map[cave_fill_tile]["element"]
+
+                    #Decode Border tile element if present
+                    elif line_param[0] == "BorderTile":
+                        border_tile = get_object_map_symbol(line_param[1])
+                        add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", element_map[border_tile]["value"])
+                        output_cave_json[line_param[0]] = element_map[border_tile]["element"]
 
                     elif line_param[0] == "Colors":
-                        cave_colours = []
+                        colour_codes = []
+                        colour_list = []
                         for text_colour in line_param[1].split(" "):
                             if colour_map.get(text_colour.lower()) != None:  #Attempt to map the text values in Colors
-                                cave_colours.append(colour_map[text_colour.lower()])
-                        if len(cave_colours) == 3:  #If exactly 3 mapped results, used the mapped scheme
-                            add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", cave_colours)
+                                colour_codes.append(colour_map[text_colour.lower()])
+                                colour_list.append(text_colour.lower())
+                        if len(colour_codes) == 3:  #If exactly 3 mapped results, used the mapped scheme
+                            add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", colour_codes)
+                            output_cave_json[line_param[0]] = colour_list
                         else:  #Use the scheme from the config for the cave
-                            add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", colour_schemes[str(cave_count)]['colours'])
+                            add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", colour_schemes[str(cave_count)]['code'])
+                            output_cave_json[line_param[0]] = colour_schemes[str(cave_count)]['colours']
 
                     #Decode RandomFill with 1 to 4 pairs of values, e.g. SPACE 60 BOULDER 50 DIAMOND 9 FIREFLYl 2
                     elif line_param[0] == "RandomFill":
                         
                         TileForProbability = []
                         TileProbability = []
-
+                        TileForProbabilityJSON = []
                         line_values = line_param[1].strip().split(" ")
                         for i in range(len(line_values)):
                             if i % 2 == 0:  #Even values are elements to decode
-                                TileForProbability.append(get_map_value(line_values[i]))
+                                value = get_object_map_value(line_values[i])
+                                TileForProbability.append(value)
+                                TileForProbabilityJSON.append(line_values[i])
                             elif i > 0:  #Odd values are random integer values
                                 TileProbability.append(int(line_values[i]))
 
@@ -379,6 +389,7 @@ def generate_caves(all_input_lines, output_subfolder):
 
                         add_cave_parameter(output_cave_json, output_cave_params, "TileForProbability", TileForProbability)
                         add_cave_parameter(output_cave_json, output_cave_params, "TileProbability", TileProbability)
+                        output_cave_json["TileForProbability"] = TileForProbabilityJSON
 
                     elif line_param[0] == "SlimePermeability":
                         add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", safe_byte(int(float(line_param[1]))))
@@ -399,43 +410,36 @@ def generate_caves(all_input_lines, output_subfolder):
             #Note array co-ordinates are specified: object_cave_map[row1:row2,col1,col2]
             pl = line.replace("="," ").strip().split(" ")
             if pl[0] == "Point":
-                element, value = get_object_map_value(pl[3], mapped_elements)
-                #print("Draw point of {} in row {}, col {}".format(element,pl[2],pl[1]))
-                object_cave_map[int(pl[2]):int(pl[2])+1,int(pl[1]):int(pl[1])+1] = value  #Draw single point
+                tile = get_object_map_symbol(pl[3])
+                object_cave_map[int(pl[2]):int(pl[2])+1,int(pl[1]):int(pl[1])+1] = tile  #Draw single point
             elif pl[0] == "Line":
-                element, value = get_object_map_value(pl[5], mapped_elements)
+                tile = get_object_map_symbol(pl[5])
                 if pl[1] == pl[3] or pl[2] == pl[4]:
-                    #print("Draw straight line of {} from row {}, col {} to row {}, col {}".format(element,pl[2],pl[1],pl[4],pl[3]))
-                    object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = value  #Draw single line
+                    object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = tile  #Draw single line
                 else:
-                    #print("Draw diagonal line of {} from row {}, col {} to row {}, col {}".format(element,pl[2],pl[1],pl[4],pl[3]))
-                    plot_diagonal_line(object_cave_map, int(pl[2]),int(pl[1]),int(pl[4]),int(pl[3]), value)
+                    plot_diagonal_line(object_cave_map, int(pl[2]),int(pl[1]),int(pl[4]),int(pl[3]), tile)
             elif pl[0] == "FillRect":
                 if len(pl) > 6:
-                    element, value = get_object_map_value(pl[5], mapped_elements)
-                    fill_element, fill_value = get_object_map_value(pl[6], mapped_elements)
-                    #print("Draw rectangle of {}, filled with {} from row {}, col {} to row {}, col {}".format(element,fill_element,pl[2],pl[1],pl[4],pl[3]))
-                    object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = value  #Draw outer filled rectangle
-                    object_cave_map[int(pl[2])+1:int(pl[4]),int(pl[1])+1:int(pl[3])] = fill_value  #Draw inner filled rectangle
+                    tile = get_object_map_symbol(pl[5])
+                    fill_tile = get_object_map_symbol(pl[6])
+                    object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = tile  #Draw outer filled rectangle
+                    object_cave_map[int(pl[2])+1:int(pl[4]),int(pl[1])+1:int(pl[3])] = fill_tile  #Draw inner filled rectangle
                 else:
-                    element, value = get_object_map_value(pl[5], mapped_elements)
-                    #print("Draw rectangle filled with {} from row {}, col {} to row {}, col {}".format(element,pl[2],pl[1],pl[4],pl[3]))
-                    object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = value  #Draw filled rectangle
+                    tile = get_object_map_symbol(pl[5])
+                    object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = tile  #Draw filled rectangle
             elif pl[0] == "Rectangle":
-                element, value = get_object_map_value(pl[5], mapped_elements)
-                #print("Draw rectangle of {} from row {}, col {} to row {}, col {}".format(element,pl[2],pl[1],pl[4],pl[3]))
-                object_cave_map[int(pl[2]):int(pl[2])+1,int(pl[1]):int(pl[3])+1] = value  #Top line
-                object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[1])+1] = value  #Left line
-                object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[3]):int(pl[3])+1] = value  #Right line
-                object_cave_map[int(pl[4]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = value  #Bottom line
+                tile = get_object_map_symbol(pl[5])
+                object_cave_map[int(pl[2]):int(pl[2])+1,int(pl[1]):int(pl[3])+1] = tile  #Top line
+                object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[1]):int(pl[1])+1] = tile  #Left line
+                object_cave_map[int(pl[2]):int(pl[4])+1,int(pl[3]):int(pl[3])+1] = tile  #Right line
+                object_cave_map[int(pl[4]):int(pl[4])+1,int(pl[1]):int(pl[3])+1] = tile  #Bottom line
             elif pl[0] == "Raster":
-                element, value = get_object_map_value(pl[7], mapped_elements)
-                #print("Draw raster of {} from row {}, col {}, number of rows {}, cols {}, gap between rows {}, cols {}".format(element,pl[2],pl[1],pl[4],pl[3],pl[6],pl[5]))
+                tile = get_object_map_symbol(pl[7])
                 plot_row = int(pl[2])
                 for r in range(int(pl[4])):
                     plot_col = int(pl[1])
                     for c in range(int(pl[3])):
-                        object_cave_map[plot_row:plot_row+1,plot_col:plot_col+1] = value  #Draw single point
+                        object_cave_map[plot_row:plot_row+1,plot_col:plot_col+1] = tile  #Draw single point
                         plot_col += int(pl[5])
                     plot_row += int(pl[6])
             elif pl[0] == "Add":
@@ -444,12 +448,16 @@ def generate_caves(all_input_lines, output_subfolder):
                 #  Add=0 1 DIAMOND MAGICWALL  #means add MAGICWALL on row below DIAMOND
                 #These become cave parameters (max 4 values), with e.g. BOULDER element value (5) occupying parameter 3
                 #because FIREFLYl is the 3rd randomly generated tile. All other parameters are 0
-                find_element, find_value = get_object_map_value(pl[3], mapped_elements)  #e.g. FIREFLYl as above
-                apply_element, apply_value = get_object_map_value(pl[4], mapped_elements)  #e.g. BOULDER as above
+                find_tile = get_object_map_value(pl[3])  #e.g. FIREFLYl as above
+                apply_tile = get_object_map_value(pl[4])  #e.g. BOULDER as above
                 RandomFillBelow = [0,0,0,0]
-                i = last_tile_for_probability.index(find_value)
-                RandomFillBelow[i] = apply_value
+                i = last_tile_for_probability.index(find_tile)
+                RandomFillBelow[i] = apply_tile
                 add_cave_parameter(output_cave_json, output_cave_params, "RandomFillBelow", RandomFillBelow)
+
+                RandomFillBelowJSON = ["","","",""]
+                RandomFillBelowJSON[i] = pl[4]
+                output_cave_json["RandomFillBelow"] = RandomFillBelowJSON
 
     #Write all caves to json file
     output_file_name = path.join(output_subfolder, "cavedef.json")
@@ -478,16 +486,35 @@ if __name__ == '__main__':
 
     ### Config and file paths
     base_path = path.dirname(path.abspath(__file__))
-    config_file = open(path.join(base_path, "config/config.json"))
+    config_file = open(path.join(base_path, "config", "config.json"))
     config_settings = json.load(config_file)
     element_map = config_settings["element_map"]
-    element_no_map = config_settings["unsupported_element_map"]
-    object_version_element_map = config_settings["object_version_element_map"]
+    parameter_list = config_settings["parameters"]
     colour_schemes = config_settings["colour_schemes"]
     colour_map = config_settings["colour_map"]
-    addresses = config_settings["addresses"]
     ssd_file_settings = config_settings["ssd_file_settings"]
     config_file.close()
+
+    #Create unsupported element list from element_map (where substitute values are being used)
+    element_no_map = [e for e in element_map if "substitute" in element_map[e]]
+        
+    #Create object_element_map from element_map by making the element name the key, using substitute values if available
+    object_element_map = {}
+    for e in element_map:
+        new_key = element_map[e]["element"]
+        object_element_map[new_key] = {}
+        if "substitute" in element_map[e]:
+            sub = element_map[e]["substitute"]
+            object_element_map[new_key]["symbol"] = sub
+            object_element_map[new_key]["value"] = element_map[sub]["value"]
+        else:
+            object_element_map[new_key]["symbol"] = e
+            object_element_map[new_key]["value"] = element_map[e]["value"]
+
+    #Create addresses where parameters will be stored in the output cave file
+    addresses = {}
+    for a in parameter_list:
+        addresses[a] = parameter_list[a]["address"]
 
     BD_code_folder = path.join(base_path, "code")
     BD_files_folder = path.join(base_path, "convert")

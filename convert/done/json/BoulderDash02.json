@@ -10,9 +10,9 @@
             100
         ],
         "Colors": [
-            5,
-            1,
-            7
+            "purple",
+            "red",
+            "white"
         ],
         "DiamondExtraValue": 15,
         "DiamondValue": 15,
@@ -23,7 +23,7 @@
             20,
             20
         ],
-        "MagicWallAmoebaTime": 25,
+        "MagicWallTime": 25,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "W------------------w-.MMM.MMM.MMMW-----W",
@@ -64,8 +64,8 @@
             37
         ],
         "TileForProbability": [
-            5,
-            4
+            "BOULDER",
+            "DIAMOND"
         ],
         "TileProbability": [
             50,
@@ -73,6 +73,7 @@
         ]
     },
     {
+        "AmoebaTime": 10,
         "CaveLetter": "B",
         "CaveNumber": 2,
         "CaveTime": [
@@ -83,9 +84,9 @@
             160
         ],
         "Colors": [
-            2,
-            5,
-            7
+            "green",
+            "purple",
+            "white"
         ],
         "DiamondExtraValue": 10,
         "DiamondValue": 3,
@@ -96,7 +97,6 @@
             90,
             95
         ],
-        "MagicWallAmoebaTime": 10,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "Wr  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr  rW",
@@ -137,8 +137,8 @@
             3
         ],
         "TileForProbability": [
-            5,
-            7
+            "BOULDER",
+            "AMOEBA"
         ],
         "TileProbability": [
             254,
@@ -156,9 +156,9 @@
             200
         ],
         "Colors": [
-            3,
-            2,
-            7
+            "yellow",
+            "green",
+            "white"
         ],
         "DiamondExtraValue": 50,
         "DiamondValue": 25,
@@ -209,10 +209,10 @@
             37
         ],
         "TileForProbability": [
-            0,
-            5,
-            6,
-            4
+            "SPACE",
+            "BOULDER",
+            "FIREFLYl",
+            "DIAMOND"
         ],
         "TileProbability": [
             120,
@@ -222,6 +222,7 @@
         ]
     },
     {
+        "AmoebaTime": 140,
         "CaveLetter": "D",
         "CaveNumber": 4,
         "CaveTime": [
@@ -232,9 +233,9 @@
             40
         ],
         "Colors": [
-            5,
-            4,
-            3
+            "purple",
+            "blue",
+            "yellow"
         ],
         "DiamondExtraValue": 8,
         "DiamondValue": 5,
@@ -245,29 +246,28 @@
             56,
             58
         ],
-        "MagicWallAmoebaTime": 140,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-            "W---------------------aadddddddddddddddW",
-            "W----qqqqqqqqqqr------aad.............dW",
-            "W---------------------aad.............dW",
-            "W---------------------aad.............dW",
-            "W----qqqqqqqqqqr------aad.............dW",
-            "W---------------------aad.............dW",
-            "W---------------------aad.............dW",
-            "W----qqqqqqqqqqr------aad.............dW",
-            "W---------------------aad.............dW",
-            "WX----------------...waad.............dW",
-            "W-----------------.P.waad.............dW",
-            "W-----------------...waad.............dW",
-            "W--------------------waad.............dW",
-            "W--------------------waad.............dW",
-            "W--------------------waad.............dW",
-            "W--------------------waad.............dW",
-            "W--------------------waad.............dW",
-            "W--------------------waad.............dW",
-            "W--------------------waad.............dW",
-            "W--------------------waadddddddddddddddW",
+            "W.....................aadddddddddddddddW",
+            "W....qqqqqqqqqqr......aad.............dW",
+            "W.....................aad.............dW",
+            "W.....................aad.............dW",
+            "W....qqqqqqqqqqr......aad.............dW",
+            "W.....................aad.............dW",
+            "W.....................aad.............dW",
+            "W....qqqqqqqqqqr......aad.............dW",
+            "W.....................aad.............dW",
+            "WX...................waad.............dW",
+            "W..................P.waad.............dW",
+            "W....................waad.............dW",
+            "W....................waad.............dW",
+            "W....................waad.............dW",
+            "W....................waad.............dW",
+            "W....................waad.............dW",
+            "W....................waad.............dW",
+            "W....................waad.............dW",
+            "W....................waad.............dW",
+            "W....................waadddddddddddddddW",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -290,9 +290,9 @@
             20
         ],
         "Colors": [
-            6,
-            4,
-            7
+            "cyan",
+            "blue",
+            "white"
         ],
         "DiamondExtraValue": 30,
         "DiamondValue": 30,
@@ -306,16 +306,16 @@
         "Intermission": true,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWW",
-            "W------------------W",
-            "W----rrrrrrr-------W",
-            "W--P-rqqqqqr-------W",
-            "W----rqqqqqr-------W",
-            "W----rqqdqqr-------W",
-            "W----rqqqqqr-------W",
-            "W----rqqqqqr-------W",
-            "W----rrrrrrr-------W",
-            "W------------------W",
-            "W-X----------------W",
+            "W..................W",
+            "W....rrrrrrr.......W",
+            "W..P.rqqqqqr.......W",
+            "W....rqqqqqr.......W",
+            "W....rqqdqqr.......W",
+            "W....rqqqqqr.......W",
+            "W....rqqqqqr.......W",
+            "W....rrrrrrr.......W",
+            "W..................W",
+            "W.X................W",
             "WWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -338,9 +338,9 @@
             30
         ],
         "Colors": [
-            5,
-            1,
-            7
+            "purple",
+            "red",
+            "white"
         ],
         "DiamondExtraValue": 40,
         "DiamondValue": 20,
@@ -351,7 +351,7 @@
             10,
             10
         ],
-        "MagicWallAmoebaTime": 2,
+        "MagicWallTime": 2,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "W-------------------...................W",
@@ -393,8 +393,8 @@
         ],
         "SlimePermeability": 10,
         "TileForProbability": [
-            5,
-            4
+            "BOULDER",
+            "DIAMOND"
         ],
         "TileProbability": [
             255,
@@ -412,9 +412,9 @@
             200
         ],
         "Colors": [
-            2,
-            4,
-            7
+            "green",
+            "blue",
+            "white"
         ],
         "DiamondExtraValue": 80,
         "DiamondValue": 5,
@@ -465,8 +465,8 @@
             1
         ],
         "TileForProbability": [
-            5,
-            4
+            "BOULDER",
+            "DIAMOND"
         ],
         "TileProbability": [
             220,
@@ -484,9 +484,9 @@
             150
         ],
         "Colors": [
-            3,
-            1,
-            7
+            "yellow",
+            "red",
+            "white"
         ],
         "DiamondExtraValue": 50,
         "DiamondValue": 20,
@@ -529,10 +529,10 @@
             14
         ],
         "RandomFillBelow": [
-            0,
-            0,
-            5,
-            0
+            "",
+            "",
+            "BOULDER",
+            ""
         ],
         "RockfordExit": [
             11,
@@ -543,10 +543,10 @@
             9
         ],
         "TileForProbability": [
-            0,
-            5,
-            6,
-            4
+            "SPACE",
+            "BOULDER",
+            "FIREFLYl",
+            "DIAMOND"
         ],
         "TileProbability": [
             120,
@@ -556,6 +556,7 @@
         ]
     },
     {
+        "AmoebaTime": 120,
         "CaveLetter": "H",
         "CaveNumber": 9,
         "CaveTime": [
@@ -566,9 +567,9 @@
             80
         ],
         "Colors": [
-            1,
-            5,
-            7
+            "red",
+            "purple",
+            "white"
         ],
         "DiamondExtraValue": 10,
         "DiamondValue": 5,
@@ -579,29 +580,28 @@
             60,
             70
         ],
-        "MagicWallAmoebaTime": 120,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-            "WP------------------w----aaaaaaaaaa----W",
-            "W- c c c c c c------w------------------W",
-            "W- ---------- ------w------------------W",
-            "W- ----------c-----Xw------------------W",
-            "W- ---------- ------w------------------W",
-            "W- ----------c------w------------------W",
-            "W- ---------- ------w------------------W",
-            "W- ----------c------w------------------W",
-            "W-  c c c c c ------w------------------W",
-            "W-------------------w------------------W",
-            "W-------------------w------------------W",
-            "W-------------------w------------------W",
-            "W-------------------w------------------W",
-            "W-------------------w------------------W",
-            "W-------------------w------------------W",
-            "W--------------------------------------W",
-            "W--------------------------------------W",
-            "W--------------------------------------W",
-            "W--------------------------------------W",
-            "W--------------------------------------W",
+            "WP..................w....aaaaaaaaaa....W",
+            "W. c c c c c c......w..................W",
+            "W. .......... ......w..................W",
+            "W. ..........c.....Xw..................W",
+            "W. .......... ......w..................W",
+            "W. ..........c......w..................W",
+            "W. .......... ......w..................W",
+            "W. ..........c......w..................W",
+            "W.  c c c c c ......w..................W",
+            "W...................w..................W",
+            "W...................w..................W",
+            "W...................w..................W",
+            "W...................w..................W",
+            "W...................w..................W",
+            "W...................w..................W",
+            "W......................................W",
+            "W......................................W",
+            "W......................................W",
+            "W......................................W",
+            "W......................................W",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -624,9 +624,9 @@
             20
         ],
         "Colors": [
-            3,
-            2,
-            7
+            "yellow",
+            "green",
+            "white"
         ],
         "DiamondExtraValue": 10,
         "DiamondValue": 10,
@@ -640,16 +640,16 @@
         "Intermission": true,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWW",
-            "W------------------W",
-            "WP-----------------W",
-            "W--   --   --   ---W",
-            "W--   --   --   ---W",
-            "W-- dq-- dq-- dq---W",
-            "W------------------W",
-            "W--   --   --   ---W",
-            "W--   --   --   ---W",
-            "W--cd --cd --cd ---W",
-            "W-----------------XW",
+            "W..................W",
+            "WP.................W",
+            "W..   ..   ..   ...W",
+            "W..   ..   ..   ...W",
+            "W.. dq.. dq.. dq...W",
+            "W..................W",
+            "W..   ..   ..   ...W",
+            "W..   ..   ..   ...W",
+            "W..cd ..cd ..cd ...W",
+            "W.................XW",
             "WWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -672,9 +672,9 @@
             80
         ],
         "Colors": [
-            6,
-            2,
-            7
+            "cyan",
+            "green",
+            "white"
         ],
         "DiamondExtraValue": 50,
         "DiamondValue": 5,
@@ -729,9 +729,9 @@
             120
         ],
         "Colors": [
-            5,
-            2,
-            7
+            "purple",
+            "green",
+            "white"
         ],
         "DiamondExtraValue": 10,
         "DiamondValue": 5,
@@ -782,7 +782,7 @@
             7
         ],
         "TileForProbability": [
-            5
+            "BOULDER"
         ],
         "TileProbability": [
             1
@@ -799,9 +799,9 @@
             60
         ],
         "Colors": [
-            2,
-            4,
-            7
+            "green",
+            "blue",
+            "white"
         ],
         "DiamondExtraValue": 30,
         "DiamondValue": 15,
@@ -812,7 +812,7 @@
             23,
             27
         ],
-        "MagicWallAmoebaTime": 2,
+        "MagicWallTime": 2,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
             "Wqqqqqqqqqqqqqqqqqqqqqqqqq.............W",
@@ -845,10 +845,10 @@
             15
         ],
         "RandomFillBelow": [
-            13,
-            0,
-            0,
-            0
+            "MAGICWALL",
+            "",
+            "",
+            ""
         ],
         "RockfordExit": [
             18,
@@ -859,7 +859,7 @@
             10
         ],
         "TileForProbability": [
-            4
+            "DIAMOND"
         ],
         "TileProbability": [
             15
@@ -876,9 +876,9 @@
             150
         ],
         "Colors": [
-            6,
-            4,
-            7
+            "cyan",
+            "blue",
+            "white"
         ],
         "DiamondExtraValue": 15,
         "DiamondValue": 15,
@@ -929,8 +929,8 @@
             21
         ],
         "TileForProbability": [
-            5,
-            4
+            "BOULDER",
+            "DIAMOND"
         ],
         "TileProbability": [
             90,
@@ -948,9 +948,9 @@
             20
         ],
         "Colors": [
-            1,
-            4,
-            7
+            "red",
+            "blue",
+            "white"
         ],
         "DiamondExtraValue": 60,
         "DiamondValue": 25,
@@ -961,20 +961,20 @@
             2,
             2
         ],
-        "InitialFill": 0,
+        "InitialFill": "SPACE",
         "Intermission": true,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWW",
-            "W-.q.-.-.-.-.-.-.-.W",
-            "WP.-.-.-.-.-.-.-.-.W",
-            "W-.-.q.-.-.-.-.-.q.W",
-            "W-.-.-.-.-.-.-.-.-.W",
-            "W-.-.-.q.-.-.-dqd-XW",
-            "W-.-.-.-.-.-.-.-.-.W",
-            "W-.-.-.-.q.-.q.-.-.W",
-            "W-.-.-.-.-.-.-.-.-.W",
-            "W-.-.-.-.-.q.-.-.-.W",
-            "W-.-.-.-.-.-.-.-.-.W",
+            "W .q. . . . . . . .W",
+            "WP. . . . . . . . .W",
+            "W . .q. . . . . .q.W",
+            "W . . . . . . . . .W",
+            "W . . .q. . . dqd XW",
+            "W . . . . . . . . .W",
+            "W . . . .q. .q. . .W",
+            "W . . . . . . . . .W",
+            "W . . . . .q. . . .W",
+            "W . . . . . . . . .W",
             "WWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -997,9 +997,9 @@
             180
         ],
         "Colors": [
-            6,
-            5,
-            7
+            "cyan",
+            "purple",
+            "white"
         ],
         "DiamondExtraValue": 10,
         "DiamondValue": 2,
@@ -1051,8 +1051,8 @@
         ],
         "SlimePermeability": 0,
         "TileForProbability": [
-            5,
-            4
+            "BOULDER",
+            "DIAMOND"
         ],
         "TileProbability": [
             255,
@@ -1070,9 +1070,9 @@
             120
         ],
         "Colors": [
-            2,
-            4,
-            6
+            "green",
+            "blue",
+            "cyan"
         ],
         "DiamondExtraValue": 1,
         "DiamondValue": 20,
@@ -1123,7 +1123,7 @@
             20
         ],
         "TileForProbability": [
-            5
+            "BOULDER"
         ],
         "TileProbability": [
             60
@@ -1140,9 +1140,9 @@
             120
         ],
         "Colors": [
-            5,
-            2,
-            7
+            "purple",
+            "green",
+            "white"
         ],
         "DiamondExtraValue": 10,
         "DiamondValue": 10,
@@ -1153,29 +1153,29 @@
             36,
             36
         ],
-        "MagicWallAmoebaTime": 10,
+        "MagicWallTime": 10,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-            "W-----------------------r--------------W",
-            "W--------------------------------------W",
-            "W-----------------------r-------------XW",
-            "W--------------------------------------W",
-            "W-----r--------------------------------W",
-            "W--.......--x.xrx.x-----------.......--W",
-            "W--.    c.--w  . cw-----------r    c.--W",
-            "W--.     .--w     w          -.     .--W",
-            "W--.     .--w     w wwwwwwww -.     .--W",
-            "W--.     .--w     w  .    c. -.     .--W",
-            "W--.     .--w     w  .     . -.     .--W",
-            "W--.......--w.....w  .     . -MMMMMMM--W",
-            "W-----------w.....w  .     . -MMMMMMM--W",
-            "W-----------w.....w  .     . ----------W",
-            "W-----------wwwwwww  ....... ----------W",
-            "W-----------wwwwwww          ----------W",
-            "W--------------------------------------W",
-            "W--P-----------------------------------W",
-            "W--------------------------------------W",
-            "W--------------------------------------W",
+            "W.......................r..............W",
+            "W......................................W",
+            "W.......................r.............XW",
+            "W......................................W",
+            "W.....r................................W",
+            "W...........x.xrx.x....................W",
+            "W...    c...w  . cw...........r    c...W",
+            "W...     ...w     w          ..     ...W",
+            "W...     ...w     w wwwwwwww ..     ...W",
+            "W...     ...w     w  .    c. ..     ...W",
+            "W...     ...w     w  .     . ..     ...W",
+            "W...........w.....w  .     . .MMMMMMM..W",
+            "W...........w.....w  .     . .MMMMMMM..W",
+            "W...........w.....w  .     . ..........W",
+            "W...........wwwwwww  ....... ..........W",
+            "W...........wwwwwww          ..........W",
+            "W......................................W",
+            "W..P...................................W",
+            "W......................................W",
+            "W......................................W",
             "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
@@ -1198,9 +1198,9 @@
             200
         ],
         "Colors": [
-            4,
-            1,
-            7
+            "blue",
+            "red",
+            "white"
         ],
         "DiamondExtraValue": 40,
         "DiamondValue": 10,
@@ -1251,9 +1251,9 @@
             3
         ],
         "TileForProbability": [
-            0,
-            5,
-            4
+            "SPACE",
+            "BOULDER",
+            "DIAMOND"
         ],
         "TileProbability": [
             189,
@@ -1272,9 +1272,9 @@
             20
         ],
         "Colors": [
-            5,
-            4,
-            7
+            "purple",
+            "blue",
+            "white"
         ],
         "DiamondExtraValue": 20,
         "DiamondValue": 10,
@@ -1288,16 +1288,16 @@
         "Intermission": true,
         "Map": [
             "WWWWWWWWWWWWWWWWWWWW",
-            "W-P----------------W",
-            "W---------   ------W",
-            "W--------- d ------W",
-            "W---------  q------W",
-            "W-----   ----------W",
-            "W----- r ----------W",
-            "W-----   ----------W",
-            "W---------qqW------W",
-            "W---------qXW------W",
-            "W---------qqW------W",
+            "W.P................W",
+            "W.........   ......W",
+            "W......... d ......W",
+            "W.........  q......W",
+            "W.....   ..........W",
+            "W..... r ..........W",
+            "W.....   ..........W",
+            "W.........qqW......W",
+            "W.........qXW......W",
+            "W.........qqW......W",
             "WWWWWWWWWWWWWWWWWWWW"
         ],
         "RockfordExit": [
