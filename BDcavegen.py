@@ -42,6 +42,7 @@ SPRITES_FILE = ""
 #COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDash02"
 #COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDash03"
 COPY_FOLDER_FOR_ASM_BUILD = ""
+ATTEMPT_BD_COLOUR_MAP = False  #Attempt to map the colours in the BDCFF or use the config file scheme per cave
 TIDY_OUTPUT_FOLDER = True
 MOVE_BD_TO_DONE_FOLDER = True
 
@@ -359,10 +360,11 @@ def generate_caves(all_input_lines, output_subfolder):
                     elif line_param[0] == "Colors":
                         colour_codes = []
                         colour_list = []
-                        for text_colour in line_param[1].split(" "):
-                            if colour_map.get(text_colour.lower()) != None:  #Attempt to map the text values in Colors
-                                colour_codes.append(colour_map[text_colour.lower()])
-                                colour_list.append(text_colour.lower())
+                        if ATTEMPT_BD_COLOUR_MAP:
+                            for text_colour in line_param[1].split(" "):
+                                if colour_map.get(text_colour.lower()) != None:  #Attempt to map the text values in Colors
+                                    colour_codes.append(colour_map[text_colour.lower()])
+                                    colour_list.append(text_colour.lower())
                         if len(colour_codes) == 3:  #If exactly 3 mapped results, used the mapped scheme
                             add_cave_parameter(output_cave_json, output_cave_params, f"{line_param[0]}", colour_codes)
                             output_cave_json[line_param[0]] = colour_list
