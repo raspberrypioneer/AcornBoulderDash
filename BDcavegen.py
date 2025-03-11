@@ -248,12 +248,12 @@ def generate_caves(all_input_lines, output_subfolder):
                 skip_bytes = 9  #9 because intermissions are 20 tiles with each tile being one nibble, and zero based counting
                 for i, byte in enumerate(output_cave_map_bytes):
                     if i % 10 == 0 and i > 10:
-                        output_file.write(b" " * 10)  #Write out padding at the end of a line (every 10th byte)
+                        output_file.write(b"3" * 10)  #Write out steelwall padding at the end of a line (every 10th byte)
                     if i > skip_bytes:
                         output_file.write(byte)
-                output_file.write(b" " * 10)
+                output_file.write(b"3" * 10)
                 for i in range(0,9):
-                    output_file.write(b" " * 20)  #Write out padding lines (20 bytes)
+                    output_file.write(b"3" * 20)  #Write out steelwall padding lines (20 bytes)
 
             else:  #standard cave
                 skip_bytes = 19  #19 because there are 40 tiles with each tile being one nibble, and zero based counting
