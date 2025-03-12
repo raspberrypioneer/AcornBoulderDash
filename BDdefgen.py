@@ -56,10 +56,10 @@ def find_param(pos):
 
     return_address = ""
     last_address_pos = 0
-    for address in addresses:
-        address_pos = addresses.get(address)
+    for param_name in parameter_list:
+        address_pos = parameter_list[param_name]["address"]
         if (pos == address_pos):
-            return_address = address
+            return_address = param_name
             break
         
         if (pos > last_address_pos and pos < address_pos):
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     config_settings = json.load(config_file)
     element_map = config_settings["element_map"]
     element_list = list(element_map.keys())
-    addresses = config_settings["addresses"]
+    parameter_list = config_settings["parameters"]
 
     cave_letters = ['A','B','C','D','Q','E','F','G','H','R','I','J','K','L','S','M','N','O','P','T']
     BD_caves_folder = path.join(base_path, "output", CAVE_FILE_FOLDER)
