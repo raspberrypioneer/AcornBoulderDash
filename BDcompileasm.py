@@ -16,8 +16,8 @@ import image
 
 CAVE_LETTERS = ['A','B','C','D','Q','E','F','G','H','R','I','J','K','L','S','M','N','O','P','T']
 ASM_SOURCE = "main.asm"
-SSD_NAME = "BoulderDashP1"
-#SSD_NAME = "BoulderDash01"
+#SSD_NAME = "BoulderDashP1"
+SSD_NAME = "BoulderDash01"
 #SSD_NAME = "BoulderDash02"
 #SSD_NAME = "BoulderDash03"
 INCLUDE_CAVES = True
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     #Compile the main program asm code using acme, this overwrites the existing main program "BDSH3"
     print(f"Compile {ASM_SOURCE} asm code using acme.exe")
-    os.system(".\\bin\\acme.exe -o .\\output\\build\\BDSH3 .\\asm\\" + ASM_SOURCE)
+    os.system(".\\bin\\acme.exe -l .\\output\\build\\symbols -o .\\output\\build\\BDSH3 .\\asm\\" + ASM_SOURCE)
 
     #Create SSD file
     print(f"Creating SSD for {BD_filename}")
