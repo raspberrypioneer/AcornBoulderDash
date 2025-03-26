@@ -6,6 +6,7 @@
 # This file has been renamed as main.asm and is where changes to the assembler code are made
 #
 # V0.1 06/03/2024: First working version
+# V0.2 26/03/2025: Amended to build all versions with all caves in one SSD
 #
 
 import os
@@ -13,14 +14,6 @@ from os import path
 from distutils.dir_util import copy_tree
 import json
 import image
-
-CAVE_LETTERS = ['A','B','C','D','Q','E','F','G','H','R','I','J','K','L','S','M','N','O','P','T']
-ASM_SOURCE = "main.asm"
-#SSD_NAME = "BoulderDashP1"
-SSD_NAME = "BoulderDash01"
-#SSD_NAME = "BoulderDash02"
-#SSD_NAME = "BoulderDash03"
-INCLUDE_CAVES = True
 
 ################################################################################
 #region Helper functions
@@ -61,49 +54,51 @@ if __name__ == '__main__':
     base_path = path.dirname(path.abspath(__file__))
     config_file = open(path.join(base_path, "config/config.json"))
     config_settings = json.load(config_file)
+    versions = config_settings["versions"]
     ssd_file_settings = config_settings["ssd_file_settings"]
     config_file.close()
 
-    BD_code_folder = path.join(base_path, "code")
-    #Use the cave files based on the SSD name
-    BD_sourcecaves_folder = path.join(base_path, "caves", SSD_NAME)
+    build_folder = path.join(base_path, "output", "build")
 
-    output_subfolder = path.join(base_path, "output", "build")
-    BD_filename = SSD_NAME
-
-    #Copy sourcecode to build folder
-    print(f"Copy sourcecode and caves to build folder")
-    copy_tree(BD_code_folder, output_subfolder)
-    copy_tree(BD_sourcecaves_folder, output_subfolder)
+    #Copy existing program binaries to build folder
+    copy_tree(path.join(base_path, "code"), build_folder)
 
     #Compile the main program asm code using acme, this overwrites the existing main program "BDSH3"
-    print(f"Compile {ASM_SOURCE} asm code using acme.exe")
-    os.system(".\\bin\\acme.exe -l .\\output\\build\\symbols -o .\\output\\build\\BDSH3 .\\asm\\" + ASM_SOURCE)
+    print(f"Compile main.asm code using acme.exe")
+    os.system(".\\bin\\acme.exe -l .\\output\\build\\symbols -o .\\output\\build\\BDSH3 .\\asm\\main.asm")
 
-    #Create SSD file
-    print(f"Creating SSD for {BD_filename}")
-    ssd_filepath = path.join(base_path, "output", "ssd", BD_filename + ".ssd")
-    create_ssd(BD_filename, ssd_filepath, 40, 3)  #SSD with file name as title, 40 tracks and bootable
-    output_subfolder_relpath = path.join("output", "build")
-    os.chdir(output_subfolder_relpath)
+    #Loop through the caves folder for each version and merge individual cave binary files into 2 groups
+    for version in versions:
+        print(f"Creating cave groups for {version}")
+        values = versions[version]
 
-    #Create INF files for each source file using config data (INF files needed for inserting into SSD)
+        os.chdir(path.join(base_path, "caves", values["folder"]))
+        os.system('copy /b A+B+C+D+E+F+G+H+Q+R "' + build_folder + '\\' + values["prefix"] + '-1" >nul')
+        os.system('copy /b I+J+K+L+M+N+O+P+S+T "' + build_folder + '\\' + values["prefix"] + '-2" >nul')
+
+    #Build SSD usiing files prepared above
+    os.chdir(build_folder)
+
+    #Create INF files for each file using config data (INF files needed for inserting into SSD)
     for file in ssd_file_settings:
-        if file not in CAVE_LETTERS or (file in CAVE_LETTERS and INCLUDE_CAVES):
-            if path.exists(file):
-                values = ssd_file_settings[file]
-                with open(file + ".inf", 'w') as f:
-                    f.write("$.{: <9} {:0>8} {:0>8} L {:0>8}".format(file, values['load'], values['exec'], values['size']))
+        if path.exists(file):
+            values = ssd_file_settings[file]
+            with open(file + ".inf", 'w') as f:
+                f.write("$.{: <9} {:0>8} {:0>8} L {:0>8}".format(file, values['load'], values['exec'], values['size']))
+
+    #Create empty SSD file
+    print(f"Creating Boulder Dash SSD")
+    ssd_filepath = path.join(base_path, "output", "ssd", "BoulderDash.ssd")
+    create_ssd("BoulderDash", ssd_filepath, 40, 3)  #SSD with file name as title, 40 tracks and bootable
 
     #Insert each file into the SSD in order per the config file
     disk_image = image.DiskImage()
     disk_image.set_disk(ssd_filepath)
 
     for file in ssd_file_settings:
-        if file not in CAVE_LETTERS or (file in CAVE_LETTERS and INCLUDE_CAVES):
-            if path.exists(file):
-#                print(f"  Inserting {file}")
-                disk_image.insert(file)
+        if path.exists(file):
+#            print(f"  Inserting {file}")
+            disk_image.insert(file)
 
     os.chdir("../../")
-    print(f"Completed {BD_filename}")
+    print(f"Build complete")

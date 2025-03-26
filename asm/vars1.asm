@@ -505,9 +505,7 @@ initial_clock_value                    ; Five byte clock value (low byte to high
 ; *************************************************************************************
 ; IMPORTANT: this section must start at a page boundary
 ;
-;!align 255, 0
-;TODO: Aim to preserve below. Move tables above to the end of this asm file when code neededin main.asm
-* = $3200
+!align 255, 0
 demonstration_keys
     !byte   0,   0,   8,   0, $10, $80,   0, $20,   0, $10, $80, $20, $40,   0, $80     ; 3100: 00 00 08... ...
     !byte $10, $80,   0, $40,   0, $80, $20, $80,   0, $10,   0, $40,   0, $10, $80     ; 310f: 10 80 00... ...
@@ -741,7 +739,11 @@ number_of_players_status_bar
 plural_for_player
     !byte sprite_space                                                                  ; 3280: 00          .
     !byte sprite_space                                                                  ; 3281: 00          .
-    !byte sprite_space                                                                  ; 3282: 00          .
+;TODO: WIP
+version_indicator
+    !byte sprite_1
+;    !byte sprite_space                                                                  ; 3282: 00          .
+;
     !byte sprite_space                                                                  ; 3283: 00          .
     !text "CAVE="                                                                       ; 3284: 43 41 56... CAV
 cave_letter
@@ -847,7 +849,6 @@ zeroed_status_bar
 ; *************************************************************************************
 ; IMPORTANT: this section must start at a page boundary
 ;
-;TODO: Revisit alignment
 !align 255, 0
 game_credits
     !fill 4,sprite_full_stop
@@ -1065,4 +1066,4 @@ tune_pitches_and_commands
     !byte $89, $8d, $cc, $70, $94, $80, $78, $2c, $40, $48, $50, $5c, $94, $8c, $80     ; 56a5: 89 8d cc... ...
     !byte $78, $70, $64, $5c                                                            ; 56b4: 78 70 64... xpd
 
-end_of_vars1
+end_of_vars

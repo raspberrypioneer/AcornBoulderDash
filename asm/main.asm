@@ -144,6 +144,15 @@
 ;   $45 = rock that's just fallen this tick
 ;
 ; *************************************************************************************
+; Memory map
+; grid_of_currently_displayed_sprites    $0c00 to $1300
+; sprite definitions                     $1300 to $1f00
+; program code and variables             $1f00 to 'end_of_vars' label address
+; load area for group of 10 caves        $3e80 to $5000 (4480 bytes for 10 caves at 448 bytes each)
+; tiles map (with variables)             $5000 to $5640 (25 rows at 64 bytes per row - 40 bytes used, 24 sometimes used)
+; single cave used in game play          $5640 to $5800 (448 bytes, moved from load area when used in game play)
+; hires screen                           $5800 to $8000 (Mode 5 layout)
+; *************************************************************************************
 
 ; Constants
 inkey_key_b                              = 155
@@ -2740,6 +2749,25 @@ waiting_for_demo_loop
     lda #opcode_inx                                                                     ; 3a60: a9 e8       ..
     sta self_modify_move_left_or_right                                                  ; 3a62: 8d 9e 3a    ..:
     lda keys_to_process                                                                 ; 3a65: a5 62       .b
+;TODO: WIP
+    lsr
+    bcc continue_options
+    inc bd_version_to_play
+    lda bd_version_to_play
+    cmp #5
+    bne update_version_on_screen
+    lda #0
+update_version_on_screen
+    sta bd_version_to_play
+    clc
+    adc #sprite_1
+    sta version_indicator
+    lda #$ff  ;reset last group and cave values to ensure load of new version caves
+    sta load_group_stored
+    sta load_cave_number_stored
+continue_options
+    lda keys_to_process
+;
     asl                                                                                 ; 3a67: 0a          .
     bcs self_modify_move_left_or_right                                                  ; 3a68: b0 34       .4
     asl                                                                                 ; 3a6a: 0a          .
@@ -2839,7 +2867,7 @@ set_cave_letter_on_status_bar
     lda cave_letter                                                                     ; 3b1d: ad 89 32    ..2
     sta cave_letter_on_regular_status_bar                                               ; 3b20: 8d 25 32    .%2
     sta cave_letter_on_inactive_players_and_men_status_bar                              ; 3b23: 8d 4d 32    .M2
-    ; copy difficuly level to other status bars
+    ; copy difficulty level to other status bars
     ldx number_of_players_status_bar_difficulty_level                                   ; 3b26: ae 8b 32    ..2
     stx difficulty_level_on_regular_status_bar                                          ; 3b29: 8e 27 32    .'2
     stx difficulty_level_on_inactive_players_and_men_status_bar                         ; 3b2c: 8e 4f 32    .O2
@@ -2882,10 +2910,10 @@ copy_score_to_last_score_loop
     bpl copy_score_to_last_score_loop                                                   ; 3b62: 10 f6       ..
     lda neighbour_cell_contents                                                         ; 3b64: a5 64       .d
     cmp #8                                                                              ; 3b66: c9 08       ..
-    beq calculate_next_cave_number_and_difficuly_level                                  ; 3b68: f0 37       .7
+    beq calculate_next_cave_number_and_difficulty_level                                 ; 3b68: f0 37       .7
     lda cave_number                                                                     ; 3b6a: a5 87       ..
     cmp #16                                                                             ; 3b6c: c9 10       ..
-    bpl calculate_next_cave_number_and_difficuly_level                                  ; 3b6e: 10 31       .1
+    bpl calculate_next_cave_number_and_difficulty_level                                 ; 3b6e: 10 31       .1
     ; check for zero men left for the current player
     lda #sprite_0                                                                       ; 3b70: a9 32       .2
     cmp men_number_on_regular_status_bar                                                ; 3b72: cd 1e 32    ..2
@@ -2911,7 +2939,7 @@ swap_loop
     jsr set_cave_number_and_difficulty_level_from_status_bar                            ; 3b9b: 20 c1 3b     .;
     jmp play_next_life                                                                  ; 3b9e: 4c 3f 3b    L?;
 
-calculate_next_cave_number_and_difficuly_level
+calculate_next_cave_number_and_difficulty_level
     ldx cave_number                                                                     ; 3ba1: a6 87       ..
     ldy difficulty_level                                                                ; 3ba3: a4 89       ..
     lda cave_play_order,x                                                               ; 3ba5: bd 40 4c    .@L
@@ -3086,43 +3114,124 @@ seeded_rand_temp2
 
 ; ****************************************************************************************************
 ; Cave file load
-;   Convert the cave number to a letter from A-T which is the name of the cave to load
-;   Load this this file using a system method
-; ****************************************************************************************************
+; For a given cave number and selected BD version, find the cave group file to load from disk
+; Load the file using a system method, then copy the cave data from the load area to the program useage area
+;
 load_cave_file
-    lda cave_number
-    cmp load_cave_number_stored        ; Check if the cave is already stored
+    ldy cave_number
+    cpy load_cave_number_stored        ; Check if the cave is already stored
     beq cave_already_loaded            ; Skip if already loaded
 
+    lda load_group_for_cave_number,y
+    cmp load_group_stored              ; Check if the cave is in the group of caves (group 1 or 2) already loaded
+    beq move_cave_to_usage_area        ; Move onto getting the cave contents if group is already loaded
+    sta load_group_stored
+
+    lda bd_version_to_play             ; Get the version file name offset from the version selected to play
+    asl                                ; (multiply version number by 4 for the offset)
+    asl
+    tay
+    ldx #0
+set_version_filename                   ; Build the cave group file name using the version selected to play
+    lda bd_version_files,y
+    sta load_file_name,x
+    iny
+    inx
+    cpx #4
+    bne set_version_filename
+    lda #"-"                           ; Add the suffix "-" and the cave group number, ending with a file name e.g. "BD01-1
+    sta load_file_name,x
+    inx
+    lda load_group_stored              ; Turn the cave group number into a digit
     clc
-    adc #'A'                           ; Add letter 'A' to get the cave letter for the cave number
-    sta load_cave_letter               ; Store the cave letter for the LOAD command
+    adc #48
+    sta load_file_name,x
+
     ldy #>system_load_command          ; Set x,y for system LOAD command address
     ldx #<system_load_command          ; Set x,y for system LOAD command address
-    jsr oscli_instruction_for_load     ; Call the LOAD command with the cave letter (next address after LOAD command address)
-                                       ; The load address on the SSD file points to where the data should be located (e.g. 4e70)
-    lda cave_number
-    sta load_cave_number_stored
+    jsr oscli_instruction_for_load     ; Call the LOAD command
+
+move_cave_to_usage_area
+
+  ; Copy cave from load area into area used in program
+  ldy cave_number  ;cave number starts from zero
+  sty load_cave_number_stored
+  lda cave_load_slot,y  ;find which of the 10 'slots' the cave is located in
+  tay
+
+  lda cave_addr_low,y
+  sta screen_addr1_low  ;source low
+  lda cave_addr_high,y
+  sta screen_addr1_high  ;source high
+
+  lda #<cave_parameter_data
+  sta screen_addr2_low  ;target low
+  lda #>cave_parameter_data
+  sta screen_addr2_high  ;target high
+
+  ;size is always 448 bytes per cave
+  lda #$c0
+  sta copy_size  
+  lda #1
+  sta copy_size+1
+
+  jsr copy_memory  ;copy from source to target for given size
 
 cave_already_loaded
     rts
 
+bd_version_to_play
+    !byte 0
+load_group_stored
+    !byte $ff                          ; Always load cave group initially
 load_cave_number_stored
     !byte $ff                          ; Initially cave $ff isn't a valid cave, so will always loads cave A
 system_load_command
     !byte $4c, $4f, $2e                ; Is "LO." for the short system LOAD command
-load_cave_letter
-    !byte $3f                          ; Cave letter for the LOAD command
+load_file_name
+    !fill 6,0                          ; Cave group file name e.g. BD01-1 for Boulder Dash 1 cave group 1 (of 2)
 system_load_end
     !byte $0d                          ; Termination for LOAD command
+
+; *************************************************************************************
+; Copy a number of bytes (in copy size variable) from source to target memory locations
+copy_memory
+
+  ldy #0
+  ldx copy_size+1
+  beq copy_remaining_bytes
+copy_a_page
+  lda (screen_addr1_low),y
+  sta (screen_addr2_low),y
+  iny
+  bne copy_a_page
+  inc screen_addr1_high
+  inc screen_addr2_high
+  dex
+  bne copy_a_page
+copy_remaining_bytes
+  ldx copy_size
+  beq copy_return
+copy_a_byte
+  lda (screen_addr1_low),y
+  sta (screen_addr2_low),y
+  iny
+  dex
+  bne copy_a_byte
+
+copy_return
+  rts
+
+copy_size
+  !byte 0, 0
 
 ; ****************************************************************************************************
 ; Populate Cave from file loaded data. Split bytes into 2 nibbles, each one representing a tile value
 ; ****************************************************************************************************
 populate_cave_from_file
-    lda #>cave_map_data                ; Point to cave address 4e70 (high byte)
+    lda #>cave_map_data                ; Point to cave address (high byte)
     sta plot_cave_tiles_x2+2           ; Store in self-modifying code location
-    lda #<cave_map_data                ; Point to cave address 4e70 (low byte)
+    lda #<cave_map_data                ; Point to cave address (low byte)
     sta plot_cave_tiles_x2+1           ; Store in self-modifying code location
 
     lda #$14                           ; Set row counter to 20 (excluding steel top and bottom rows)
@@ -3262,18 +3371,10 @@ move_to_next_tune_channel
 ; *************************************************************************************
 !source ".\asm\vars1.asm"
 
-;TODO: Aim to preserve $3d00 for loading caves in 2 parts (A-J and K-T)
-;Means will have BD01AJ, BD01KT, BD02AJ, BD02KT, BD03AJ, BD03KT, BDP1AJ, BDP2KT, AR01AJ, AR02KT
-;10 files instead of 100. On an SD means 10 fewer files but include all versions!
-
-;grid_of_currently_displayed_sprites $0c00 to $1300
-;sprites $1300 to $1f00
-;start of program $1f00
-;end of program (currrently) $3bb8
-;potential load $3c00 to $5000 :5120 bytes (20 pages / 5kb). Need 4480 bytes for 10 caves at 448 bytes each
-;tiles $5000 to $5640
-;single cave $5640 to $5800
-;hires screen $5800 to $8000
+; *************************************************************************************
+; Load area for 10 caves. Caves for a BD version are stored in 2 groups of 10 caves each
+;IMPORTANT: Address must not change as it corresponds to the SD file load address
+* = $3e80
 
 ; *************************************************************************************
 ; Cave tile map. Each row has 40 bytes used for the tiles in the game 
@@ -3283,11 +3384,12 @@ move_to_next_tune_channel
 !source ".\asm\vars2.asm"
 
 ; *************************************************************************************
-; Cave data. Loaded data is placed here for cave parameters and map
+; Cave data. Loaded data is placed here for cave parameters and map used in the game
 * = $5640
 !source ".\asm\cavedata.asm"
 
 ; *************************************************************************************
 ; Screen memory. MODE 5 layout for graphics 160x256, colours 4, text 20x32
+; Big Rockford splashscreen also loaded here
 * = $5800
 big_rockford_destination_screen_address

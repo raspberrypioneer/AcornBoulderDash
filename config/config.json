@@ -77,30 +77,27 @@
         "cyan": 6,
         "white": 7
     },
+    "versions": {
+        "Boulder Dash 1": {"folder": "BoulderDash01", "prefix": "BD01"},
+        "Boulder Dash 2": {"folder": "BoulderDash02", "prefix": "BD02"},
+        "Boulder Dash 3": {"folder": "BoulderDash03", "prefix": "BD03"},
+        "Boulder Dash +1": {"folder": "BoulderDashP1", "prefix": "BDP1"},
+        "Arno Dash 1": {"folder": "ArnoDash01", "prefix": "AD01"}
+    },
     "ssd_file_settings": {
         "BDSH1": {"load": "1900", "exec": "0", "size": "300"},
         "BDSH2": {"load": "5800", "exec": "0", "size": "2500"},
         "BDSH3": {"load": "1300", "exec": "1F00", "size": "4500"},
         "!BOOT": {"load": "FFFFFFFF", "exec": "FFFFFFFF", "size": "1F"},
-        "A": {"load": "5640", "exec": "0", "size": "1C0"},
-        "B": {"load": "5640", "exec": "0", "size": "1C0"},
-        "C": {"load": "5640", "exec": "0", "size": "1C0"},
-        "D": {"load": "5640", "exec": "0", "size": "1C0"},
-        "E": {"load": "5640", "exec": "0", "size": "1C0"},
-        "F": {"load": "5640", "exec": "0", "size": "1C0"},
-        "G": {"load": "5640", "exec": "0", "size": "1C0"},
-        "H": {"load": "5640", "exec": "0", "size": "1C0"},
-        "I": {"load": "5640", "exec": "0", "size": "1C0"},
-        "J": {"load": "5640", "exec": "0", "size": "1C0"},
-        "K": {"load": "5640", "exec": "0", "size": "1C0"},
-        "L": {"load": "5640", "exec": "0", "size": "1C0"},
-        "M": {"load": "5640", "exec": "0", "size": "1C0"},
-        "N": {"load": "5640", "exec": "0", "size": "1C0"},
-        "O": {"load": "5640", "exec": "0", "size": "1C0"},
-        "P": {"load": "5640", "exec": "0", "size": "1C0"},
-        "Q": {"load": "5640", "exec": "0", "size": "1C0"},
-        "R": {"load": "5640", "exec": "0", "size": "1C0"},
-        "S": {"load": "5640", "exec": "0", "size": "1C0"},
-        "T": {"load": "5640", "exec": "0", "size": "1C0"}
+        "AD01-1": {"load": "3E80", "exec": "0", "size": "1180"},
+        "AD01-2": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BD01-1": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BD01-2": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BD02-1": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BD02-2": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BD03-1": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BD03-2": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BDP1-1": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BDP1-2": {"load": "3E80", "exec": "0", "size": "1180"}
     }
 }
