@@ -1,12 +1,9 @@
 ################################################################################
-# BDcompileasm.py - Compile Boulder Dash assembler code and build ssd
-#
-# See https://github.com/TobyLobster/Boulderdash for the disassembly
-# The complete original asm is in /source/___1___.asm
-# This file has been renamed as main.asm and is where changes to the assembler code are made
+# bd_build_all.py - Compile Boulder Dash assembler code and build ssd
 #
 # V0.1 06/03/2024: First working version
 # V0.2 26/03/2025: Amended to build all versions with all caves in one SSD
+# V1.0 28/03/2025: Amended with changes to folder structure
 #
 
 import os
@@ -58,21 +55,21 @@ if __name__ == '__main__':
     ssd_file_settings = config_settings["ssd_file_settings"]
     config_file.close()
 
-    build_folder = path.join(base_path, "output", "build")
+    build_folder = path.join(base_path, "build")
 
     #Copy existing program binaries to build folder
-    copy_tree(path.join(base_path, "code"), build_folder)
+    copy_tree(path.join(base_path, "code_bin"), build_folder)
 
     #Compile the main program asm code using acme, this overwrites the existing main program "BDSH3"
     print(f"Compile main.asm code using acme.exe")
-    os.system(".\\bin\\acme.exe -l .\\output\\build\\symbols -o .\\output\\build\\BDSH3 .\\asm\\main.asm")
+    os.system(".\\bin\\acme.exe -l .\\build\\symbols -o .\\build\\BDSH3 main.asm")
 
     #Loop through the caves folder for each version and merge individual cave binary files into 2 groups
     for version in versions:
         print(f"Creating cave groups for {version}")
         values = versions[version]
 
-        os.chdir(path.join(base_path, "caves", values["folder"]))
+        os.chdir(path.join(base_path, "caves_bin", values["folder"]))
         os.system('copy /b A+B+C+D+E+F+G+H+Q+R "' + build_folder + '\\' + values["prefix"] + '-1" >nul')
         os.system('copy /b I+J+K+L+M+N+O+P+S+T "' + build_folder + '\\' + values["prefix"] + '-2" >nul')
 
@@ -88,7 +85,7 @@ if __name__ == '__main__':
 
     #Create empty SSD file
     print(f"Creating Boulder Dash SSD")
-    ssd_filepath = path.join(base_path, "output", "ssd", "BoulderDash.ssd")
+    ssd_filepath = path.join(base_path, "ssd", "BoulderDash.ssd")
     create_ssd("BoulderDash", ssd_filepath, 40, 3)  #SSD with file name as title, 40 tracks and bootable
 
     #Insert each file into the SSD in order per the config file

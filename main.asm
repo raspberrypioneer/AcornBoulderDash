@@ -387,7 +387,7 @@ lfff6                                   = $fff6
 oscli_instruction_for_load              = $fff7
 
 * = $1300
-!source ".\asm\spr.asm"
+!source "spr.asm"
 ; *************************************************************************************
 ; Entry point for the start of the program
 ; IMPORTANT: Below is needed to point to the correct execution memory address
@@ -3496,7 +3496,7 @@ move_to_next_tune_channel
     rts                                                                                 ; 5795: 60          `
 
 ; *************************************************************************************
-!source ".\asm\vars1.asm"
+!source "vars1.asm"
 
 ; *************************************************************************************
 ; Load area for 10 caves. Caves for a BD version are stored in 2 groups of 10 caves each
@@ -3508,12 +3508,12 @@ move_to_next_tune_channel
 ; and 24 unused (repurposed with table variables to not waste memory)
 ; IMPORTANT: Address must be $4000, $5000 etc, not $4100 for example!
 * = $5000
-!source ".\asm\vars2.asm"
+!source "vars2.asm"
 
 ; *************************************************************************************
 ; Cave data. Loaded data is placed here for cave parameters and map used in the game
 * = $5640
-!source ".\asm\cavedata.asm"
+!source "cavedata.asm"
 
 ; *************************************************************************************
 ; Screen memory. MODE 5 layout for graphics 160x256, colours 4, text 20x32
