@@ -82,7 +82,8 @@
         "Boulder Dash 2": {"folder": "BoulderDash02", "prefix": "BD02"},
         "Boulder Dash 3": {"folder": "BoulderDash03", "prefix": "BD03"},
         "Boulder Dash +1": {"folder": "BoulderDashP1", "prefix": "BDP1"},
-        "Arno Dash 1": {"folder": "ArnoDash01", "prefix": "AD01"}
+        "Arno Dash 1": {"folder": "ArnoDash01", "prefix": "AD01"},
+        "Bonus Caves": {"folder": "BoulderBonus", "prefix": "BB01"}
     },
     "ssd_file_settings": {
         "BDSH1": {"load": "1900", "exec": "0", "size": "300"},
@@ -91,6 +92,8 @@
         "!BOOT": {"load": "FFFFFFFF", "exec": "FFFFFFFF", "size": "1F"},
         "AD01-1": {"load": "3E80", "exec": "0", "size": "1180"},
         "AD01-2": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BB01-1": {"load": "3E80", "exec": "0", "size": "1180"},
+        "BB01-2": {"load": "3E80", "exec": "0", "size": "1180"},
         "BD01-1": {"load": "3E80", "exec": "0", "size": "1180"},
         "BD01-2": {"load": "3E80", "exec": "0", "size": "1180"},
         "BD02-1": {"load": "3E80", "exec": "0", "size": "1180"},

@@ -276,6 +276,7 @@ sprite_bomb3                             = 93
 sprite_bomb4                             = 94
 sprite_bubble1                           = 95
 total_caves                              = 20
+option_left_edge = $40
 
 ; Memory locations
 page_0                                  = $00
@@ -392,6 +393,113 @@ oscli_instruction_for_load              = $fff7
 ; IMPORTANT: Below is needed to point to the correct execution memory address
 ;
 * = $1f00
+
+;Select version to play
+select_version_to_play
+    ;Clear screen
+    lda #<big_rockford_destination_screen_address  ;set screen memory as target
+    sta screen_addr2_low  ;target low
+    lda #>big_rockford_destination_screen_address
+    sta screen_addr2_high  ;target high
+    lda #$00  ;size is $8000 - $5800 = $2800 (hires screen size)
+    sta clear_size  
+    lda #$28
+    sta clear_size+1
+    lda #0  ;clear to 0
+    sta clear_to
+    jsr clear_memory  ;clear target for given size and value
+
+    ;Plot each option using tables of data and screen addresses
+    ldx #0
+plot_version_option
+    stx temp_keys
+    lda #$ff
+    jsr reset_status_bar
+    ldx temp_keys
+    lda version_option_text_high,x
+    sta status_text_address_high
+    lda version_option_text_low,x
+    sta status_text_address_low
+    ldy #option_left_edge
+    lda version_option_screen_high,x
+    jsr draw_single_row_of_sprites
+    ldx temp_keys
+    inx
+    cpx #6
+    bne plot_version_option
+
+version_select_loop
+    jsr wait_for_13_centiseconds_and_read_keys
+    lda keys_to_process
+    asl
+    bcs version_option_down
+    asl
+    bcs version_option_up
+    asl
+    bcs version_option_up
+    asl
+    bcs version_option_down
+    asl
+    ;#bcs = enter key
+    asl
+    ;#bcs = "b" key
+    asl
+    bcs main_menu_loop  ;space key is pressed to start selected version
+    jmp version_select_loop
+
+version_option_up
+    lda #sprite_space
+    sta option_sprite_to_plot+1
+    jsr plot_sprite_next_to_option
+
+    dec bd_version_to_play
+    lda bd_version_to_play
+    bpl update_version_on_screen
+    lda #5
+    jmp update_version_on_screen
+
+version_option_down
+    lda #sprite_space
+    sta option_sprite_to_plot+1
+    jsr plot_sprite_next_to_option
+
+    inc bd_version_to_play
+    lda bd_version_to_play
+    cmp #6
+    bne update_version_on_screen
+    lda #0
+update_version_on_screen
+    sta bd_version_to_play
+
+    lda #sprite_rockford_blinking1
+    sta option_sprite_to_plot+1
+    jsr plot_sprite_next_to_option
+
+    lda #$ff  ;reset last group and cave values to ensure load of new version caves
+    sta load_group_stored
+    sta load_cave_number_stored
+    jmp version_select_loop
+
+plot_sprite_next_to_option
+    lda #$ff
+    jsr reset_status_bar
+    ldx bd_version_to_play
+    lda version_option_text_high,x
+    sta status_text_address_high
+    sta screen_addr2_high
+    lda version_option_text_low,x
+    sta status_text_address_low
+    sta screen_addr2_low
+option_sprite_to_plot
+    lda #sprite_rockford_blinking1
+    ldy #1
+    sta (screen_addr2_low),y
+    ldy #option_left_edge
+    lda version_option_screen_high,x
+    jsr draw_single_row_of_sprites
+    rts
+
+;Standard game menu
 main_menu_loop
     lda #>regular_status_bar
     sta status_text_address_high
@@ -451,7 +559,8 @@ reset_grid_of_sprites_loop
     dex                                                                                 ; 2296: ca          .
     sta grid_of_currently_displayed_sprites,x                                           ; 2297: 9d 00 0c    ...
     bne reset_grid_of_sprites_loop                                                      ; 229a: d0 fa       ..
-    ; clear the current status bar
+
+reset_status_bar  ; clear the current status bar
     ldx #$14                                                                            ; 229c: a2 14       ..
 clear_status_bar_loop
     dex                                                                                 ; 229e: ca          .
@@ -2046,9 +2155,8 @@ check_for_need_to_scroll_up
     bmi check_for_bonus_stages                                                          ; 2b64: 30 01       0.
     dey                                                                                 ; 2b66: 88          .
 check_for_bonus_stages
-    lda cave_number                                                                     ; 2b67: a5 87       ..
-    cmp #$10                                                                            ; 2b69: c9 10       ..
-    bmi skip_bonus_stage                                                                ; 2b6b: 30 04       0.
+    lda param_intermission
+    beq skip_bonus_stage
     ; bonus stage is always situated in top left corner
     lda #0                                                                              ; 2b6d: a9 00       ..
     tax                                                                                 ; 2b6f: aa          .
@@ -2749,25 +2857,6 @@ waiting_for_demo_loop
     lda #opcode_inx                                                                     ; 3a60: a9 e8       ..
     sta self_modify_move_left_or_right                                                  ; 3a62: 8d 9e 3a    ..:
     lda keys_to_process                                                                 ; 3a65: a5 62       .b
-;TODO: WIP
-    lsr
-    bcc continue_options
-    inc bd_version_to_play
-    lda bd_version_to_play
-    cmp #5
-    bne update_version_on_screen
-    lda #0
-update_version_on_screen
-    sta bd_version_to_play
-    clc
-    adc #sprite_1
-    sta version_indicator
-    lda #$ff  ;reset last group and cave values to ensure load of new version caves
-    sta load_group_stored
-    sta load_cave_number_stored
-continue_options
-    lda keys_to_process
-;
     asl                                                                                 ; 3a67: 0a          .
     bcs self_modify_move_left_or_right                                                  ; 3a68: b0 34       .4
     asl                                                                                 ; 3a6a: 0a          .
@@ -2777,11 +2866,13 @@ continue_options
     asl                                                                                 ; 3a70: 0a          .
     bcs decrease_difficulty_level                                                       ; 3a71: b0 44       .D
     asl                                                                                 ; 3a73: 0a          .
-    bcs toggle_one_or_two_players                                                       ; 3a74: b0 48       .H
+    bcs toggle_one_or_two_players  ;enter key toggles the number of players
     asl                                                                                 ; 3a76: 0a          .
-    bcs return15                                                                        ; 3a77: b0 68       .h
+    bcs return15  ;"b" key returns and displays scrolling credits
     asl                                                                                 ; 3a79: 0a          .
-    bcs show_rockford_again_and_play_game                                               ; 3a7a: b0 55       .U
+    bcs show_rockford_again_and_play_game  ;space key starts game
+    asl
+    bcs return_to_version_selection  ;escape key returns to version selection screen
     dec timeout_until_demo_mode                                                         ; 3a7c: c6 6a       .j
     bne waiting_for_demo_loop                                                           ; 3a7e: d0 c5       ..
 
@@ -2847,6 +2938,9 @@ show_rockford_again_and_play_game
 
 return15
     rts                                                                                 ; 3ae1: 60          `
+
+return_to_version_selection
+    jmp select_version_to_play
 
 ; *************************************************************************************
 initialise_and_play_game
@@ -3153,29 +3247,29 @@ set_version_filename                   ; Build the cave group file name using th
 
 move_cave_to_usage_area
 
-  ; Copy cave from load area into area used in program
-  ldy cave_number  ;cave number starts from zero
-  sty load_cave_number_stored
-  lda cave_load_slot,y  ;find which of the 10 'slots' the cave is located in
-  tay
+    ; Copy cave from load area into area used in program
+    ldy cave_number  ;cave number starts from zero
+    sty load_cave_number_stored
+    lda cave_load_slot,y  ;find which of the 10 'slots' the cave is located in
+    tay
 
-  lda cave_addr_low,y
-  sta screen_addr1_low  ;source low
-  lda cave_addr_high,y
-  sta screen_addr1_high  ;source high
+    lda cave_addr_low,y
+    sta screen_addr1_low  ;source low
+    lda cave_addr_high,y
+    sta screen_addr1_high  ;source high
 
-  lda #<cave_parameter_data
-  sta screen_addr2_low  ;target low
-  lda #>cave_parameter_data
-  sta screen_addr2_high  ;target high
+    lda #<cave_parameter_data
+    sta screen_addr2_low  ;target low
+    lda #>cave_parameter_data
+    sta screen_addr2_high  ;target high
 
-  ;size is always 448 bytes per cave
-  lda #$c0
-  sta copy_size  
-  lda #1
-  sta copy_size+1
+    ;size is always 448 bytes per cave
+    lda #$c0
+    sta copy_size  
+    lda #1
+    sta copy_size+1
 
-  jsr copy_memory  ;copy from source to target for given size
+    jsr copy_memory  ;copy from source to target for given size
 
 cave_already_loaded
     rts
@@ -3197,33 +3291,66 @@ system_load_end
 ; Copy a number of bytes (in copy size variable) from source to target memory locations
 copy_memory
 
-  ldy #0
-  ldx copy_size+1
-  beq copy_remaining_bytes
+    ldy #0
+    ldx copy_size+1
+    beq copy_remaining_bytes
 copy_a_page
-  lda (screen_addr1_low),y
-  sta (screen_addr2_low),y
-  iny
-  bne copy_a_page
-  inc screen_addr1_high
-  inc screen_addr2_high
-  dex
-  bne copy_a_page
+    lda (screen_addr1_low),y
+    sta (screen_addr2_low),y
+    iny
+    bne copy_a_page
+    inc screen_addr1_high
+    inc screen_addr2_high
+    dex
+    bne copy_a_page
 copy_remaining_bytes
-  ldx copy_size
-  beq copy_return
+    ldx copy_size
+    beq copy_return
 copy_a_byte
-  lda (screen_addr1_low),y
-  sta (screen_addr2_low),y
-  iny
-  dex
-  bne copy_a_byte
+    lda (screen_addr1_low),y
+    sta (screen_addr2_low),y
+    iny
+    dex
+    bne copy_a_byte
 
 copy_return
-  rts
+    rts
 
 copy_size
-  !byte 0, 0
+    !byte 0, 0
+
+; *************************************************************************************
+; Clear a number of bytes in target memory locations, using clear_size and clear_to
+clear_memory
+
+    ldy #0
+    ldx clear_size+1
+    beq clear_remaining_bytes
+clear_a_page
+    lda clear_to
+    sta (screen_addr2_low),y
+    iny
+    bne clear_a_page
+    inc screen_addr2_high
+    dex
+    bne clear_a_page
+clear_remaining_bytes
+    ldx clear_size
+    beq clear_return
+clear_a_byte
+    lda clear_to
+    sta (screen_addr2_low),y
+    iny
+    dex
+    bne clear_a_byte
+
+clear_return
+    rts
+
+clear_size
+    !byte 0, 0
+clear_to
+    !byte 0
 
 ; ****************************************************************************************************
 ; Populate Cave from file loaded data. Split bytes into 2 nibbles, each one representing a tile value

@@ -459,6 +459,52 @@ sprite_titanium_addressC
     !byte $22                                                                           ; 20ff: 22          "
 
 ; *************************************************************************************
+; Given a direction (0-3), return an offset from the current position ($41) in the map
+; to check is clear when moving a rock (or zero if direction is not possible):
+;    00 01 02
+; 3f 40 41 42 43
+;    80 81 82
+;       c1
+check_for_rock_direction_offsets
+    !byte $43, $3f,   0, $c1                                                            ; 2204: 43 3f 00... C?.
+
+map_offset_for_direction
+    !byte $42, $40,   1, $81                                                            ; 2208: 42 40 01... B@.
+
+rockford_cell_value_for_direction
+    !byte $af, $9f,   0,   0                                                            ; 2224: af 9f 00... ...
+
+neighbouring_cell_variable_from_direction_index
+    !byte cell_right                                                                    ; 2200: 78          x
+    !byte cell_left                                                                     ; 2201: 76          v
+    !byte cell_above                                                                    ; 2202: 74          t
+    !byte cell_below                                                                    ; 2203: 7a          z
+
+firefly_and_butterfly_next_direction_table
+    !byte 2, 3, 4, 5, 6, 7, 0, 1                                                        ; 2110: 02 03 04... ...
+
+firefly_and_butterfly_cell_values
+    !byte   (map_unprocessed | map_anim_state3) | map_firefly                           ; 2118: b6          .
+    !byte (map_unprocessed | map_anim_state3) | map_butterfly                           ; 2119: be          .
+    !byte   (map_unprocessed | map_anim_state0) | map_firefly                           ; 211a: 86          .
+    !byte (map_unprocessed | map_anim_state0) | map_butterfly                           ; 211b: 8e          .
+    !byte   (map_unprocessed | map_anim_state1) | map_firefly                           ; 211c: 96          .
+    !byte (map_unprocessed | map_anim_state1) | map_butterfly                           ; 211d: 9e          .
+    !byte   (map_unprocessed | map_anim_state2) | map_firefly                           ; 211e: a6          .
+    !byte (map_unprocessed | map_anim_state2) | map_butterfly                           ; 211f: ae          .
+
+; Next table has even offsets progressing clockwise, odd offsets progress anti-clockwise
+firefly_neighbour_variables
+    !byte cell_left                                                                     ; 221c: 76          v
+    !byte cell_right                                                                    ; 221d: 78          x
+    !byte cell_above                                                                    ; 221e: 74          t
+    !byte cell_above                                                                    ; 221f: 74          t
+    !byte cell_right                                                                    ; 2220: 78          x
+    !byte cell_left                                                                     ; 2221: 76          v
+    !byte cell_below                                                                    ; 2222: 7a          z
+    !byte cell_below                                                                    ; 2223: 7a          z
+
+; *************************************************************************************
 sound1
     !word 1                                                                             ; 56b8: 01 00       ..             ; channel   (2 bytes)
     !word 10                                                                            ; 56ba: 0a 00       ..             ; amplitude (2 bytes)
@@ -739,11 +785,7 @@ number_of_players_status_bar
 plural_for_player
     !byte sprite_space                                                                  ; 3280: 00          .
     !byte sprite_space                                                                  ; 3281: 00          .
-;TODO: WIP
-version_indicator
-    !byte sprite_1
-;    !byte sprite_space                                                                  ; 3282: 00          .
-;
+    !byte sprite_space                                                                  ; 3282: 00          .
     !byte sprite_space                                                                  ; 3283: 00          .
     !text "CAVE="                                                                       ; 3284: 43 41 56... CAV
 cave_letter
@@ -1065,5 +1107,34 @@ tune_pitches_and_commands
     !byte $8d, $81, $85, $a9, $a1, $9d, $95, $a1, $a1, $8d, $a1, $89, $8d, $89, $8d     ; 5696: 8d 81 85... ...
     !byte $89, $8d, $cc, $70, $94, $80, $78, $2c, $40, $48, $50, $5c, $94, $8c, $80     ; 56a5: 89 8d cc... ...
     !byte $78, $70, $64, $5c                                                            ; 56b4: 78 70 64... xpd
+
+; *************************************************************************************
+inkey_keys_table
+    !byte inkey_key_escape                                                              ; 2228: 8f          .
+    !byte inkey_key_space                                                               ; 2229: 9d          .
+    !byte inkey_key_b                                                                   ; 222a: 9b          .
+    !byte inkey_key_return                                                              ; 222b: b6          .
+    !byte inkey_key_slash                                                               ; 222c: 97          .
+    !byte inkey_key_colon                                                               ; 222d: b7          .
+    !byte inkey_key_z                                                                   ; 222e: 9e          .
+    !byte inkey_key_x                                                                   ; 222f: bd          .
+
+initial_values_of_variables_from_0x50
+    !byte $0d                                                                           ; 1e60: 0d          .              ; magic_wall_state
+    !byte 99                                                                            ; 1e61: 63          c              ; magic_wall_timer
+    !byte $9f                                                                           ; 1e62: 9f          .              ; rockford_cell_value
+    !byte 4                                                                             ; 1e63: 04          .              ; delay_trying_to_push_rock
+    !byte 0                                                                             ; 1e64: 00          .              ; amoeba_replacement
+    !byte 99                                                                            ; 1e65: 63          c              ; amoeba_growth_interval
+    !byte 0                                                                             ; 1e66: 00          .              ; number_of_amoeba_cells_found
+    !byte 1                                                                             ; 1e67: 01          .              ; amoeba_counter
+    !byte 240                                                                           ; 1e68: f0          .              ; ticks_since_last_direction_key_pressed
+    !byte 0                                                                             ; 1e69: 00          .              ; countdown_while_switching_palette
+    !byte 31                                                                            ; 1e6a: 1f          .              ; tick_counter
+    !byte 0                                                                             ; 1e6b: 00          .              ; current_rockford_sprite
+    !byte 12                                                                            ; 1e6c: 0c          .              ; sub_second_ticks
+    !byte 0                                                                             ; 1e6d: 00          .              ; previous_direction_keys
+    !byte 0                                                                             ; 1e6e: 00          .              ; just_pressed_direction_keys
+    !byte 0                                                                             ; 1e6f: 00          .              ; rockford_explosion_cell_type
 
 end_of_vars
