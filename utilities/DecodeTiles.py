@@ -32,8 +32,9 @@ OUTPUT_SPRITES_TO_FILE = False
 #Read bytes for tile sprites
 #This is at the start address in the source code, not need to position to a location - input_source_file.seek(pos)
 base_path = path.dirname(path.abspath(__file__))
+base_path = path.join(base_path, "..")
 if USE_INPUT_SPRITES_FILE:
-    BD_input_sprites_folder = path.join(base_path, "convert", "sprites")
+    BD_input_sprites_folder = path.join(base_path, "sprites")
     sprites_bytes = []
     for i in range(32):  #First 32 bytes are the space character, all zeros
         sprites_bytes.append(0)
@@ -43,14 +44,14 @@ if USE_INPUT_SPRITES_FILE:
                 if byte != '':
                     sprites_bytes.append(int(byte))
 else:
-    BD_code_folder = path.join(base_path, "code")
+    BD_code_folder = path.join(base_path, "code_bin")
     input_source_file = open(path.join(BD_code_folder, "BDSH3"), "rb")  #Open the file as binary
     sprites_bytes = input_source_file.read(NUM_SPRITE_BYTES)
     input_source_file.close()
 
 #Output to file if required
 if OUTPUT_SPRITES_TO_FILE:
-    output_subfolder = path.join(base_path, "output", "sprites")
+    output_subfolder = path.join(base_path, "build")
     output_file_name = path.join(output_subfolder, f"sprites_{datetime.now().strftime('%Y%m%d_%H%M')}.bin")
     output_file = open(output_file_name, "wb")
     for byte in sprites_bytes:

@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     ### Config and file paths
     base_path = path.dirname(path.abspath(__file__))
-    config_file = open(path.join(base_path, "config/config.json"))
+    config_file = open(path.join(base_path, "config", "config.json"))
     config_settings = json.load(config_file)
     versions = config_settings["versions"]
     ssd_file_settings = config_settings["ssd_file_settings"]

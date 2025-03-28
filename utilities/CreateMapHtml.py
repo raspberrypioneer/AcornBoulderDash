@@ -147,6 +147,7 @@ if __name__ == '__main__':
 
     ### Config and file paths
     base_path = path.dirname(path.abspath(__file__))
+    base_path = path.join(base_path, "..")
     config_file = open(path.join(base_path, "config", "config.json"))
     config_settings = json.load(config_file)
     element_map = config_settings["element_map"]
@@ -167,9 +168,9 @@ if __name__ == '__main__':
     other_params = ["AmoebaTime", "MagicWallTime", "SlimePermeability", "Bombs", "ZeroGravityTime"]
 
     #Add files / folders needed
-    html_folder = path.join(base_path, "convert", "done", "html")
+    html_folder = path.join(base_path, "bdcff_conversions", "done", "html")
     images_folder = path.join(html_folder, "images")
-    json_cave_list = json.load(open(path.join(base_path, "convert", "done", "json", JSON_CAVE_DEF)))
+    json_cave_list = json.load(open(path.join(base_path, "bdcff_conversions", "done", "json", JSON_CAVE_DEF)))
     sprite_json = json.load(open(path.join(base_path, "sprites", "Text_sprites.json")))
 
     title = JSON_CAVE_DEF.split('.')[0]

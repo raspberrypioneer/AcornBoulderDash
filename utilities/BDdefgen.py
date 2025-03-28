@@ -76,14 +76,15 @@ if __name__ == '__main__':
 
     ### Config and file paths
     base_path = path.dirname(path.abspath(__file__))
-    config_file = open(path.join(base_path, "config/config.json"))
+    base_path = path.join(base_path, "..")
+    config_file = open(path.join(base_path, "config", "config.json"))
     config_settings = json.load(config_file)
     element_map = config_settings["element_map"]
     element_list = list(element_map.keys())
     parameter_list = config_settings["parameters"]
 
     cave_letters = ['A','B','C','D','Q','E','F','G','H','R','I','J','K','L','S','M','N','O','P','T']
-    BD_caves_folder = path.join(base_path, "output", CAVE_FILE_FOLDER)
+    BD_caves_folder = path.join(base_path, "build", CAVE_FILE_FOLDER)
 
     #Open bd file to write to
     output_file_name = path.join(BD_caves_folder, BD_caves_folder + ".bd")

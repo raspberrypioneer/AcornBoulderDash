@@ -1,12 +1,13 @@
 # BBC/Electron Boulder Dash enhancements and utilities
 
 This repository includes the following:
-- Enhanced version of the Boulder Dash game (6502 assembler and build programs) which allows new caves to be played. The caves and difficulty levels from the original game are also supported.
-- Addition of the new Boulder Dash 2 elements, slime and growing wall to support that version of the game
-- Addition of bomb element, zero-gravity and non-steelwall borders in the homebrew '+1' version
+- An enhanced version of the Boulder Dash game (6502 assembler and build programs) which allows new caves to be played. The caves and difficulty levels from the original game is maintained.
+- Addition of Boulder Dash 2 elements, slime and growing wall to support that version of the game.
+- Addition of bomb element, zero-gravity and non-steelwall borders in the homebrew '+1' version.
+- All versions (Boulder Dash 1, 2, 3, +1, Arno Dash 1) are playable from a single SSD.
 - Cave file generator which creates caves from Boulder Dash cave format files (BDCFFs) developed by fans of the game.
-- Cave editor to load and edit caves or create completely new ones
-- Sprite editor to change the game sprites and tiles
+- Cave editor to load and edit caves or create completely new ones.
+- Sprite editor to change the game sprites and tiles.
 - Sprite set decoder for converting bytes into their sprite tiles and displaying the results.
 
 More information about this project can be found at: [Stardot: More Boulder Dash!](https://stardot.org.uk/forums/viewtopic.php?t=28372)
@@ -14,7 +15,9 @@ More information about this project can be found at: [Stardot: More Boulder Dash
 ## Enhancements
 
 ### Loading cave files
-Caves are no longer held within the main program, instead they are defined as individual cave files (letters A-T) which are loaded into the game. This allows completely new caves to be created and played with the original game engine.
+Caves are no longer held within the main program, instead they are defined as [individual cave files (letters A-T)](./caves_bin/) allowing for completely new caves to be created and played with the game engine.
+
+To enable all caves for each version of Boulder Dash to fit on a single SSD, they are combined into two files per version (two files are needed to allow them to fit into memory).
 
 ![Files in Beeb Image](./docs/game-files.png)
 
@@ -48,28 +51,20 @@ In the map layout of 400 bytes, each tile (dirt, boulder, diamond etc) is a nibb
 ### Original game difficulty levels
 The original version of the game is preserved by having the difficulty levels use the 'standard' pseudo-random method of plotting boulders, diamonds, etc in a cave (same method used by the original Boulder Dash developer, Peter Liepa).
 
-- This is a compact approach for creating the original caves and replaces the method used by the coder of the Acorn conversion, Andrew Bennett.
+- This is a compact approach for creating the original caves and replaces the method used by the author of the Acorn conversion, Andrew Bennett.
 - If the cave uses this method to create the layout, the non-random 'fixed' tiles are applied first, followed by pseudo-random generated tiles which are plotted over any of the non-fixed or 'null' tiles.
 - A pseudo-random value is calculated by a function using the seed value for the cave difficulty level. It is compared with each of the 4 tile probability values to determine whether to draw those tiles or not.
 - The parameters needed for the pseudo-random function are held in cave files. The map data is used for the non-random 'fixed' tiles (e.g. walls).
 - Entirely new caves can be created using this method if required. It is also possible to mix caves which use the pseudo-random method with those that do not.
 
 Below is original cave B. The fixed tiles are the walls and passage-ways of spaces. All the other tiles are plotted using the pseudo-random method. Where no random tile is determined in a tile position, a default is used usually the dirt tile.
+
 ![Original cave B](./docs/cave-b-example.png)
 
-### Code and build
-The assembler code is compiled using ACME and an SSD file including the caves is produced by a Python build script. Amend the `SSD_NAME` value in this script to switch between producing Boulder Dash 1, 2, etc.
-- [main.asm is the game engine assembler code](./asm/main.asm)
-- [BDcompileasm.py is the Python SSD file build script](./BDcompileasm.py)
-- [BoulderDash01 folder has the cave files for Boulder Dash](./caves/BoulderDash01/)
-- [BoulderDash02 folder has the cave files for Boulder Dash 2](./caves/BoulderDash02/)
-
-The output from this process is kept in sub-folders.
-- [Build output includes file BDSH3 compiled from main.asm](./output/build/)
-- [SSD output contains the complete game](./output/ssd)
+### Building the game SSD file
+The assembler code in `main.asm` and linked source `asm` files are compiled using ACME using the [build script](./bd_build_all.py). It adds the cave files and creates the [completed game in the ssd folder](./ssd/BoulderDash.ssd).
 
 ## Cave file generator
-
 This is a Python program for creating playable caves from Boulder Dash cave format files (BDCFFs) which can be found online. A substantial collection can be found at [Arno's Boulder Dash fansite](https://www.boulder-dash.nl/).
 
 ### Boulder Dash cave format files
@@ -80,12 +75,9 @@ BDCFFs are a type of structured file which documents the cave parameters and map
 ### Generator features
 The cave generator does the following:
 - Produces all the cave files for the BBC/Electron Boulder Dash game engine from a single BDCFF. This is done by parsing and mapping the data in the BDCFF files.
-- Combines these caves with the game engine (created earlier) and other startup code to produce an SSD file ready to play.
-- Optionally allows the original sprites to be replaced with different ones (some sprite files are included in this repository).
 - Produces a JSON file for the BDCFF (JSON being a modern structured and readable alternative).
-- Produces multiple SSD files if given multiple BDCFFs.
 
-A [config file](./config/config.json) is used to define the elements for mapping purposes and contains the data needed to produce SSD files. Colours are also mapped where possible. Where there is no colour mapping possible, a colour scheme for the cave is used instead.
+A [config file](./config/config.json) is used to define the elements for mapping purposes. Colours are also mapped where possible or a colour scheme for the cave is used instead.
 
 Colours are used as follows for the sprites in the game - there are 3 definable colour groups applied to each cave used to paint the elements (black is always present).
 -  Group 1 for most of titanium walls, rocks, amoeba; part of rockford, diamonds
@@ -95,12 +87,13 @@ Colours are used as follows for the sprites in the game - there are 3 definable 
 The butterflies and fireflies contain a bit of each colour.
 
 ### Usage
-- The game engine and related startup code used in this build is taken from the [code folder](./code/).
-- If there is a new assembled program which should be used for cave generation, replace [BDSH3](./code/BDSH3) with the compiled version from the [build output folder](./output/build/).
-- Copy one or more BDCFFs into the [convert folder](./convert/).
-- Optionally replace the original sprites with a custom set by amending the SPRITES_FILE value in the [BDcavegen.py python script](./BDcavegen.py) to point to a sprite file in [sample sprites folder](./sprites/). 
-- Run the script.
-- The resulting SSDs are located in [SSD output](./output/ssd). Converted BDCFFs are moved to the [done sub-folder](./convert/done/).
+- Copy one or more BDCFFs into the [conversion folder](./bdcff_conversions/) and run the [generation script](./utilities/BDcavegen.py).
+- The binary format caves are in the [build folder](./build/). Converted BDCFFs are moved to the [done sub-folder](./bdcff_conversions/done/).
+
+## Create HTML Boulder Dash maps
+An HTML file with images of Boulder Dash caves can be created using the [Python HTML conversion script](./utilities/CreateMapHtml.py). It uses the JSON file created from the generation step above as the main input. An example of the result is below.
+
+![Boulder Dash 1 cave B](./bdcff_conversions/done/html/images/BoulderDash01_caveB.png)
 
 ## Cave editor
 An easy way to create or edit a cave is to use the [cave editor](./editor/). The editor includes a help page which lists the main functions and the keys needed to use them.
@@ -175,7 +168,7 @@ Unrelated to the sprite editor, there is a sprite decoder utility program for di
 
 ![Sample sprite output](./docs/sample-sprite.png)
 
-Although largely replaced with a full sprite editor now, this program will accept a csv file with sprite byte values to display and output to a sprite set file. See [DecodeTiles.py](./DecodeTiles.py) for more information.
+Although largely replaced with a full sprite editor now, this program will accept a csv file with sprite byte values to display and output to a sprite set file. See [DecodeTiles.py](./utilities/DecodeTiles.py) for more information.
 
 ## Acknowledgements
 The information and code shared by the following developers and sources is gratefully acknowledged:

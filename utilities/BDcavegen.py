@@ -30,21 +30,9 @@ import os
 from os import path
 import json
 import numpy as np
-from distutils.dir_util import copy_tree
-import image
 
-SPRITES_FILE = ""
-#SPRITES_FILE = "Bubble_Bobble_sprites.bin"
-#SPRITES_FILE = "Pacman_sprites.bin"
-#SPRITES_FILE = "Easter_sprites.bin"
-#COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDashP1"
-#COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDash01"
-#COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDash02"
-#COPY_FOLDER_FOR_ASM_BUILD = "caves/BoulderDash03"
-COPY_FOLDER_FOR_ASM_BUILD = ""
-ATTEMPT_BD_COLOUR_MAP = False  #Attempt to map the colours in the BDCFF or use the config file scheme per cave
-TIDY_OUTPUT_FOLDER = True
-MOVE_BD_TO_DONE_FOLDER = True
+ATTEMPT_BD_COLOUR_MAP = True  #Attempt to map the colours in the BDCFF or use the config file scheme per cave
+MOVE_BD_TO_DONE_FOLDER = True  #True move to "done" folder, False leaves the source BDCFF file where it is
 
 ################################################################################
 #region Helper functions
@@ -467,20 +455,6 @@ def generate_caves(all_input_lines, output_subfolder):
         json.dump(output_all_caves_json, outfile, indent=4, sort_keys=True)
 
 #endregion
-################################################################################
-
-def poke_source_code_sprites(bd_sprites_file, sprites_address, output_subfolder):
-
-    #Open the source code file and poke the values into the required addresses
-    input_source_file = open(path.join(output_subfolder, "BDSH3"), "r+b")  #Open the file as binary
-
-    with open(bd_sprites_file, "rb") as input_sprites_file:  #Open sprites file as binary and read contents
-        prog_bytes = input_sprites_file.read()
-
-    input_source_file.seek(sprites_address)  #Navigate to the start address
-    input_source_file.write(prog_bytes)  #Replace the bytes from this position with the list of values
-
-    input_source_file.close()
 
 ################################################################################
 # Main Routine
@@ -488,6 +462,7 @@ if __name__ == '__main__':
 
     ### Config and file paths
     base_path = path.dirname(path.abspath(__file__))
+    base_path = path.join(base_path, "..")
     config_file = open(path.join(base_path, "config", "config.json"))
     config_settings = json.load(config_file)
     element_map = config_settings["element_map"]
@@ -518,8 +493,7 @@ if __name__ == '__main__':
     for a in parameter_list:
         addresses[a] = parameter_list[a]["address"]
 
-    BD_code_folder = path.join(base_path, "code")
-    BD_files_folder = path.join(base_path, "convert")
+    BD_files_folder = path.join(base_path, "bdcff_conversions")
 
     ### Process each BD file in the conversion folder
     for filename in os.listdir(BD_files_folder):
@@ -527,7 +501,7 @@ if __name__ == '__main__':
         if path.isfile(path.join(BD_files_folder, filename)) and filename[-2:].upper() == "BD":
 
             BD_filename = filename.split('.')[0]  #e.g. ArnoDash01 without the ".bd" extension
-            output_subfolder = path.join(base_path, "output", BD_filename)
+            output_subfolder = path.join(base_path, "build", BD_filename)
             if not os.path.exists(output_subfolder):
                 print(f"Creating output subfolder {output_subfolder}")
                 os.mkdir(output_subfolder)
@@ -542,56 +516,11 @@ if __name__ == '__main__':
             print(f"Generating caves for {BD_filename}")
             generate_caves(all_input_lines, output_subfolder)
 
-            #Shortcut way to get caves into next compiled asm build / ssd build
-            if COPY_FOLDER_FOR_ASM_BUILD != "":
-                copy_tree(output_subfolder, path.join(base_path, COPY_FOLDER_FOR_ASM_BUILD))
-
-            #Copy the source code for updating sprites and creation of SSD file
-            copy_tree(BD_code_folder, output_subfolder)
-
-            #Replace sprites if required
-            if SPRITES_FILE != "":
-                print(f"Updating sprites for {BD_filename} using {SPRITES_FILE}")
-                #Note sprites are defined at the start of the file (position 0)
-                bd_sprites_file = path.join(base_path, "sprites", SPRITES_FILE)
-                poke_source_code_sprites(bd_sprites_file, 0, output_subfolder)
-
             #Move BD file and cave definition json file to completed folder
             print(f"Completing definitions for {BD_filename}")
             BD_files_complete_folder = path.join(BD_files_folder, "done")
             if MOVE_BD_TO_DONE_FOLDER:
                 os.replace(input_file_name, path.join(BD_files_complete_folder, BD_filename + ".bd"))
             os.replace(path.join(output_subfolder, "cavedef.json"), path.join(BD_files_complete_folder, "json", BD_filename + ".json"))
-
-            #Create SSD file
-            print(f"Creating SSD for {BD_filename}")
-            ssd_filepath = path.join(base_path, "output", "ssd", BD_filename + ".ssd")
-            create_ssd(BD_filename, ssd_filepath, 40, 3)  #SSD with file name as title, 40 tracks and bootable
-            output_subfolder_relpath = path.join("output", BD_filename)
-            os.chdir(output_subfolder_relpath)
-
-            #Create INF files for each source file using config data (INF files needed for inserting into SSD)
-            for file in ssd_file_settings:
-                if path.exists(file):
-                    values = ssd_file_settings[file]
-                    with open(file + ".inf", 'w') as f:
-                        f.write("$.{: <9} {:0>8} {:0>8} L {:0>8}".format(file, values['load'], values['exec'], values['size']))
-
-            #Insert each file into the SSD in order per the config file
-            #This sequence is essential for the SSD to be editable using the Boulder Dash Editor
-            disk_image = image.DiskImage()
-            disk_image.set_disk(ssd_filepath)
-
-            for file in ssd_file_settings:
-                if path.exists(file):
-                    print(f"  Inserting {file}")
-                    disk_image.insert(file)
-
-            os.chdir("../../")
-            if TIDY_OUTPUT_FOLDER:
-                print(f"Tidying up output files for {BD_filename}")
-                for file in os.listdir(output_subfolder_relpath):
-                    os.remove(path.join(output_subfolder_relpath,file))
-                os.removedirs(output_subfolder_relpath)
             
             print(f"Completed {BD_filename}")
