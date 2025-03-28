@@ -893,94 +893,95 @@ zeroed_status_bar
 ;
 !align 255, 0
 game_credits
-    !fill 4,sprite_full_stop
-    !text "BOULDERDASH"                                                                 ; 5404: 42 4f 55... BOU
     !fill 3,sprite_full_stop
-    !text "WRITTEN"                                                                     ; 5412: 57 52 49... WRI
-    !byte sprite_space                                                                  ; 5419: 00          .
-    !text "BY"                                                                          ; 541a: 42 59       BY
-    !byte sprite_space                                                                  ; 541c: 00          .
-    !text "A"                                                                           ; 541d: 41          A
-    !byte sprite_full_stop                                                              ; 541e: 40          @
-    !text "G"                                                                           ; 541f: 47          G
-    !byte sprite_full_stop                                                              ; 5420: 40          @
-    !text "BENNETT"                                                                     ; 5421: 42 45 4e... BEN
-    !byte sprite_space                                                                  ; 5428: 00          .
-    !byte sprite_1                                                                      ; 5429: 33          3
-    !byte sprite_9                                                                      ; 542a: 3b          ;
-    !byte sprite_8                                                                      ; 542b: 3a          :
-    !byte sprite_8                                                                      ; 542c: 3a          :
-    !fill 3,sprite_full_stop
-    !text "DEDICATED"                                                                   ; 5430: 44 45 44... DED
-    !byte sprite_space                                                                  ; 5439: 00          .
-    !text "TO"                                                                          ; 543a: 54 4f       TO
-    !byte sprite_space                                                                  ; 543c: 00          .
-    !text "J"                                                                           ; 543d: 4a          J
-    !byte sprite_full_stop                                                              ; 543e: 40          @
-    !text "M"                                                                           ; 543f: 4d          M
-    !byte sprite_full_stop                                                              ; 5440: 40          @
-    !text "BARNES"                                                                      ; 5441: 42 41 52... BAR
-    !byte sprite_comma                                                                  ; 5447: 3f          ?
-    !text "DEBBIE"                                                                      ; 5448: 44 45 42... DEB
-    !byte sprite_comma                                                                  ; 544e: 3f          ?
-    !text "MARK"                                                                        ; 544f: 4d 41 52... MAR
-    !byte sprite_space                                                                  ; 5453: 00          .
-    !text "BENNETT"                                                                     ; 5454: 42 45 4e... BEN
-    !byte sprite_comma                                                                  ; 545b: 3f          ?
-    !text "OUR"                                                                         ; 545c: 4f 55 52    OUR
-    !byte sprite_space                                                                  ; 545f: 00          .
-    !text "MAM"                                                                         ; 5460: 4d 41 4d    MAM
-    !byte sprite_comma                                                                  ; 5463: 3f          ?
-    !text "MIC"                                                                         ; 5464: 4d 49 43    MIC
-    !byte sprite_comma                                                                  ; 5467: 3f          ?
-    !text "BURNY"                                                                       ; 5468: 42 55 52... BUR
-    !byte sprite_comma                                                                  ; 546d: 3f          ?
-    !text "N"                                                                           ; 546e: 4e          N
-    !byte sprite_full_stop                                                              ; 546f: 40          @
-    !text "JENNISON"                                                                    ; 5470: 4a 45 4e... JEN
-    !byte sprite_comma                                                                  ; 5478: 3f          ?
-    !text "CRAIG"                                                                       ; 5479: 43 52 41... CRA
-    !byte sprite_space                                                                  ; 547e: 00          .
-    !text "DARRELL"                                                                     ; 547f: 44 41 52... DAR
-    !byte sprite_comma                                                                  ; 5486: 3f          ?
-    !text "T"                                                                           ; 5487: 54          T
-    !byte sprite_full_stop                                                              ; 5488: 40          @
-    !text "SECKER"                                                                      ; 5489: 53 45 43... SEC
-    !byte sprite_comma                                                                  ; 548f: 3f          ?
-    !text "TONY"                                                                        ; 5490: 54 4f 4e... TON
-    !byte sprite_space                                                                  ; 5494: 00          .
-    !text "FROM"                                                                        ; 5495: 46 52 4f... FRO
-    !byte sprite_space                                                                  ; 5499: 00          .
-    !text "THE"                                                                         ; 549a: 54 48 45    THE
-    !byte sprite_space                                                                  ; 549d: 00          .
-    !text "PALACE"                                                                      ; 549e: 50 41 4c... PAL
-    !byte sprite_comma                                                                  ; 54a4: 3f          ?
-    !text "TONY"                                                                        ; 54a5: 54 4f 4e... TON
-    !byte sprite_space                                                                  ; 54a9: 00          .
-    !text "FROM"                                                                        ; 54aa: 46 52 4f... FRO
-    !byte sprite_space                                                                  ; 54ae: 00          .
-    !text "LEAZES"                                                                      ; 54af: 4c 45 41... LEA
-    !byte sprite_comma                                                                  ; 54b5: 3f          ?
-    !text "SOLAR"                                                                       ; 54b6: 53 4f 4c... SOL
-    !byte sprite_space                                                                  ; 54bb: 00          .
-    !text "WORKSHOP"                                                                    ; 54bc: 57 4f 52... WOR
-    !byte sprite_comma                                                                  ; 54c4: 3f          ?
-    !text "ELSIE"                                                                       ; 54c5: 45 4c 53... ELS
-    !byte sprite_comma                                                                  ; 54ca: 3f          ?
-    !text "PRIMROSE"                                                                    ; 54cb: 50 52 49... PRI
-    !byte sprite_comma                                                                  ; 54d3: 3f          ?
-    !text "STRANGE"                                                                     ; 54d4: 53 54 52... STR
-    !byte sprite_space                                                                  ; 54db: 00          .
-    !text "SCIENCE"                                                                     ; 54dc: 53 43 49... SCI
-    !byte sprite_space                                                                  ; 54e3: 00          .
-    !text "PINBALL"                                                                     ; 54e4: 50 49 4e... PIN
-    !byte sprite_space                                                                  ; 54eb: 00          .
-    !text "AND"                                                                         ; 54ec: 41 4e 44    AND
-    !byte sprite_space                                                                  ; 54ef: 00          .
-    !text "COSMIC"                                                                      ; 54f0: 43 4f 53... COS
-    !byte sprite_space                                                                  ; 54f6: 00          .
-    !text "MONSTERS"                                                                    ; 54f7: 4d 4f 4e... MON
-    !byte sprite_full_stop                                                              ; 54ff: 40          @
+    !text "BOULDERDASH"
+    !byte sprite_space
+    !text "BY"
+    !byte sprite_space
+    !text "AG"
+    !byte sprite_space
+    !text "BENNETT"
+    !byte sprite_space
+    !byte sprite_1
+    !byte sprite_9
+    !byte sprite_8
+    !byte sprite_8
+    !byte sprite_space
+    !text "ENHANCED"
+    !byte sprite_space
+    !byte sprite_2
+    !byte sprite_0
+    !byte sprite_2
+    !byte sprite_4
+    !byte sprite_space
+    !text "RASPBERRYPIONEER"
+end_of_credits
+
+sprite_text_high
+    !byte >sprites1_text, >sprites2_text, >sprites3_text, >sprites4_text, >sprites5_text, >sprites6_text
+
+sprite_text_low
+    !byte <sprites1_text, <sprites2_text, <sprites3_text, <sprites4_text, <sprites5_text, <sprites6_text
+
+sprites1_text
+    !fill 1, sprite_space
+    !byte sprite_rockford_blinking1
+    !fill 1, sprite_space    
+    !text "ORIGINAL"
+    !byte sprite_space
+    !text "SPRITES"
+    !fill 1,sprite_space
+
+sprites2_text
+    !fill 3, sprite_space    
+    !text "BUBBLE"
+    !byte sprite_space
+    !text "BOBBLE"
+    !fill 4,sprite_space
+
+sprites3_text
+    !fill 3, sprite_space    
+    !text "EASTER"
+    !byte sprite_space
+    !text "EGGS"
+    !fill 6,sprite_space
+
+sprites4_text
+    !fill 3, sprite_space    
+    !text "MS"
+    !byte sprite_full_stop
+    !byte sprite_space
+    !text "PACMAN"
+    !fill 7,sprite_space
+
+sprites5_text
+    !fill 3, sprite_space    
+    !text "ROBO"
+    !byte sprite_space
+    !text "TECH"
+    !fill 8,sprite_space
+
+sprites6_text
+    !fill 3, sprite_space    
+    !text "COMING"
+    !byte sprite_space
+    !text "SOON"
+    !fill 6,sprite_space
+
+bd_sprites_files
+    !scr "ORISPR"
+    !byte 0,0
+    !scr "BUBBOB"
+    !byte 0,0
+    !scr "EASTER"
+    !byte 0,0
+    !scr "PACMAN"
+    !byte 0,0
+    !scr "ROBOTS"
+    !byte 0,0
+    !scr "ORISPR"  ;TODO: Need new set
+    !byte 0,0
+    !fill 12,0
 
 ; *************************************************************************************
 ; IMPORTANT: this section must start at a page boundary

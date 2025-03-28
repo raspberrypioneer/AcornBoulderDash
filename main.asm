@@ -341,7 +341,6 @@ amount_to_increment_ptr_minus_one       = $78
 cell_right                              = $78
 cell_below_left                         = $79
 initial_cell_fill_value                 = $79
-value_to_clear_map_to                   = $79
 cell_below                              = $7a
 cell_below_right                        = $7b
 lower_nybble_value                      = $7c
@@ -444,13 +443,13 @@ version_select_loop
     asl
     ;#bcs = "b" key
     asl
-    bcs main_menu_loop  ;space key is pressed to start selected version
+    bcs select_sprites_to_use  ;space key is pressed to use selected version
     jmp version_select_loop
 
 version_option_up
     lda #sprite_space
-    sta option_sprite_to_plot+1
-    jsr plot_sprite_next_to_option
+    sta version_option_sprite_to_plot+1
+    jsr plot_sprite_next_to_version_option
 
     dec bd_version_to_play
     lda bd_version_to_play
@@ -460,8 +459,8 @@ version_option_up
 
 version_option_down
     lda #sprite_space
-    sta option_sprite_to_plot+1
-    jsr plot_sprite_next_to_option
+    sta version_option_sprite_to_plot+1
+    jsr plot_sprite_next_to_version_option
 
     inc bd_version_to_play
     lda bd_version_to_play
@@ -472,15 +471,15 @@ update_version_on_screen
     sta bd_version_to_play
 
     lda #sprite_rockford_blinking1
-    sta option_sprite_to_plot+1
-    jsr plot_sprite_next_to_option
+    sta version_option_sprite_to_plot+1
+    jsr plot_sprite_next_to_version_option
 
     lda #$ff  ;reset last group and cave values to ensure load of new version caves
     sta load_group_stored
     sta load_cave_number_stored
     jmp version_select_loop
 
-plot_sprite_next_to_option
+plot_sprite_next_to_version_option
     lda #$ff
     jsr reset_status_bar
     ldx bd_version_to_play
@@ -490,12 +489,103 @@ plot_sprite_next_to_option
     lda version_option_text_low,x
     sta status_text_address_low
     sta screen_addr2_low
-option_sprite_to_plot
+version_option_sprite_to_plot
     lda #sprite_rockford_blinking1
     ldy #1
     sta (screen_addr2_low),y
     ldy #option_left_edge
     lda version_option_screen_high,x
+    jsr draw_single_row_of_sprites
+    rts
+
+;Select sprite set to use in game
+select_sprites_to_use
+    ;Plot each option using tables of data and screen addresses
+    ldx #0
+plot_sprites_option
+    stx temp_keys
+    lda #$ff
+    jsr reset_status_bar
+    ldx temp_keys
+    lda sprite_text_high,x
+    sta status_text_address_high
+    lda sprite_text_low,x
+    sta status_text_address_low
+    ldy #option_left_edge
+    lda sprites_on_screen_high,x
+    jsr draw_single_row_of_sprites
+    ldx temp_keys
+    inx
+    cpx #6
+    bne plot_sprites_option
+
+sprites_select_loop
+    jsr wait_for_13_centiseconds_and_read_keys
+    lda keys_to_process
+    asl
+    bcs sprites_option_down
+    asl
+    bcs sprites_option_up
+    asl
+    bcs sprites_option_up
+    asl
+    bcs sprites_option_down
+    asl
+    ;#bcs = enter key
+    asl
+    ;#bcs = "b" key
+    asl
+    bcs main_menu_loop  ;space key is pressed to start selected version with sprite set chosen
+    jmp sprites_select_loop
+
+sprites_option_up
+    lda #sprite_space
+    sta sprite_option_sprite_to_plot+1
+    jsr plot_sprite_next_to_spriteset_option
+
+    dec bd_sprites_to_use
+    lda bd_sprites_to_use
+    bpl update_spriteset_on_screen
+    lda #5
+    jmp update_spriteset_on_screen
+
+sprites_option_down
+    lda #sprite_space
+    sta sprite_option_sprite_to_plot+1
+    jsr plot_sprite_next_to_spriteset_option
+
+    inc bd_sprites_to_use
+    lda bd_sprites_to_use
+    cmp #6
+    bne update_spriteset_on_screen
+    lda #0
+update_spriteset_on_screen
+    sta bd_sprites_to_use
+
+    lda #sprite_rockford_blinking1
+    sta sprite_option_sprite_to_plot+1
+    jsr plot_sprite_next_to_spriteset_option
+
+    lda #$ff  ;reset sprites set stored to ensure load of set
+    sta sprite_set_stored
+    jmp sprites_select_loop
+
+plot_sprite_next_to_spriteset_option
+    lda #$ff
+    jsr reset_status_bar
+    ldx bd_sprites_to_use
+    lda sprite_text_high,x
+    sta status_text_address_high
+    sta screen_addr2_high
+    lda sprite_text_low,x
+    sta status_text_address_low
+    sta screen_addr2_low
+sprite_option_sprite_to_plot
+    lda #sprite_rockford_blinking1
+    ldy #1
+    sta (screen_addr2_low),y
+    ldy #option_left_edge
+    lda sprites_on_screen_high,x
     jsr draw_single_row_of_sprites
     rts
 
@@ -516,6 +606,8 @@ show_credits_loop
     jsr draw_status_bar
     jsr wait_for_13_centiseconds_and_read_keys
     inc status_text_address_low
+    lda status_text_address_low
+    cmp #<end_of_credits-19
     bne show_credits_loop
     jmp main_menu_loop
 
@@ -2933,6 +3025,7 @@ show_rockford_again_and_play_game
     jsr reset_grid_of_sprites                                                           ; 3ad4: 20 92 22     ."
     lda #$ff                                                                            ; 3ad7: a9 ff       ..
     sta demo_mode_tick_count                                                            ; 3ad9: 85 65       .e
+    jsr load_spriteset
     jsr initialise_and_play_game                                                        ; 3adb: 20 00 3b     .;
     jmp show_menu                                                                       ; 3ade: 4c 00 3a    L.:
 
@@ -3286,6 +3379,38 @@ load_file_name
     !fill 6,0                          ; Cave group file name e.g. BD01-1 for Boulder Dash 1 cave group 1 (of 2)
 system_load_end
     !byte $0d                          ; Termination for LOAD command
+
+; ****************************************************************************************************
+load_spriteset
+
+    lda bd_sprites_to_use
+    cmp sprite_set_stored
+    beq spriteset_already_loaded
+    sta sprite_set_stored
+    asl                                ; (multiply version number by 8 for the offset)
+    asl
+    asl
+    tay
+    ldx #0
+set_spriteset_filename                   ; Build the cave group file name using the version selected to play
+    lda bd_sprites_files,y
+    sta load_file_name,x
+    iny
+    inx
+    cpx #6
+    bne set_spriteset_filename
+
+    ldy #>system_load_command          ; Set x,y for system LOAD command address
+    ldx #<system_load_command          ; Set x,y for system LOAD command address
+    jsr oscli_instruction_for_load     ; Call the LOAD command
+
+spriteset_already_loaded
+    rts
+
+bd_sprites_to_use
+    !byte 0
+sprite_set_stored
+    !byte 0
 
 ; *************************************************************************************
 ; Copy a number of bytes (in copy size variable) from source to target memory locations

@@ -342,6 +342,7 @@ version_option_text_high
 version_option_text_low
     !byte <version1_text, <version2_text, <version3_text, <version4_text, <version5_text, <version6_text
 version_option_screen_high
+sprites_on_screen_high
     !byte $5e, $63, $68, $6d, $72, $77
     !fill 6,0
 

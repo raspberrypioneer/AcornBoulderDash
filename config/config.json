@@ -101,6 +101,11 @@
         "BD03-1": {"load": "3E80", "exec": "0", "size": "1180"},
         "BD03-2": {"load": "3E80", "exec": "0", "size": "1180"},
         "BDP1-1": {"load": "3E80", "exec": "0", "size": "1180"},
-        "BDP1-2": {"load": "3E80", "exec": "0", "size": "1180"}
+        "BDP1-2": {"load": "3E80", "exec": "0", "size": "1180"},
+        "ORISPR": {"load": "1300", "exec": "0", "size": "640"},
+        "BUBBOB": {"load": "1300", "exec": "0", "size": "640"},
+        "EASTER": {"load": "1300", "exec": "0", "size": "640"},
+        "PACMAN": {"load": "1300", "exec": "0", "size": "640"},
+        "ROBOTS": {"load": "1300", "exec": "0", "size": "640"}
     }
 }
