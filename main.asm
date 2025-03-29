@@ -613,182 +613,181 @@ show_credits_loop
 
 ; *************************************************************************************
 increment_ptr_and_clear_carry
-    inc ptr_low                                                                         ; 2238: e6 8c       ..
-    bne skip_increment                                                                  ; 223a: d0 02       ..
-    inc ptr_high                                                                        ; 223c: e6 8d       ..
+    inc ptr_low
+    bne skip_increment
+    inc ptr_high
 skip_increment
-    clc                                                                                 ; 223e: 18          .
-    rts                                                                                 ; 223f: 60          `
+    clc
+    rts
 
 ; *************************************************************************************
 add_a_to_ptr
-    clc                                                                                 ; 2240: 18          .
-    adc ptr_low                                                                         ; 2241: 65 8c       e.
-    sta ptr_low                                                                         ; 2243: 85 8c       ..
-    bcc return1                                                                         ; 2245: 90 02       ..
-    inc ptr_high                                                                        ; 2247: e6 8d       ..
+    clc
+    adc ptr_low
+    sta ptr_low
+    bcc return1
+    inc ptr_high
 return1
-    rts                                                                                 ; 2249: 60          `
+    rts
 
 ; *************************************************************************************
 ; a small 'pseudo-random' number routine. Generates a sequence of 256 numbers.
 get_next_random_byte
-    lda random_seed                                                                     ; 224a: a5 88       ..
-    asl                                                                                 ; 224c: 0a          .
-    asl                                                                                 ; 224d: 0a          .
-    asl                                                                                 ; 224e: 0a          .
-    asl                                                                                 ; 224f: 0a          .
-    sec                                                                                 ; 2250: 38          8
-    adc random_seed                                                                     ; 2251: 65 88       e.
-    sta random_seed                                                                     ; 2253: 85 88       ..
-    rts                                                                                 ; 2255: 60          `
+    lda random_seed
+    asl
+    asl
+    asl
+    asl
+    sec
+    adc random_seed
+    sta random_seed
+    rts
 
 ; *************************************************************************************
 reset_grid_of_sprites
-    ldx #$f0                                                                            ; 2292: a2 f0       ..
-    lda #$ff                                                                            ; 2294: a9 ff       ..
+    ldx #$f0
+    lda #$ff
 reset_grid_of_sprites_loop
-    dex                                                                                 ; 2296: ca          .
-    sta grid_of_currently_displayed_sprites,x                                           ; 2297: 9d 00 0c    ...
-    bne reset_grid_of_sprites_loop                                                      ; 229a: d0 fa       ..
+    dex
+    sta grid_of_currently_displayed_sprites,x
+    bne reset_grid_of_sprites_loop
 
 reset_status_bar  ; clear the current status bar
-    ldx #$14                                                                            ; 229c: a2 14       ..
+    ldx #$14
 clear_status_bar_loop
-    dex                                                                                 ; 229e: ca          .
-    sta current_status_bar_sprites,x                                                    ; 229f: 9d 28 50    .(P
-    bne clear_status_bar_loop                                                           ; 22a2: d0 fa       ..
-    rts                                                                                 ; 22a4: 60          `
+    dex
+    sta current_status_bar_sprites,x
+    bne clear_status_bar_loop
+    rts
 
 ; *************************************************************************************
 handler_basics
-    txa                                                                                 ; 22a5: 8a          .
-    sec                                                                                 ; 22a6: 38          8
-    sbc #$90                                                                            ; 22a7: e9 90       ..
-    cmp #$10                                                                            ; 22a9: c9 10       ..
-    bpl not_in_range_so_change_nothing                                                  ; 22ab: 10 04       ..
+    txa
+    sec
+    sbc #$90
+    cmp #$10
+    bpl not_in_range_so_change_nothing
     ; cell is in the range $90-$9f (corresponding to $10 to $1f with the top bit set),
     ; so we look up the replacement in a table. This is used to replace the final step
     ; of an explosion, either with rockford during the introduction (offset $01), or a
     ; space for the outro (death) explosion (offset $03)
-    tax                                                                                 ; 22ad: aa          .
-    lda explosion_replacements,x                                                        ; 22ae: bd e0 21    ..!
+    tax
+    lda explosion_replacements,x
 not_in_range_so_change_nothing
-    tax                                                                                 ; 22b1: aa          .
-    rts                                                                                 ; 22b2: 60          `
+    tax
+    rts
 
 ; *************************************************************************************
 reveal_or_hide_more_cells
-    ldy #<tile_map_row_0                                                                ; 22b3: a0 00       ..
-    sty ptr_low                                                                         ; 22b5: 84 8c       ..
-    lda #>tile_map_row_0                                                                ; 22b7: a9 50       .P
-    sta ptr_high                                                                        ; 22b9: 85 8d       ..
+    ldy #<tile_map_row_0
+    sty ptr_low
+    lda #>tile_map_row_0
+    sta ptr_high
     ; loop over all the rows, X is the loop counter
-    ldx #22                                                                             ; 22bb: a2 16       ..
+    ldx #22
 loop_over_rows
-    lda ptr_low                                                                         ; 22bd: a5 8c       ..
+    lda ptr_low
     ; rows are stored in the first 40 bytes of every 64 bytes, so skip if we have
     ; exceeded the right range
-    and #63                                                                             ; 22bf: 29 3f       )?
-    cmp #40                                                                             ; 22c1: c9 28       .(
-    bpl skip_to_next_row                                                                ; 22c3: 10 17       ..
+    and #63
+    cmp #40
+    bpl skip_to_next_row
     ; progress a counter in a non-obvious pattern
-    jsr get_next_random_byte                                                            ; 22c5: 20 4a 22     J"
+    jsr get_next_random_byte
     ; if it's early in the process (tick counter is low), then branch more often so we
     ; reveal/hide the cells in a non-obvious pattern over time
-    lsr                                                                                 ; 22c8: 4a          J
-    lsr                                                                                 ; 22c9: 4a          J
-    lsr                                                                                 ; 22ca: 4a          J
-    cmp tick_counter                                                                    ; 22cb: c5 5a       .Z
-    bne skip_reveal_or_hide                                                             ; 22cd: d0 08       ..
-    lda (ptr_low),y                                                                     ; 22cf: b1 8c       ..
+    lsr
+    lsr
+    lsr
+    cmp tick_counter
+    bne skip_reveal_or_hide
+    lda (ptr_low),y
     ; clear the top bit to reveal the cell...
-    and #$7f                                                                            ; 22d1: 29 7f       ).
+    and #$7f
     ; ...or set the top bit to hide the cell
-    ora dissolve_to_solid_flag                                                          ; 22d3: 05 72       .r
-    sta (ptr_low),y                                                                     ; 22d5: 91 8c       ..
+    ora dissolve_to_solid_flag
+    sta (ptr_low),y
 skip_reveal_or_hide
-    jsr increment_ptr_and_clear_carry                                                   ; 22d7: 20 38 22     8"
-    bcc loop_over_rows                                                                  ; 22da: 90 e1       ..
+    jsr increment_ptr_and_clear_carry
+    bcc loop_over_rows
     ; move forward to next row. Each row is stored at 64 byte intervals. We have moved
     ; on 40 so far so add the remainder to get to the next row
 skip_to_next_row
-    lda #64-40                                                                          ; 22dc: a9 18       ..
-    jsr add_a_to_ptr                                                                    ; 22de: 20 40 22     @"
-    dex                                                                                 ; 22e1: ca          .
-    bne loop_over_rows                                                                  ; 22e2: d0 d9       ..
+    lda #64-40
+    jsr add_a_to_ptr
+    dex
+    bne loop_over_rows
     ; create some 'random' audio pitches to play while revealing/hiding the map. First
     ; multiply the data set pointer low byte by five and add one
-    lda sound0_active_flag                                                              ; 22e4: a5 46       .F
-    asl                                                                                 ; 22e6: 0a          .
-    asl                                                                                 ; 22e7: 0a          .
-    sec                                                                                 ; 22e8: 38          8
-    adc sound0_active_flag                                                              ; 22e9: 65 46       eF
-    sta sound0_active_flag                                                              ; 22eb: 85 46       .F
+    lda sound0_active_flag
+    asl
+    asl
+    sec
+    adc sound0_active_flag
+    sta sound0_active_flag
     ; add the cave number
-    ora cave_number                                                                     ; 22ed: 05 87       ..
+    ora cave_number
     ; just take some of the bits
-    and #$9e                                                                            ; 22ef: 29 9e       ).
+    and #$9e
     ; use as the pitch
-    tay                                                                                 ; 22f1: a8          .
-    iny                                                                                 ; 22f2: c8          .
-    ldx #$85                                                                            ; 22f3: a2 85       ..
-    jsr play_sound_x_pitch_y                                                            ; 22f5: 20 2c 2c     ,,
-    rts                                                                                 ; 22f8: 60          `
+    tay
+    iny
+    ldx #$85
+    jsr play_sound_x_pitch_y
+    rts
 
 ; *************************************************************************************
 ; draw a full grid of sprites, updating the current map position first
 draw_grid_of_sprites
-    jsr update_map_scroll_position                                                      ; 2300: 20 2c 2b     ,+
-    jsr update_grid_animations                                                          ; 2303: 20 00 28     .(
-    lda #>screen_addr_row_6                                                             ; 2306: a9 5f       ._
-    sta screen_addr1_high                                                               ; 2308: 85 8b       ..
-    ldy #<screen_addr_row_6                                                             ; 230a: a0 80       ..
-    lda #opcode_lda_abs_y                                                               ; 230c: a9 b9       ..
-    sta load_instruction                                                                ; 230e: 8d 57 23    .W#
-    lda #<grid_of_currently_displayed_sprites                                           ; 2311: a9 00       ..
-    sta grid_compare_address_low                                                        ; 2313: 8d 5c 23    .\#
-    sta grid_write_address_low                                                          ; 2316: 8d 61 23    .a#
-    lda #>grid_of_currently_displayed_sprites                                           ; 2319: a9 0c       ..
-    sta grid_compare_address_high                                                       ; 231b: 8d 5d 23    .]#
-    sta grid_write_address_high                                                         ; 231e: 8d 62 23    .b#
+    jsr update_map_scroll_position
+    jsr update_grid_animations
+    lda #>screen_addr_row_6
+    sta screen_addr1_high
+    ldy #<screen_addr_row_6
+    lda #opcode_lda_abs_y
+    sta load_instruction
+    lda #<grid_of_currently_displayed_sprites
+    sta grid_compare_address_low
+    sta grid_write_address_low
+    lda #>grid_of_currently_displayed_sprites
+    sta grid_compare_address_high
+    sta grid_write_address_high
     ; X = number of cells to draw: 12 rows of 20 cells each (a loop counter)
-    ldx #20*12                                                                          ; 2321: a2 f0       ..
-    bne draw_grid                                                                       ; 2323: d0 25       .%             ; ALWAYS branch
+    ldx #20*12
+    bne draw_grid
 
 ; *************************************************************************************
 draw_status_bar
-    ldy #<start_of_grid_screen_address                                                  ; 2325: a0 c0       ..
-    lda #>start_of_grid_screen_address                                                  ; 2327: a9 5b       .[
+    ldy #<start_of_grid_screen_address
+    lda #>start_of_grid_screen_address
 draw_single_row_of_sprites
-    sta screen_addr1_high                                                               ; 2329: 85 8b       ..
-    lda #>current_status_bar_sprites                                                    ; 232b: a9 50       .P
-    ldx #<current_status_bar_sprites                                                    ; 232d: a2 28       .(
-    stx grid_compare_address_low                                                        ; 232f: 8e 5c 23    .\#
-    stx grid_write_address_low                                                          ; 2332: 8e 61 23    .a#
-    sta grid_compare_address_high                                                       ; 2335: 8d 5d 23    .]#
-    sta grid_write_address_high                                                         ; 2338: 8d 62 23    .b#
+    sta screen_addr1_high
+    lda #>current_status_bar_sprites
+    ldx #<current_status_bar_sprites
+    stx grid_compare_address_low
+    stx grid_write_address_low
+    sta grid_compare_address_high
+    sta grid_write_address_high
 instruction_for_self_modification
 status_text_address_high = instruction_for_self_modification+1
-    lda #>regular_status_bar                                                            ; 233b: a9 32       .2
-    sta tile_map_ptr_high                                                               ; 233d: 85 86       ..
-    lda #opcode_ldy_abs                                                                 ; 233f: a9 ac       ..
-    sta load_instruction                                                                ; 2341: 8d 57 23    .W#
-    ; X is the cell counter (20 for a single row)
-    ldx #20                                                                             ; 2344: a2 14       ..
-    lda status_text_address_low                                                         ; 2346: a5 69       .i
-    sta tile_map_ptr_low                                                                ; 2348: 85 85       ..
+    lda #>regular_status_bar
+    sta tile_map_ptr_high
+    lda #opcode_ldy_abs
+    sta load_instruction
+    ldx #20                             ; X is the cell counter (20 for a single row)
+    lda status_text_address_low
+    sta tile_map_ptr_low
 draw_grid
-    sty screen_addr1_low                                                                ; 234a: 84 8a       ..
+    sty screen_addr1_low
 draw_grid_loop
-    ldy #0                                                                              ; 234c: a0 00       ..
-    sty grid_column_counter                                                             ; 234e: 84 73       .s
+    ldy #0
+    sty grid_column_counter
 grid_draw_row_loop
-    lda (tile_map_ptr_low),y                                                            ; 2350: b1 85       ..
-    tay                                                                                 ; 2352: a8          .
-    bpl load_instruction                                                                ; 2353: 10 02       ..
+    lda (tile_map_ptr_low),y
+    tay
+    bpl load_instruction
     ; Y=9 corresponds to the titanium wall sprite used while revealing the grid
-    ldy #9                                                                              ; 2355: a0 09       ..
+    ldy #9
     ; this next instruction is either:
     ;     'ldy cell_type_to_sprite' which in this context is equivalent to a no-op,
     ; which is used during preprocessing OR
@@ -796,94 +795,94 @@ grid_draw_row_loop
     ; to convert the cell into a sprite (used during actual gameplay).
     ; Self-modifying code above sets which version is to be used.
 load_instruction
-    ldy cell_type_to_sprite                                                             ; 2357: ac 80 1f    ...
-    dex                                                                                 ; 235a: ca          .
+    ldy cell_type_to_sprite
+    dex
 compare_instruction
 grid_compare_address_low = compare_instruction+1
 grid_compare_address_high = compare_instruction+2
-    cmp current_status_bar_sprites,x                                                    ; 235b: dd 28 50    .(P
-    beq skip_draw_sprite                                                                ; 235e: f0 49       .I
+    cmp current_status_bar_sprites,x
+    beq skip_draw_sprite
 write_instruction
 grid_write_address_low = write_instruction+1
 grid_write_address_high = write_instruction+2
-    sta current_status_bar_sprites,x                                                    ; 2360: 9d 28 50    .(P
-    tay                                                                                 ; 2363: a8          .
-    clc                                                                                 ; 2364: 18          .
-    lda sprite_addresses_low,y                                                          ; 2365: b9 00 20    ..
-    sta ptr_low                                                                         ; 2368: 85 8c       ..
-    adc #$10                                                                            ; 236a: 69 10       i.
-    sta next_ptr_low                                                                    ; 236c: 85 82       ..
-    lda sprite_addresses_high,y                                                         ; 236e: b9 80 20    ..
-    sta ptr_high                                                                        ; 2371: 85 8d       ..
-    sta next_ptr_high                                                                   ; 2373: 85 83       ..
+    sta current_status_bar_sprites,x
+    tay
+    clc
+    lda sprite_addresses_low,y
+    sta ptr_low
+    adc #$10
+    sta next_ptr_low
+    lda sprite_addresses_high,y
+    sta ptr_high
+    sta next_ptr_high
     ; Each sprite is two character rows tall. screen_addr2_low/high is the destination
     ; screen address for the second character row of the sprite
-    lda screen_addr1_low                                                                ; 2375: a5 8a       ..
-    adc #$40                                                                            ; 2377: 69 40       i@
-    sta screen_addr2_low                                                                ; 2379: 85 80       ..
-    lda screen_addr1_high                                                               ; 237b: a5 8b       ..
-    adc #1                                                                              ; 237d: 69 01       i.
-    sta screen_addr2_high                                                               ; 237f: 85 81       ..
+    lda screen_addr1_low
+    adc #$40
+    sta screen_addr2_low
+    lda screen_addr1_high
+    adc #1
+    sta screen_addr2_high
     ; This next loop draws a single sprite in the grid.
     ; It draws two character rows at the same time, with 16 bytes in each row.
-    ldy #$0f                                                                            ; 2381: a0 0f       ..
+    ldy #$0f
 draw_sprite_loop
-    lda (ptr_low),y                                                                     ; 2383: b1 8c       ..
-    sta (screen_addr1_low),y                                                            ; 2385: 91 8a       ..
-    lda (next_ptr_low),y                                                                ; 2387: b1 82       ..
-    sta (screen_addr2_low),y                                                            ; 2389: 91 80       ..
-    dey                                                                                 ; 238b: 88          .
-    lda (ptr_low),y                                                                     ; 238c: b1 8c       ..
-    sta (screen_addr1_low),y                                                            ; 238e: 91 8a       ..
-    lda (next_ptr_low),y                                                                ; 2390: b1 82       ..
-    sta (screen_addr2_low),y                                                            ; 2392: 91 80       ..
-    dey                                                                                 ; 2394: 88          .
-    lda (ptr_low),y                                                                     ; 2395: b1 8c       ..
-    sta (screen_addr1_low),y                                                            ; 2397: 91 8a       ..
-    lda (next_ptr_low),y                                                                ; 2399: b1 82       ..
-    sta (screen_addr2_low),y                                                            ; 239b: 91 80       ..
-    dey                                                                                 ; 239d: 88          .
-    lda (ptr_low),y                                                                     ; 239e: b1 8c       ..
-    sta (screen_addr1_low),y                                                            ; 23a0: 91 8a       ..
-    lda (next_ptr_low),y                                                                ; 23a2: b1 82       ..
-    sta (screen_addr2_low),y                                                            ; 23a4: 91 80       ..
-    dey                                                                                 ; 23a6: 88          .
-    bpl draw_sprite_loop                                                                ; 23a7: 10 da       ..
+    lda (ptr_low),y
+    sta (screen_addr1_low),y
+    lda (next_ptr_low),y
+    sta (screen_addr2_low),y
+    dey
+    lda (ptr_low),y
+    sta (screen_addr1_low),y
+    lda (next_ptr_low),y
+    sta (screen_addr2_low),y
+    dey
+    lda (ptr_low),y
+    sta (screen_addr1_low),y
+    lda (next_ptr_low),y
+    sta (screen_addr2_low),y
+    dey
+    lda (ptr_low),y
+    sta (screen_addr1_low),y
+    lda (next_ptr_low),y
+    sta (screen_addr2_low),y
+    dey
+    bpl draw_sprite_loop
     ; move the screen pointer on 16 pixels to next column
 skip_draw_sprite
-    clc                                                                                 ; 23a9: 18          .
-    lda screen_addr1_low                                                                ; 23aa: a5 8a       ..
-    adc #$10                                                                            ; 23ac: 69 10       i.
-    sta screen_addr1_low                                                                ; 23ae: 85 8a       ..
-    bcc skip_high_byte2                                                                 ; 23b0: 90 02       ..
-    inc screen_addr1_high                                                               ; 23b2: e6 8b       ..
+    clc
+    lda screen_addr1_low
+    adc #$10
+    sta screen_addr1_low
+    bcc skip_high_byte2
+    inc screen_addr1_high
 skip_high_byte2
-    inc grid_column_counter                                                             ; 23b4: e6 73       .s
-    ldy grid_column_counter                                                             ; 23b6: a4 73       .s
-    cpy #20                                                                             ; 23b8: c0 14       ..
-    bne grid_draw_row_loop                                                              ; 23ba: d0 94       ..
+    inc grid_column_counter
+    ldy grid_column_counter
+    cpy #20
+    bne grid_draw_row_loop
     ; return if we have drawn all the rows (X=0)
-    txa                                                                                 ; 23bc: 8a          .
-    beq return2                                                                         ; 23bd: f0 1c       ..
+    txa
+    beq return2
     ; move screen pointer on to next row of sprites (two character rows)
-    clc                                                                                 ; 23bf: 18          .
-    lda screen_addr1_low                                                                ; 23c0: a5 8a       ..
-    adc #$40                                                                            ; 23c2: 69 40       i@
-    sta screen_addr1_low                                                                ; 23c4: 85 8a       ..
-    lda screen_addr1_high                                                               ; 23c6: a5 8b       ..
-    adc #1                                                                              ; 23c8: 69 01       i.
-    sta screen_addr1_high                                                               ; 23ca: 85 8b       ..
-    ; move tile pointer on to next row (64 bytes)
-    lda tile_map_ptr_low                                                                ; 23cc: a5 85       ..
-    adc #$40                                                                            ; 23ce: 69 40       i@
-    sta tile_map_ptr_low                                                                ; 23d0: 85 85       ..
-    lda tile_map_ptr_high                                                               ; 23d2: a5 86       ..
-    adc #0                                                                              ; 23d4: 69 00       i.
-    sta tile_map_ptr_high                                                               ; 23d6: 85 86       ..
-    jmp draw_grid_loop                                                                  ; 23d8: 4c 4c 23    LL#
+    clc
+    lda screen_addr1_low
+    adc #$40
+    sta screen_addr1_low
+    lda screen_addr1_high
+    adc #1
+    sta screen_addr1_high
+    
+    lda tile_map_ptr_low
+    adc #$40                            ; move tile pointer on to next row (64 bytes)
+    sta tile_map_ptr_low
+    lda tile_map_ptr_high
+    adc #0
+    sta tile_map_ptr_high
+    jmp draw_grid_loop
 
 return2
-    rts                                                                                 ; 23db: 60          `
+    rts
 
 ; *************************************************************************************
 ;
@@ -900,81 +899,80 @@ return2
 ; *************************************************************************************
     ; set branch offset (self modifying code)
 update_map
-    ldy #update_rock_or_diamond_that_can_fall - branch_instruction - 2                  ; 2400: a0 5f       ._
-    bne scan_map                                                                        ; 2402: d0 02       ..             ; ALWAYS branch
-    ldy #mark_cell_above_as_processed_and_move_to_next_cell - branch_instruction - 2    ; 2404: a0 26       .&
+    ldy #update_rock_or_diamond_that_can_fall - branch_instruction - 2
+    bne scan_map                        ; ALWAYS branch
+    ldy #mark_cell_above_as_processed_and_move_to_next_cell - branch_instruction - 2
 scan_map
-    sty branch_offset                                                                   ; 2406: 8c 3a 24    .:$
-    ; twenty rows
-    lda #20                                                                             ; 2409: a9 14       ..
-    sta tile_y                                                                          ; 240b: 85 85       ..
-    lda #>tile_map_row_0                                                                ; 240d: a9 50       .P
-    sta ptr_high                                                                        ; 240f: 85 8d       ..
-    lda #<tile_map_row_0                                                                ; 2411: a9 00       ..
-    sta ptr_low                                                                         ; 2413: 85 8c       ..
+    sty branch_offset
+    lda #20                             ; twenty rows
+    sta tile_y
+    lda #>tile_map_row_0
+    sta ptr_high
+    lda #<tile_map_row_0
+    sta ptr_low
     ; Each row is stored in the first 40 bytes of every 64 bytes. Here we set Y to
     ; start on the second row, after the titanium wall border
-    ldy #$40                                                                            ; 2415: a0 40       .@
+    ldy #$40
     ; loop through the twenty rows of map
 tile_map_y_loop
-    lda #38                                                                             ; 2417: a9 26       .&             ; 38 columns (cells per row)
-    sta tile_x                                                                          ; 2419: 85 86       ..
-    lda (ptr_low),y                                                                     ; 241b: b1 8c       ..
-    sta cell_left                                                                       ; 241d: 85 76       .v
+    lda #38                             ; 38 columns (cells per row)
+    sta tile_x
+    lda (ptr_low),y
+    sta cell_left
     ; move to the next cell
-    iny                                                                                 ; 241f: c8          .
+    iny
     ; read current cell contents into X
-    lda (ptr_low),y                                                                     ; 2420: b1 8c       ..
-    tax                                                                                 ; 2422: aa          .
+    lda (ptr_low),y
+    tax
     ; loop through the 38 cells in a row of map
     ; read next cell contents into cell_right
 tile_map_x_loop
-    ldy #$42                                                                            ; 2423: a0 42       .B
-    lda (ptr_low),y                                                                     ; 2425: b1 8c       ..
-    sta cell_right                                                                      ; 2427: 85 78       .x
-    cpx #map_diamond                                                                    ; 2429: e0 04       ..
-    bmi mark_cell_above_as_processed_and_move_to_next_cell                              ; 242b: 30 34       04
+    ldy #$42
+    lda (ptr_low),y
+    sta cell_right
+    cpx #map_diamond
+    bmi mark_cell_above_as_processed_and_move_to_next_cell
 
     ; read cells into cell_above and cell_below variables
-    ldy #1                                                                              ; 2444: a0 01       ..
-    lda (ptr_low),y                                                                     ; 2446: b1 8c       ..
-    sta cell_above                                                                      ; 2448: 85 74       .t
-    ldy #$81                                                                            ; 244a: a0 81       ..
-    lda (ptr_low),y                                                                     ; 244c: b1 8c       ..
-    sta cell_below                                                                      ; 244e: 85 7a       .z
+    ldy #1
+    lda (ptr_low),y
+    sta cell_above
+    ldy #$81
+    lda (ptr_low),y
+    sta cell_below
 
     ; if current cell is already processed (top bit set), then skip to next cell
-    txa                                                                                 ; 242d: 8a          .
-    bmi mark_cell_above_as_processed_and_move_to_next_cell                              ; 242e: 30 31       01
+    txa
+    bmi mark_cell_above_as_processed_and_move_to_next_cell
     ; mark current cell as processed (set top bit)
-    ora #$80                                                                            ; 2430: 09 80       ..
-    tax                                                                                 ; 2432: aa          .
+    ora #$80
+    tax
     ; the lower four bits are the type, each of which has a handler to process it
-    and #$0f                                                                            ; 2433: 29 0f       ).
-    tay                                                                                 ; 2435: a8          .
-    lda handler_table_high,y                                                            ; 2436: b9 d0 21    ..!
+    and #$0f
+    tay
+    lda handler_table_high,y
     ; if we have no handler for this cell type then branch (destination was set
     ; depending on where we entered this routine)
 branch_instruction
 branch_offset = branch_instruction+1
-    beq update_rock_or_diamond_that_can_fall                                            ; 2439: f0 5f       ._
-    sta handler_high                                                                    ; 243b: 8d 52 24    .R$
-    lda handler_table_low,y                                                             ; 243e: b9 c0 21    ..!
-    sta handler_low                                                                     ; 2441: 8d 51 24    .Q$
+    beq update_rock_or_diamond_that_can_fall
+    sta handler_high
+    lda handler_table_low,y
+    sta handler_low
     ; call the handler for the cell based on the type (0-15)
 jsr_handler_instruction
 handler_low = jsr_handler_instruction+1
 handler_high = jsr_handler_instruction+2
-    jsr handler_firefly_or_butterfly                                                    ; 2450: 20 00 25     .%
+    jsr handler_firefly_or_butterfly
     ; the handler may have changed the surrounding cells, store the new cell below
-    lda cell_below                                                                      ; 2453: a5 7a       .z
-    ldy #$81                                                                            ; 2455: a0 81       ..
-    sta (ptr_low),y                                                                     ; 2457: 91 8c       ..
+    lda cell_below
+    ldy #$81
+    sta (ptr_low),y
     ; store the new cell above
-    lda cell_above                                                                      ; 2459: a5 74       .t
-    and #$7f                                                                            ; 245b: 29 7f       ).
-    ldy #1                                                                              ; 245d: a0 01       ..
-    bpl move_to_next_cell                                                               ; 245f: 10 06       ..             ; ALWAYS branch
+    lda cell_above
+    and #$7f
+    ldy #1
+    bpl move_to_next_cell               ; ALWAYS branch
 
 ; *************************************************************************************
 ;
@@ -983,47 +981,47 @@ handler_high = jsr_handler_instruction+2
 ;
 ; *************************************************************************************
 mark_cell_above_as_processed_and_move_to_next_cell
-    ldy #1                                                                              ; 2461: a0 01       ..
-    lda (ptr_low),y                                                                     ; 2463: b1 8c       ..
-    and #$7f                                                                            ; 2465: 29 7f       ).
+    ldy #1
+    lda (ptr_low),y
+    and #$7f
 move_to_next_cell
-    sta (ptr_low),y                                                                     ; 2467: 91 8c       ..
+    sta (ptr_low),y
     ; store the new cell left back into the map
-    lda cell_left                                                                       ; 2469: a5 76       .v
-    ldy #$40                                                                            ; 246b: a0 40       .@
-    sta (ptr_low),y                                                                     ; 246d: 91 8c       ..
+    lda cell_left
+    ldy #$40
+    sta (ptr_low),y
     ; update cell_left with the current cell value (in X)
-    stx cell_left                                                                       ; 246f: 86 76       .v
+    stx cell_left
     ; update the current cell value x from the cell_right variable
-    ldx cell_right                                                                      ; 2471: a6 78       .x
+    ldx cell_right
     ; move ptr to next position
-    inc ptr_low                                                                         ; 2473: e6 8c       ..
+    inc ptr_low
     ; loop back for the rest of the cells in the row
-    dec tile_x                                                                          ; 2475: c6 86       ..
-    bne tile_map_x_loop                                                                 ; 2477: d0 aa       ..
+    dec tile_x
+    bne tile_map_x_loop
     ; store the final previous_cell for the row
-    lda cell_left                                                                       ; 2479: a5 76       .v
-    sta (ptr_low),y                                                                     ; 247b: 91 8c       ..
+    lda cell_left
+    sta (ptr_low),y
     ; move ptr to the start of the next row. Stride is 64, 38 entries done, so
     ; remainder to add is 64-38=26
-    lda #26                                                                             ; 247d: a9 1a       ..
-    jsr add_a_to_ptr                                                                    ; 247f: 20 40 22     @"
+    lda #26
+    jsr add_a_to_ptr
     ; loop back for the rest of the rows
-    dec tile_y                                                                          ; 2482: c6 85       ..
-    bne tile_map_y_loop                                                                 ; 2484: d0 91       ..
+    dec tile_y
+    bne tile_map_y_loop
     ; clear top bit in final row
-    ldy #38                                                                             ; 2486: a0 26       .&
+    ldy #38
 clear_top_bit_on_final_row_loop
-    lda tile_map_row_20,y                                                               ; 2488: b9 00 55    ..U
-    and #$7f                                                                            ; 248b: 29 7f       ).
-    sta tile_map_row_20,y                                                               ; 248d: 99 00 55    ..U
-    dey                                                                                 ; 2490: 88          .
-    bne clear_top_bit_on_final_row_loop                                                 ; 2491: d0 f5       ..
+    lda tile_map_row_20,y
+    and #$7f
+    sta tile_map_row_20,y
+    dey
+    bne clear_top_bit_on_final_row_loop
     ; clear top bit on end position
-    lda (map_rockford_end_position_addr_low),y                                          ; 2493: b1 6a       .j
-    and #$7f                                                                            ; 2495: 29 7f       ).
-    sta (map_rockford_end_position_addr_low),y                                          ; 2497: 91 6a       .j
-    rts                                                                                 ; 2499: 60          `
+    lda (map_rockford_end_position_addr_low),y
+    and #$7f
+    sta (map_rockford_end_position_addr_low),y
+    rts
 
 ; *************************************************************************************
 ; Update for rock/diamond/bomb elements
@@ -1050,80 +1048,80 @@ gravity_on_as_normal
     bne not_a_rock
     ldx #map_rock | map_unprocessed  ;switch back to rock
 not_a_rock
-    ldy #$81                                                                            ; 249a: a0 81       ..
-    lda (ptr_low),y                                                                     ; 249c: b1 8c       ..
-    beq cell_below_is_a_space                                                           ; 249e: f0 34       .4
+    ldy #$81
+    lda (ptr_low),y
+    beq cell_below_is_a_space
     ; check current cell
-    cpx #map_deadly                                                                     ; 24a0: e0 c0       ..
-    bmi not_c0_or_above                                                                 ; 24a2: 30 03       0.
-    jsr process_c0_or_above                                                             ; 24a4: 20 db 24     .$
+    cpx #map_deadly
+    bmi not_c0_or_above
+    jsr process_c0_or_above
 not_c0_or_above
-    and #$4f                                                                            ; 24a7: 29 4f       )O
-    tay                                                                                 ; 24a9: a8          .
-    asl                                                                                 ; 24aa: 0a          .
-    bmi process_next_cell                                                               ; 24ab: 30 b4       0.
-    lda cell_types_that_rocks_or_diamonds_will_fall_off,y                               ; 24ad: b9 00 21    ..!
-    beq process_next_cell                                                               ; 24b0: f0 af       ..
-    lda cell_left                                                                       ; 24b2: a5 76       .v
-    bne check_if_cell_right_is_empty                                                    ; 24b4: d0 06       ..
+    and #$4f
+    tay
+    asl
+    bmi process_next_cell
+    lda cell_types_that_rocks_or_diamonds_will_fall_off,y
+    beq process_next_cell
+    lda cell_left
+    bne check_if_cell_right_is_empty
     ; cell left is empty, now check below left cell
-    ldy #$80                                                                            ; 24b6: a0 80       ..
-    lda (ptr_low),y                                                                     ; 24b8: b1 8c       ..
-    beq rock_or_diamond_can_fall_left_or_right                                          ; 24ba: f0 0a       ..
+    ldy #$80
+    lda (ptr_low),y
+    beq rock_or_diamond_can_fall_left_or_right
 check_if_cell_right_is_empty
-    lda cell_right                                                                      ; 24bc: a5 78       .x
-    bne process_next_cell                                                               ; 24be: d0 a1       ..
+    lda cell_right
+    bne process_next_cell
     ; cell right is empty, now check below right cell
-    ldy #$82                                                                            ; 24c0: a0 82       ..
-    lda (ptr_low),y                                                                     ; 24c2: b1 8c       ..
-    bne process_next_cell                                                               ; 24c4: d0 9b       ..
+    ldy #$82
+    lda (ptr_low),y
+    bne process_next_cell
     ; take the rock or diamond, and set bit 6 to indicate it has been moved this scan
     ; (so it won't be moved again). Then store it in the below left or below right cell
 rock_or_diamond_can_fall_left_or_right
-    txa                                                                                 ; 24c6: 8a          .
-    ora #$40                                                                            ; 24c7: 09 40       .@
+    txa
+    ora #$40
     ; Store in either cell_below_left or cell_below_right depending on Y=$80 or $82,
     ; since $fff6 = cell_below_left - $80
-    sta lfff6,y                                                                         ; 24c9: 99 f6 ff    ...
+    sta lfff6,y
     ; below left or right is set to $80, still a space, but marked as unprocessed
-    lda #$80                                                                            ; 24cc: a9 80       ..
-    sta (ptr_low),y                                                                     ; 24ce: 91 8c       ..
+    lda #$80
+    sta (ptr_low),y
 set_to_unprocessed_space
-    ldx #$80                                                                            ; 24d0: a2 80       ..
-    bne process_next_cell                                                               ; 24d2: d0 8d       ..             ; ALWAYS branch
+    ldx #$80
+    bne process_next_cell               ; ALWAYS branch
 
     ; take the rock or diamond, and set bit 6 to indicate it has been moved this scan
     ; (so it won't be moved again). Then store it in the cell below.
 cell_below_is_a_space
-    txa                                                                                 ; 24d4: 8a          .
-    ora #$40                                                                            ; 24d5: 09 40       .@
-    sta (ptr_low),y                                                                     ; 24d7: 91 8c       ..
-    bne set_to_unprocessed_space                                                        ; 24d9: d0 f5       ..             ; ALWAYS branch
+    txa
+    ora #$40
+    sta (ptr_low),y
+    bne set_to_unprocessed_space        ; ALWAYS branch
 
 process_c0_or_above
-    pha                                                                                 ; 24db: 48          H
+    pha
     ; look up table based on type
-    and #$0f                                                                            ; 24dc: 29 0f       ).
-    tay                                                                                 ; 24de: a8          .
-    lda update_cell_type_when_below_a_falling_rock_or_diamond,y                         ; 24df: b9 80 21    ..!
-    beq play_rock_or_diamond_fall_sound                                                 ; 24e2: f0 04       ..
+    and #$0f
+    tay
+    lda update_cell_type_when_below_a_falling_rock_or_diamond,y
+    beq play_rock_or_diamond_fall_sound
     ; store in cell below
-    ldy #$81                                                                            ; 24e4: a0 81       ..
-    sta (ptr_low),y                                                                     ; 24e6: 91 8c       ..
+    ldy #$81
+    sta (ptr_low),y
 play_rock_or_diamond_fall_sound
-    txa                                                                                 ; 24e8: 8a          .
-    and #1                                                                              ; 24e9: 29 01       ).
-    eor #sound5_active_flag                                                             ; 24eb: 49 4b       IK
-    tay                                                                                 ; 24ed: a8          .
+    txa
+    and #1
+    eor #sound5_active_flag
+    tay
     ; store $4b or $4c (i.e. a non-zero value) in location $4b or $4c. i.e. activate
     ; sound5_active_flag or sound6_active_flag
-    sta page_0,y                                                                        ; 24ee: 99 00 00    ...
+    sta page_0,y
     ; mask off bit 6 for the current cell value
-    txa                                                                                 ; 24f1: 8a          .
-    and #$bf                                                                            ; 24f2: 29 bf       ).
-    tax                                                                                 ; 24f4: aa          .
-    pla                                                                                 ; 24f5: 68          h
-    rts                                                                                 ; 24f6: 60          `
+    txa
+    and #$bf
+    tax
+    pla
+    rts
 
 ;Needed because subroutine is out of range to branch to
 process_next_cell
@@ -1131,279 +1129,277 @@ process_next_cell
 
 ; *************************************************************************************
 handler_firefly_or_butterfly
-    cpx #map_deadly                                                                     ; 2500: e0 c0       ..
-    bpl show_large_explosion                                                            ; 2502: 10 3e       .>
+    cpx #map_deadly
+    bpl show_large_explosion
     ; check directions in order: cell_below, cell_right, cell_left, cell_up
-    ldy #8                                                                              ; 2504: a0 08       ..
+    ldy #8
 look_for_amoeba_or_player_loop
-    lda cell_above_left-1,y                                                             ; 2506: b9 72 00    .r.
-;    bne unnecessary_branch                                                              ; 2509: d0 00       ..             ; redundant instruction
-;unnecessary_branch
-    and #7                                                                              ; 250b: 29 07       ).
-    eor #7                                                                              ; 250d: 49 07       I.
-    beq show_large_explosion                                                            ; 250f: f0 31       .1
-    dey                                                                                 ; 2511: 88          .
-    dey                                                                                 ; 2512: 88          .
-    bne look_for_amoeba_or_player_loop                                                  ; 2513: d0 f1       ..
+    lda cell_above_left-1,y
+    and #7
+    eor #7
+    beq show_large_explosion
+    dey
+    dey
+    bne look_for_amoeba_or_player_loop
     ; calculate direction to move in Y
-    txa                                                                                 ; 2515: 8a          .
-    lsr                                                                                 ; 2516: 4a          J
-    lsr                                                                                 ; 2517: 4a          J
-    lsr                                                                                 ; 2518: 4a          J
-    and #7                                                                              ; 2519: 29 07       ).
-    tay                                                                                 ; 251b: a8          .
+    txa
+    lsr
+    lsr
+    lsr
+    and #7
+    tay
     ; branch if the desired direction is empty
-    ldx firefly_neighbour_variables,y                                                   ; 251c: be 1c 22    .."
-    lda page_0,x                                                                        ; 251f: b5 00       ..
-    beq set_firefly_or_butterfly                                                        ; 2521: f0 11       ..
+    ldx firefly_neighbour_variables,y
+    lda page_0,x
+    beq set_firefly_or_butterfly
     ; get the next direction in Y
-    lda firefly_and_butterfly_next_direction_table,y                                    ; 2523: b9 10 21    ..!
-    tay                                                                                 ; 2526: a8          .
+    lda firefly_and_butterfly_next_direction_table,y
+    tay
     ; branch if the second desired direction is empty
-    ldx firefly_neighbour_variables,y                                                   ; 2527: be 1c 22    .."
-    lda page_0,x                                                                        ; 252a: b5 00       ..
-    beq set_firefly_or_butterfly                                                        ; 252c: f0 06       ..
+    ldx firefly_neighbour_variables,y
+    lda page_0,x
+    beq set_firefly_or_butterfly
     ; set X=0 to force the use of the final possible direction
-    ldx #0                                                                              ; 252e: a2 00       ..
+    ldx #0
     ; get the last cardinal direction that isn't a u-turn
-    lda firefly_and_butterfly_next_direction_table,y                                    ; 2530: b9 10 21    ..!
-    tay                                                                                 ; 2533: a8          .
+    lda firefly_and_butterfly_next_direction_table,y
+    tay
 set_firefly_or_butterfly
-    lda firefly_and_butterfly_cell_values,y                                             ; 2534: b9 18 21    ..!
-    cpx #0                                                                              ; 2537: e0 00       ..
-    bne store_firefly_and_clear_current_cell                                            ; 2539: d0 02       ..
-    tax                                                                                 ; 253b: aa          .
-    rts                                                                                 ; 253c: 60          `
+    lda firefly_and_butterfly_cell_values,y
+    cpx #0
+    bne store_firefly_and_clear_current_cell
+    tax
+    rts
 
 store_firefly_and_clear_current_cell
-    sta page_0,x                                                                        ; 253d: 95 00       ..
-    ldx #0                                                                              ; 253f: a2 00       ..
-    rts                                                                                 ; 2541: 60          `
+    sta page_0,x
+    ldx #0
+    rts
 
 show_large_explosion
-    txa                                                                                 ; 2542: 8a          .
-    ldx #<cell_types_that_will_turn_into_large_explosion                                ; 2543: a2 40       .@
-    and #8                                                                              ; 2545: 29 08       ).
-    beq set_explosion_type                                                              ; 2547: f0 02       ..
-    ldx #<cell_types_that_will_turn_into_diamonds                                       ; 2549: a2 30       .0
+    txa
+    ldx #<cell_types_that_will_turn_into_large_explosion
+    and #8
+    beq set_explosion_type
+    ldx #<cell_types_that_will_turn_into_diamonds
 set_explosion_type
-    stx lookup_table_address_low                                                        ; 254b: 8e 72 25    .r%
+    stx lookup_table_address_low
     ; activate explosion sound
-    stx sound6_active_flag                                                              ; 254e: 86 4c       .L
+    stx sound6_active_flag
     ; read above left cell
-    ldy #0                                                                              ; 2550: a0 00       ..
-    lda (ptr_low),y                                                                     ; 2552: b1 8c       ..
-    sta cell_above_left                                                                 ; 2554: 85 73       .s
+    ldy #0
+    lda (ptr_low),y
+    sta cell_above_left
     ; reset current cell to zero
-    sty cell_current                                                                    ; 2556: 84 77       .w
+    sty cell_current
     ; read above right cell
-    ldy #2                                                                              ; 2558: a0 02       ..
-    lda (ptr_low),y                                                                     ; 255a: b1 8c       ..
-    sta cell_above_right                                                                ; 255c: 85 75       .u
+    ldy #2
+    lda (ptr_low),y
+    sta cell_above_right
     ; read below left cell
-    ldy #$80                                                                            ; 255e: a0 80       ..
-    lda (ptr_low),y                                                                     ; 2560: b1 8c       ..
-    sta cell_below_left                                                                 ; 2562: 85 79       .y
+    ldy #$80
+    lda (ptr_low),y
+    sta cell_below_left
     ; read below right cell
-    ldy #$82                                                                            ; 2564: a0 82       ..
-    lda (ptr_low),y                                                                     ; 2566: b1 8c       ..
-    sta cell_below_right                                                                ; 2568: 85 7b       .{
+    ldy #$82
+    lda (ptr_low),y
+    sta cell_below_right
     ; loop 9 times to replace all the neighbour cells with diamonds or large explosion
-    ldx #9                                                                              ; 256a: a2 09       ..
+    ldx #9
 replace_neighbours_loop
-    lda cell_above_left-1,x                                                             ; 256c: b5 72       .r
-    and #$0f                                                                            ; 256e: 29 0f       ).
-    tay                                                                                 ; 2570: a8          .
+    lda cell_above_left-1,x
+    and #$0f
+    tay
 read_from_table_instruction
 lookup_table_address_low = read_from_table_instruction+1
-    lda cell_types_that_will_turn_into_large_explosion,y                                ; 2571: b9 40 21    .@!
-    beq skip_storing_explosion_into_cell                                                ; 2574: f0 02       ..
-    sta cell_above_left-1,x                                                             ; 2576: 95 72       .r
+    lda cell_types_that_will_turn_into_large_explosion,y
+    beq skip_storing_explosion_into_cell
+    sta cell_above_left-1,x
 skip_storing_explosion_into_cell
-    dex                                                                                 ; 2578: ca          .
-    bne replace_neighbours_loop                                                         ; 2579: d0 f1       ..
+    dex
+    bne replace_neighbours_loop
     ; write new values back into the corner cells
     ; write to above left cell
-    ldy #0                                                                              ; 257b: a0 00       ..
-    lda cell_above_left                                                                 ; 257d: a5 73       .s
-    and #$7f                                                                            ; 257f: 29 7f       ).
-    sta (ptr_low),y                                                                     ; 2581: 91 8c       ..
+    ldy #0
+    lda cell_above_left
+    and #$7f
+    sta (ptr_low),y
     ; write to above right cell
-    ldy #2                                                                              ; 2583: a0 02       ..
-    lda cell_above_right                                                                ; 2585: a5 75       .u
-    sta (ptr_low),y                                                                     ; 2587: 91 8c       ..
+    ldy #2
+    lda cell_above_right
+    sta (ptr_low),y
     ; write to below left cell
-    ldy #$80                                                                            ; 2589: a0 80       ..
-    lda cell_below_left                                                                 ; 258b: a5 79       .y
-    sta (ptr_low),y                                                                     ; 258d: 91 8c       ..
+    ldy #$80
+    lda cell_below_left
+    sta (ptr_low),y
     ; write to below right cell
-    ldy #$82                                                                            ; 258f: a0 82       ..
-    lda cell_below_right                                                                ; 2591: a5 7b       .{
-    sta (ptr_low),y                                                                     ; 2593: 91 8c       ..
-    ldx cell_current                                                                    ; 2595: a6 77       .w
-    rts                                                                                 ; 2597: 60          `
+    ldy #$82
+    lda cell_below_right
+    sta (ptr_low),y
+    ldx cell_current
+    rts
 
 ; *************************************************************************************
 handler_amoeba
-    lda amoeba_replacement                                                              ; 259e: a5 54       .T
-    beq update_amoeba                                                                   ; 25a0: f0 04       ..
+    lda amoeba_replacement
+    beq update_amoeba
     ; play amoeba sound
-    tax                                                                                 ; 25a2: aa          .
-    sta sound6_active_flag                                                              ; 25a3: 85 4c       .L
-    rts                                                                                 ; 25a5: 60          `
+    tax
+    sta sound6_active_flag
+    rts
 
 update_amoeba
-    inc number_of_amoeba_cells_found                                                    ; 25a6: e6 56       .V
+    inc number_of_amoeba_cells_found
     ; check for surrounding space or earth allowing the amoeba to grow
-    lda #$0e                                                                            ; 25a8: a9 0e       ..
-    bit cell_above                                                                      ; 25aa: 24 74       $t
-    beq amoeba_can_grow                                                                 ; 25ac: f0 0c       ..
-    bit cell_left                                                                       ; 25ae: 24 76       $v
-    beq amoeba_can_grow                                                                 ; 25b0: f0 08       ..
-    bit cell_right                                                                      ; 25b2: 24 78       $x
-    beq amoeba_can_grow                                                                 ; 25b4: f0 04       ..
-    bit cell_below                                                                      ; 25b6: 24 7a       $z
-    bne return3                                                                         ; 25b8: d0 3b       .;
+    lda #$0e
+    bit cell_above
+    beq amoeba_can_grow
+    bit cell_left
+    beq amoeba_can_grow
+    bit cell_right
+    beq amoeba_can_grow
+    bit cell_below
+    bne return3
 amoeba_can_grow
-    stx current_amoeba_cell_type                                                        ; 25ba: 86 60       .`
-    stx sound0_active_flag                                                              ; 25bc: 86 46       .F
-    inc amoeba_counter                                                                  ; 25be: e6 57       .W
-    lda amoeba_counter                                                                  ; 25c0: a5 57       .W
-    cmp amoeba_growth_interval                                                          ; 25c2: c5 55       .U
-    bne return3                                                                         ; 25c4: d0 2f       ./
-    lda #0                                                                              ; 25c6: a9 00       ..
-    sta amoeba_counter                                                                  ; 25c8: 85 57       .W
+    stx current_amoeba_cell_type
+    stx sound0_active_flag
+    inc amoeba_counter
+    lda amoeba_counter
+    cmp amoeba_growth_interval
+    bne return3
+    lda #0
+    sta amoeba_counter
     ; calculate direction to grow based on current amoeba state in top bits
-    txa                                                                                 ; 25ca: 8a          .
-    lsr                                                                                 ; 25cb: 4a          J
-    lsr                                                                                 ; 25cc: 4a          J
-    lsr                                                                                 ; 25cd: 4a          J
-    and #6                                                                              ; 25ce: 29 06       ).
+    txa
+    lsr
+    lsr
+    lsr
+    and #6
     ; Y is set to 0,2,4, or 6 for the compass directions
-    tay                                                                                 ; 25d0: a8          .
-    cpx #map_deadly                                                                     ; 25d1: e0 c0       ..
-    bmi check_for_space_or_earth                                                        ; 25d3: 30 0d       0.
+    tay
+    cpx #map_deadly
+    bmi check_for_space_or_earth
     ; get cell value for direction Y
-    lda cell_above,y                                                                    ; 25d5: b9 74 00    .t.
-    beq found_space_or_earth_to_grow_into                                               ; 25d8: f0 0f       ..
+    lda cell_above,y
+    beq found_space_or_earth_to_grow_into
     ; move amoeba onto next state (add 16)
 increment_top_nybble_of_amoeba
-    txa                                                                                 ; 25da: 8a          .
-    clc                                                                                 ; 25db: 18          .
-    adc #$10                                                                            ; 25dc: 69 10       i.
-    and #$7f                                                                            ; 25de: 29 7f       ).
-    tax                                                                                 ; 25e0: aa          .
-    rts                                                                                 ; 25e1: 60          `
+    txa
+    clc
+    adc #$10
+    and #$7f
+    tax
+    rts
 
     ; get cell value for direction Y
 check_for_space_or_earth
-    lda cell_above,y                                                                    ; 25e2: b9 74 00    .t.
+    lda cell_above,y
     ; branch if 0 or 1 (space or earth)
-    and #$0e                                                                            ; 25e5: 29 0e       ).
-    bne increment_top_nybble_of_amoeba                                                  ; 25e7: d0 f1       ..
+    and #$0e
+    bne increment_top_nybble_of_amoeba
 found_space_or_earth_to_grow_into
-    lda tick_counter                                                                    ; 25e9: a5 5a       .Z
-    lsr                                                                                 ; 25eb: 4a          J
-    bcc store_x                                                                         ; 25ec: 90 03       ..
-    jsr increment_top_nybble_of_amoeba                                                  ; 25ee: 20 da 25     .%
+    lda tick_counter
+    lsr
+    bcc store_x
+    jsr increment_top_nybble_of_amoeba
 store_x
-    txa                                                                                 ; 25f1: 8a          .
-    sta cell_above,y                                                                    ; 25f2: 99 74 00    .t.
+    txa
+    sta cell_above,y
 return3
-    rts                                                                                 ; 25f5: 60          `
+    rts
 
 ; *************************************************************************************
 handler_rockford
-    stx current_rockford_sprite                                                         ; 2600: 86 5b       .[
-    lda rockford_explosion_cell_type                                                    ; 2602: a5 5f       ._
-    bne start_large_explosion                                                           ; 2604: d0 03       ..
-    inx                                                                                 ; 2606: e8          .
-    bne check_for_direction_key_pressed                                                 ; 2607: d0 05       ..
+    stx current_rockford_sprite
+    lda rockford_explosion_cell_type
+    bne start_large_explosion
+    inx
+    bne check_for_direction_key_pressed
 start_large_explosion
-    ldx #map_start_large_explosion                                                      ; 2609: a2 46       .F
-    stx rockford_explosion_cell_type                                                    ; 260b: 86 5f       ._
-    rts                                                                                 ; 260d: 60          `
+    ldx #map_start_large_explosion
+    stx rockford_explosion_cell_type
+    rts
 
 check_for_direction_key_pressed
-    lda keys_to_process                                                                 ; 260e: a5 62       .b
-    and #$f0                                                                            ; 2610: 29 f0       ).
-    bne direction_key_pressed                                                           ; 2612: d0 12       ..
+    lda keys_to_process
+    and #$f0
+    bne direction_key_pressed
     ; player is not moving in any direction
-    ldx #map_rockford                                                                   ; 2614: a2 0f       ..
+    ldx #map_rockford
 update_player_at_current_location
-    lda #$41                                                                            ; 2616: a9 41       .A
+    lda #$41
 play_movement_sound_and_update_current_position_address
-    sta sound2_active_flag                                                              ; 2618: 85 48       .H
-    clc                                                                                 ; 261a: 18          .
-    adc ptr_low                                                                         ; 261b: 65 8c       e.
-    sta map_rockford_current_position_addr_low                                          ; 261d: 85 70       .p
-    lda ptr_high                                                                        ; 261f: a5 8d       ..
-    adc #0                                                                              ; 2621: 69 00       i.
-    sta map_rockford_current_position_addr_high                                         ; 2623: 85 71       .q
-    rts                                                                                 ; 2625: 60          `
+    sta sound2_active_flag
+    clc
+    adc ptr_low
+    sta map_rockford_current_position_addr_low
+    lda ptr_high
+    adc #0
+    sta map_rockford_current_position_addr_high
+    rts
 
 direction_key_pressed
-    ldx #0                                                                              ; 2626: a2 00       ..
-    stx ticks_since_last_direction_key_pressed                                          ; 2628: 86 58       .X
-    dex                                                                                 ; 262a: ca          .
+    ldx #0
+    stx ticks_since_last_direction_key_pressed
+    dex
 get_direction_index_loop
-    inx                                                                                 ; 262b: e8          .
-    asl                                                                                 ; 262c: 0a          .
-    bcc get_direction_index_loop                                                        ; 262d: 90 fc       ..
-    lda rockford_cell_value_for_direction,x                                             ; 262f: bd 24 22    .$"
-    beq skip_storing_rockford_cell_type                                                 ; 2632: f0 02       ..
-    sta rockford_cell_value                                                             ; 2634: 85 52       .R
+    inx
+    asl
+    bcc get_direction_index_loop
+    lda rockford_cell_value_for_direction,x
+    beq skip_storing_rockford_cell_type
+    sta rockford_cell_value
 skip_storing_rockford_cell_type
-    ldy neighbouring_cell_variable_from_direction_index,x                               ; 2636: bc 00 22    .."
-    sty neighbouring_cell_variable                                                      ; 2639: 84 73       .s
+    ldy neighbouring_cell_variable_from_direction_index,x
+    sty neighbouring_cell_variable
     ; read cell contents from the given neighbouring cell variable y
-    lda page_0,y                                                                        ; 263b: b9 00 00    ...
-    sta neighbour_cell_contents                                                         ; 263e: 85 64       .d
-    and #$0f                                                                            ; 2640: 29 0f       ).
-    tay                                                                                 ; 2642: a8          .
+    lda page_0,y
+    sta neighbour_cell_contents
+    and #$0f
+    tay
     ; branch if movement is not possible
-    lda collision_for_cell_type,y                                                       ; 2643: b9 f0 21    ..!
-    beq check_if_value_is_empty                                                         ; 2646: f0 2c       .,
+    lda collision_for_cell_type,y
+    beq check_if_value_is_empty
     ; branch if movement is freely possible
-    bmi check_for_return_pressed                                                        ; 2648: 30 1d       0.
+    bmi check_for_return_pressed
     ; trying to move into something difficult to move (e.g. a rock)
-    ldy check_for_rock_direction_offsets,x                                              ; 264a: bc 04 22    .."
-    beq check_if_value_is_empty                                                         ; 264d: f0 25       .%
+    ldy check_for_rock_direction_offsets,x
+    beq check_if_value_is_empty
     cpy #$ee  ;Special value used to detect rock has been pushed up
     beq check_push_up
-    lda (ptr_low),y                                                                     ; 264f: b1 8c       ..
-    bne check_if_value_is_empty                                                         ; 2651: d0 21       .!
-    lda neighbour_cell_contents                                                         ; 2653: a5 64       .d
+    lda (ptr_low),y
+    bne check_if_value_is_empty
+    lda neighbour_cell_contents
     ; don't try pushing a rock that's just fallen this tick (bit 6 set at $24c7)
-    cmp #$45                                                                            ; 2655: c9 45       .E
-    beq check_if_value_is_empty                                                         ; 2657: f0 1b       ..
-    dec delay_trying_to_push_rock                                                       ; 2659: c6 53       .S
-    bne check_if_value_is_empty                                                         ; 265b: d0 17       ..
-    ora #$80                                                                            ; 265d: 09 80       ..
-    sta (ptr_low),y                                                                     ; 265f: 91 8c       ..
-    lda #4                                                                              ; 2661: a9 04       ..
-    sta delay_trying_to_push_rock                                                       ; 2663: 85 53       .S
-    inc sound4_active_flag                                                              ; 2665: e6 4a       .J
+    cmp #$45
+    beq check_if_value_is_empty
+    dec delay_trying_to_push_rock
+    bne check_if_value_is_empty
+    ora #$80
+    sta (ptr_low),y
+    lda #4
+    sta delay_trying_to_push_rock
+    inc sound4_active_flag
 check_for_return_pressed
-    lda keys_to_process                                                                 ; 2667: a5 62       .b
-    and #8                                                                              ; 2669: 29 08       ).
-    beq store_rockford_cell_value_without_return_pressed                                ; 266b: f0 0b       ..
+    lda keys_to_process
+    and #8
+    beq store_rockford_cell_value_without_return_pressed
     ; return and direction is pressed. clear the appropriate cell
     jsr check_if_bombs_used  ;Returns accumulator used below
     ldy neighbouring_cell_variable
-    sta page_0,y                                                                        ; 2671: 99 00 00    ...
+    sta page_0,y
 check_if_value_is_empty
-    ldx rockford_cell_value                                                             ; 2674: a6 52       .R
-    bne update_player_at_current_location                                               ; 2676: d0 9e       ..
+    ldx rockford_cell_value
+    bne update_player_at_current_location
 store_rockford_cell_value_without_return_pressed
-    ldy neighbouring_cell_variable                                                      ; 2678: a4 73       .s
-    lda rockford_cell_value                                                             ; 267a: a5 52       .R
-    sta page_0,y                                                                        ; 267c: 99 00 00    ...
-    lda map_offset_for_direction,x                                                      ; 267f: bd 08 22    .."
-    dex                                                                                 ; 2682: ca          .
-    beq play_movement_sound_and_update_current_position_address                         ; 2683: f0 93       ..
-    ldx #$80                                                                            ; 2685: a2 80       ..
-    bne play_movement_sound_and_update_current_position_address                         ; 2687: d0 8f       ..             ; ALWAYS branch
+    ldy neighbouring_cell_variable
+    lda rockford_cell_value
+    sta page_0,y
+    lda map_offset_for_direction,x
+    dex
+    beq play_movement_sound_and_update_current_position_address
+    ldx #$80
+    bne play_movement_sound_and_update_current_position_address                 ; ALWAYS branch
 
 ;Subroutine to allow Rockford to push a rock upwards
 ;Needs to check there is a free space above the rock being pushed, allow for the push delay, then continue like other direction pushes
@@ -1519,85 +1515,85 @@ bomb_return
 
 ; *************************************************************************************
 handler_magic_wall
-    txa                                                                                 ; 26ae: 8a          .
-    ldx magic_wall_state                                                                ; 26af: a6 50       .P
-    cmp #$bd                                                                            ; 26b1: c9 bd       ..
-    bne check_if_magic_wall_is_active                                                   ; 26b3: d0 25       .%
+    txa
+    ldx magic_wall_state
+    cmp #$bd
+    bne check_if_magic_wall_is_active
     ; read what's above the wall, getting the cell type from the lower nybble
-    lda cell_above                                                                      ; 26b5: a5 74       .t
-    and #$0f                                                                            ; 26b7: 29 0f       ).
-    tay                                                                                 ; 26b9: a8          .
+    lda cell_above
+    and #$0f
+    tay
     ; read what cell types are allowed to fall through and what is produced as a result
     ; (rocks turn into diamonds and vice versa)
-    lda items_produced_by_the_magic_wall,y                                              ; 26ba: b9 20 21    . !
-    beq skip_storing_space_above                                                        ; 26bd: f0 04       ..
+    lda items_produced_by_the_magic_wall,y
+    beq skip_storing_space_above
     ; something will fall into the wall, clear the cell above
-    ldy #map_unprocessed | map_space                                                    ; 26bf: a0 80       ..
-    sty cell_above                                                                      ; 26c1: 84 74       .t
+    ldy #map_unprocessed | map_space
+    sty cell_above
 skip_storing_space_above
-    cpx #$2d                                                                            ; 26c3: e0 2d       .-
-    beq store_magic_wall_state                                                          ; 26c5: f0 10       ..
+    cpx #$2d
+    beq store_magic_wall_state
     ; if the cell below isn't empty, then don't store the item below
-    ldy cell_below                                                                      ; 26c7: a4 7a       .z
-    bne magic_wall_is_active                                                            ; 26c9: d0 02       ..
+    ldy cell_below
+    bne magic_wall_is_active
     ; store the item that has fallen through the wall below
-    sta cell_below                                                                      ; 26cb: 85 7a       .z
+    sta cell_below
 magic_wall_is_active
-    ldx #$1d                                                                            ; 26cd: a2 1d       ..
-    inc sound1_active_flag                                                              ; 26cf: e6 47       .G
-    ldy magic_wall_timer                                                                ; 26d1: a4 51       .Q
-    bne store_magic_wall_state                                                          ; 26d3: d0 02       ..
+    ldx #$1d
+    inc sound1_active_flag
+    ldy magic_wall_timer
+    bne store_magic_wall_state
     ; magic wall becomes inactive once the timer has run out
-    ldx #$2d                                                                            ; 26d5: a2 2d       .-
+    ldx #$2d
 store_magic_wall_state
-    stx magic_wall_state                                                                ; 26d7: 86 50       .P
-    rts                                                                                 ; 26d9: 60          `
+    stx magic_wall_state
+    rts
 
 check_if_magic_wall_is_active
-    cpx #$1d                                                                            ; 26da: e0 1d       ..
-    beq magic_wall_is_active                                                            ; 26dc: f0 ef       ..
-    rts                                                                                 ; 26de: 60          `
+    cpx #$1d
+    beq magic_wall_is_active
+    rts
 
 ; *************************************************************************************
     ; mark rockford cell as visible
 handler_rockford_intro_or_exit
-    txa                                                                                 ; 26e3: 8a          .
-    and #$7f                                                                            ; 26e4: 29 7f       ).
-    tax                                                                                 ; 26e6: aa          .
+    txa
+    and #$7f
+    tax
     ; branch if on exit
-    cpx #map_active_exit                                                                ; 26e7: e0 18       ..
-    beq return4                                                                         ; 26e9: f0 12       ..
+    cpx #map_active_exit
+    beq return4
     ; we have found the intro square
-    lda #0                                                                              ; 26eb: a9 00       ..
-    sta keys_to_process                                                                 ; 26ed: 85 62       .b
+    lda #0
+    sta keys_to_process
     ; wait for flashing rockford animation to finish
-    lda tick_counter                                                                    ; 26ef: a5 5a       .Z
-    cmp #$f0                                                                            ; 26f1: c9 f0       ..
-    bpl return4                                                                         ; 26f3: 10 08       ..
+    lda tick_counter
+    cmp #$f0
+    bpl return4
     ; start the explosion just before gameplay starts
-    ldx #$21                                                                            ; 26f5: a2 21       .!
-    inc sound4_active_flag                                                              ; 26f7: e6 4a       .J
-    lda #<regular_status_bar                                                            ; 26f9: a9 00       ..
-    sta status_text_address_low                                                         ; 26fb: 85 69       .i
+    ldx #$21
+    inc sound4_active_flag
+    lda #<regular_status_bar
+    sta status_text_address_low
 return4
-    rts                                                                                 ; 26fd: 60          `
+    rts
 
 ; *************************************************************************************
 start_gameplay
-    jsr reset_clock                                                                     ; 2700: 20 4d 2a     M*
-    lda #1                                                                              ; 2703: a9 01       ..
-    sta demo_key_duration                                                               ; 2705: 85 67       .g
+    jsr reset_clock
+    lda #1
+    sta demo_key_duration
     ; Set A=0
-    lsr                                                                                 ; 2707: 4a          J
-    sta zeroed_but_unused                                                               ; 2708: 85 66       .f
+    lsr
+    sta zeroed_but_unused
 gameplay_loop
-    lda #0                                                                              ; 270a: a9 00       ..
+    lda #0
     ; clear sound
-    ldx #7                                                                              ; 270c: a2 07       ..
+    ldx #7
 zero_eight_bytes_loop
-    sta sound0_active_flag,x                                                            ; 270e: 95 46       .F
-    dex                                                                                 ; 2710: ca          .
-    bpl zero_eight_bytes_loop                                                           ; 2711: 10 fb       ..
+    sta sound0_active_flag,x
+    dex
+    bpl zero_eight_bytes_loop
     ; zero variables
 
     ;allow the number of bombs left to be shown briefly in place of number of diamonds required
@@ -1637,111 +1633,111 @@ add_diamonds_required
 end_change_status_bar
     lda #0
 
-    sta status_text_address_low                                                         ; 2713: 85 69       .i
-    sta current_amoeba_cell_type                                                        ; 2715: 85 60       .`
-    sta neighbour_cell_contents                                                         ; 2717: 85 64       .d
+    sta status_text_address_low
+    sta current_amoeba_cell_type
+    sta neighbour_cell_contents
     ; activate movement sound
-    lda #$41                                                                            ; 2719: a9 41       .A
-    sta sound2_active_flag                                                              ; 271b: 85 48       .H
+    lda #$41
+    sta sound2_active_flag
     ; reset number of amoeba cells found, and if already zero then clear the
     ; amoeba_replacement
-    ldx #0                                                                              ; 271d: a2 00       ..
-    lda number_of_amoeba_cells_found                                                    ; 271f: a5 56       .V
-    stx number_of_amoeba_cells_found                                                    ; 2721: 86 56       .V
-    bne skip_clearing_amoeba_replacement                                                ; 2723: d0 02       ..
-    stx amoeba_replacement                                                              ; 2725: 86 54       .T
+    ldx #0
+    lda number_of_amoeba_cells_found
+    stx number_of_amoeba_cells_found
+    bne skip_clearing_amoeba_replacement
+    stx amoeba_replacement
 skip_clearing_amoeba_replacement
-    stx current_amoeba_cell_type                                                        ; 2727: 86 60       .`
-    jsr wait_for_13_centiseconds_and_read_keys                                          ; 2729: 20 90 2b     .+
+    stx current_amoeba_cell_type
+    jsr wait_for_13_centiseconds_and_read_keys
     ; branch if not in demo mode
-    ldx demo_mode_tick_count                                                            ; 272c: a6 65       .e
-    bmi update_gameplay                                                                 ; 272e: 30 22       0"
+    ldx demo_mode_tick_count
+    bmi update_gameplay
     ; if a key is pressed in demo mode, then return
-    lda keys_to_process                                                                 ; 2730: a5 62       .b
-    beq update_demo_mode                                                                ; 2732: f0 01       ..
-    rts                                                                                 ; 2734: 60          `
+    lda keys_to_process
+    beq update_demo_mode
+    rts
 
 update_demo_mode
-    ldy #<regular_status_bar                                                            ; 2735: a0 00       ..
+    ldy #<regular_status_bar
     ; flip between status bar and demo mode text every 16 ticks
-    lda tick_counter                                                                    ; 2737: a5 5a       .Z
-    and #$10                                                                            ; 2739: 29 10       ).
-    beq skip_demo_mode_text                                                             ; 273b: f0 02       ..
-    ldy #<demonstration_mode_text                                                       ; 273d: a0 a0       ..
+    lda tick_counter
+    and #$10
+    beq skip_demo_mode_text
+    ldy #<demonstration_mode_text
 skip_demo_mode_text
-    sty status_text_address_low                                                         ; 273f: 84 69       .i
-    lda demonstration_keys,x                                                            ; 2741: bd 00 31    ..1
-    sta keys_to_process                                                                 ; 2744: 85 62       .b
-    dec demo_key_duration                                                               ; 2746: c6 67       .g
-    bne update_gameplay                                                                 ; 2748: d0 08       ..
-    inc demo_mode_tick_count                                                            ; 274a: e6 65       .e
-    inx                                                                                 ; 274c: e8          .
-    lda demonstration_key_durations,x                                                   ; 274d: bd 60 31    .`1
-    sta demo_key_duration                                                               ; 2750: 85 67       .g
+    sty status_text_address_low
+    lda demonstration_keys,x
+    sta keys_to_process
+    dec demo_key_duration
+    bne update_gameplay
+    inc demo_mode_tick_count
+    inx
+    lda demonstration_key_durations,x
+    sta demo_key_duration
 
 update_gameplay
-    jsr update_map                                                                      ; 2752: 20 00 24     .$
+    jsr update_map
     ; get the contents of the cell that rockford is influencing. This can be the cell
     ; underneath rockford, or by holding the RETURN key down and pressing a direction
     ; key it can be one of the neighbouring cells.
     ; We clear the top bits to just extract the basic type.
-    lda neighbour_cell_contents                                                         ; 2755: a5 64       .d
-    and #$0f                                                                            ; 2757: 29 0f       ).
-    sta neighbour_cell_contents                                                         ; 2759: 85 64       .d
-    cmp #map_rockford_appearing_or_end_position                                         ; 275b: c9 08       ..
-    bne rockford_is_not_at_end_position                                                 ; 275d: d0 03       ..
-    jmp update_with_gameplay_not_active                                                 ; 275f: 4c 40 30    L@0
+    lda neighbour_cell_contents
+    and #$0f
+    sta neighbour_cell_contents
+    cmp #map_rockford_appearing_or_end_position
+    bne rockford_is_not_at_end_position
+    jmp update_with_gameplay_not_active
 
 rockford_is_not_at_end_position
-    jsr draw_grid_of_sprites                                                            ; 2762: 20 00 23     .#
-    jsr draw_status_bar                                                                 ; 2765: 20 25 23     %#
-    jsr update_amoeba_timing                                                            ; 2768: 20 00 30     .0
+    jsr draw_grid_of_sprites
+    jsr draw_status_bar
+    jsr update_amoeba_timing
     ; check if the player is still alive by reading the current rockford sprite (branch
     ; if not)
-    lda current_rockford_sprite                                                         ; 276b: a5 5b       .[
-    beq check_for_earth                                                                 ; 276d: f0 18       ..
+    lda current_rockford_sprite
+    beq check_for_earth
     ; update game timer (sub seconds)
-    dec sub_second_ticks                                                                ; 276f: c6 5c       .\
-    bpl check_for_earth                                                                 ; 2771: 10 14       ..
+    dec sub_second_ticks
+    bpl check_for_earth
     ; each 'second' of game time has 11 game ticks
-    ldx #11                                                                             ; 2773: a2 0b       ..
-    stx sub_second_ticks                                                                ; 2775: 86 5c       .\
+    ldx #11
+    stx sub_second_ticks
     ; decrement time remaining ('seconds') on the status bar and in the separate
     ; variable
-    ldy #12                                                                             ; 2777: a0 0c       ..
-    jsr decrement_status_bar_number                                                     ; 2779: 20 aa 28     .(
-    dec time_remaining                                                                  ; 277c: c6 6d       .m
+    ldy #12
+    jsr decrement_status_bar_number
+    dec time_remaining
     ; branch if there's still time left
-    bne check_for_earth                                                                 ; 277e: d0 07       ..
+    bne check_for_earth
     ; out of time
-    lda #<out_of_time_message                                                           ; 2780: a9 b4       ..
-    sta status_text_address_low                                                         ; 2782: 85 69       .i
-    jmp update_with_gameplay_not_active                                                 ; 2784: 4c 40 30    L@0
+    lda #<out_of_time_message
+    sta status_text_address_low
+    jmp update_with_gameplay_not_active
 
 check_for_earth
-    lda neighbour_cell_contents                                                         ; 2787: a5 64       .d
-    cmp #1                                                                              ; 2789: c9 01       ..
-    bne skip_earth                                                                      ; 278b: d0 02       ..
+    lda neighbour_cell_contents
+    cmp #1
+    bne skip_earth
     ; got earth. play sound 3
-    inc sound3_active_flag                                                              ; 278d: e6 49       .I
+    inc sound3_active_flag
 skip_earth
-    cmp #4                                                                              ; 278f: c9 04       ..
-    bne skip_got_diamond                                                                ; 2791: d0 11       ..
+    cmp #4
+    bne skip_got_diamond
     ; got diamond. play sounds
-    ldx #$85                                                                            ; 2793: a2 85       ..
-    ldy #$f0                                                                            ; 2795: a0 f0       ..
-    jsr play_sound_x_pitch_y                                                            ; 2797: 20 2c 2c     ,,
-    ldx #$85                                                                            ; 279a: a2 85       ..
-    ldy #$d2                                                                            ; 279c: a0 d2       ..
-    jsr play_sound_x_pitch_y                                                            ; 279e: 20 2c 2c     ,,
-    jsr got_diamond_so_update_status_bar                                                ; 27a1: 20 00 2f     ./
+    ldx #$85
+    ldy #$f0
+    jsr play_sound_x_pitch_y
+    ldx #$85
+    ldy #$d2
+    jsr play_sound_x_pitch_y
+    jsr got_diamond_so_update_status_bar
 skip_got_diamond
-    jsr update_sounds                                                                   ; 27a4: 20 80 2c     .,
+    jsr update_sounds
     ; update game tick
-    dec tick_counter                                                                    ; 27a7: c6 5a       .Z
-    lda tick_counter                                                                    ; 27a9: a5 5a       .Z
-    and #7                                                                              ; 27ab: 29 07       ).
-    bne update_death_explosion                                                          ; 27ad: d0 08       ..
+    dec tick_counter
+    lda tick_counter
+    and #7
+    bne update_death_explosion
     ;update bomb delay timer
     lda bomb_delay
     beq end_update_bomb_delay
@@ -1758,105 +1754,105 @@ end_update_bomb_delay
     sta check_for_rock_direction_offsets+2
 end_update_gravity_timer
     ; update magic wall timer
-    lda magic_wall_state                                                                ; 27af: a5 50       .P
-    cmp #$1d                                                                            ; 27b1: c9 1d       ..
-    bne update_death_explosion                                                          ; 27b3: d0 02       ..
-    dec magic_wall_timer                                                                ; 27b5: c6 51       .Q
+    lda magic_wall_state
+    cmp #$1d
+    bne update_death_explosion
+    dec magic_wall_timer
 update_death_explosion
-    ldx rockford_explosion_cell_type                                                    ; 27b7: a6 5f       ._
-    beq check_for_escape_key_pressed_to_die                                             ; 27b9: f0 0d       ..
-    inx                                                                                 ; 27bb: e8          .
-    stx rockford_explosion_cell_type                                                    ; 27bc: 86 5f       ._
-    cpx #$4b                                                                            ; 27be: e0 4b       .K
-    bmi check_for_escape_key_pressed_to_die                                             ; 27c0: 30 06       0.
+    ldx rockford_explosion_cell_type
+    beq check_for_escape_key_pressed_to_die
+    inx
+    stx rockford_explosion_cell_type
+    cpx #$4b
+    bmi check_for_escape_key_pressed_to_die
     ; if key is pressed at end of the death explosion sequence, then return
-    lda keys_to_process                                                                 ; 27c2: a5 62       .b
-    bne return5                                                                         ; 27c4: d0 29       .)
-    dec rockford_explosion_cell_type                                                    ; 27c6: c6 5f       ._
+    lda keys_to_process
+    bne return5
+    dec rockford_explosion_cell_type
     ; branch if escape not pressed
 check_for_escape_key_pressed_to_die
-    lda keys_to_process                                                                 ; 27c8: a5 62       .b
-    lsr                                                                                 ; 27ca: 4a          J
-    bcc check_if_pause_is_available                                                     ; 27cb: 90 08       ..
+    lda keys_to_process
+    lsr
+    bcc check_if_pause_is_available
     ; branch if explosion already underway
-    lda rockford_explosion_cell_type                                                    ; 27cd: a5 5f       ._
-    bne check_if_pause_is_available                                                     ; 27cf: d0 04       ..
+    lda rockford_explosion_cell_type
+    bne check_if_pause_is_available
     ; start death explosion
-    lda #map_start_large_explosion                                                      ; 27d1: a9 46       .F
-    sta rockford_explosion_cell_type                                                    ; 27d3: 85 5f       ._
+    lda #map_start_large_explosion
+    sta rockford_explosion_cell_type
     ; branch if on a bonus stage (no pause available)
 check_if_pause_is_available
-    lda cave_number                                                                     ; 27d5: a5 87       ..
-    cmp #16                                                                             ; 27d7: c9 10       ..
-    bpl gameplay_loop_local                                                             ; 27d9: 10 11       ..
+    lda cave_number
+    cmp #16
+    bpl gameplay_loop_local
     ; check if pause pressed
-    lda keys_to_process                                                                 ; 27e3: a5 62       .b
-    and #2                                                                              ; 27e5: 29 02       ).
-    beq gameplay_loop_local                                                             ; 27e7: f0 03       ..
-    jsr update_with_gameplay_not_active                                                 ; 27e9: 20 40 30     @0
+    lda keys_to_process
+    and #2
+    beq gameplay_loop_local
+    jsr update_with_gameplay_not_active
 gameplay_loop_local
-    jmp gameplay_loop                                                                   ; 27ec: 4c 0a 27    L.'
+    jmp gameplay_loop
 
 return5
-    rts                                                                                 ; 27ef: 60          `
+    rts
 
 ; *************************************************************************************
 update_grid_animations
-    ldx #$0e                                                                            ; 2800: a2 0e       ..
-    stx cell_current                                                                    ; 2802: 86 77       .w
+    ldx #$0e
+    stx cell_current
 update_sprites_to_use_loop
-    ldy cell_types_that_always_animate,x                                                ; 2804: bc 50 21    .P!
-    ldx cell_type_to_sprite,y                                                           ; 2807: be 80 1f    ...
+    ldy cell_types_that_always_animate,x
+    ldx cell_type_to_sprite,y
     ; look up the next sprite in the animation sequence
-    lda sprite_to_next_sprite,x                                                         ; 280a: bd 00 1f    ...
-    sta cell_type_to_sprite,y                                                           ; 280d: 99 80 1f    ...
-    dec cell_current                                                                    ; 2810: c6 77       .w
-    ldx cell_current                                                                    ; 2812: a6 77       .w
-    bpl update_sprites_to_use_loop                                                      ; 2814: 10 ee       ..
+    lda sprite_to_next_sprite,x
+    sta cell_type_to_sprite,y
+    dec cell_current
+    ldx cell_current
+    bpl update_sprites_to_use_loop
 
     ; use the tick counter (bottom two bits scaled up by 16) to update amoeba animation (and apply to slime as well)
-    lda tick_counter                                                                    ; 2816: a5 5a       .Z
-    and #3                                                                              ; 2818: 29 03       ).
-    asl                                                                                 ; 281a: 0a          .
-    asl                                                                                 ; 281b: 0a          .
-    asl                                                                                 ; 281c: 0a          .
-    asl                                                                                 ; 281d: 0a          .
-    tax                                                                                 ; 281e: aa          .
-    lda amoeba_animated_sprite0,x                                                       ; 281f: bd 87 1f    ...
-    eor #1                                                                              ; 2822: 49 01       I.
-    sta amoeba_animated_sprite0,x                                                       ; 2824: 9d 87 1f    ...
-    sta slime_animated_sprite0,x                                                        ; 3
-    lda amoeba_animated_sprites4,x                                                      ; 2827: bd c7 1f    ...
-    eor #1                                                                              ; 282a: 49 01       I.
-    sta amoeba_animated_sprites4,x                                                      ; 282c: 9d c7 1f    ...
-    sta slime_animated_sprite1,x                                                        ; 3
+    lda tick_counter
+    and #3
+    asl
+    asl
+    asl
+    asl
+    tax
+    lda amoeba_animated_sprite0,x
+    eor #1
+    sta amoeba_animated_sprite0,x
+    sta slime_animated_sprite0,x
+    lda amoeba_animated_sprites4,x
+    eor #1
+    sta amoeba_animated_sprites4,x
+    sta slime_animated_sprite1,x
     ; animate exit
-    lda exit_cell_type                                                                  ; 282f: ad 56 21    .V!
-    eor #$10                                                                            ; 2832: 49 10       I.
-    sta exit_cell_type                                                                  ; 2834: 8d 56 21    .V!
+    lda exit_cell_type
+    eor #$10
+    sta exit_cell_type
     ; update rockford idle animation
-    lda ticks_since_last_direction_key_pressed                                          ; 2837: a5 58       .X
-    tay                                                                                 ; 2839: a8          .
-    and #$3f                                                                            ; 283a: 29 3f       )?
-    tax                                                                                 ; 283c: aa          .
-    lda idle_animation_data,x                                                           ; 283d: bd 80 1e    ...
+    lda ticks_since_last_direction_key_pressed
+    tay
+    and #$3f
+    tax
+    lda idle_animation_data,x
     ; check for nearing the end of the idle animation (range $c0-$ff).
     ; Use the top nybbles of the data if so.
-    cpy #$c0                                                                            ; 2840: c0 c0       ..
-    bcc extract_lower_nybble                                                            ; 2842: 90 04       ..
+    cpy #$c0
+    bcc extract_lower_nybble
     ; Near the end of the idle animation. Shift the upper nybble into the bottom nybble
     ; to get more idle sprites
-    lsr                                                                                 ; 2844: 4a          J
-    lsr                                                                                 ; 2845: 4a          J
-    lsr                                                                                 ; 2846: 4a          J
-    lsr                                                                                 ; 2847: 4a          J
+    lsr
+    lsr
+    lsr
+    lsr
 extract_lower_nybble
-    and #$0f                                                                            ; 2848: 29 0f       ).
+    and #$0f
     ; set the rockford sprite
-    ora #sprite_rockford_blinking1                                                      ; 284a: 09 20       .
-    sta rockford_sprite                                                                 ; 284c: 8d 8f 1f    ...
-    inc ticks_since_last_direction_key_pressed                                          ; 284f: e6 58       .X
-    rts                                                                                 ; 2851: 60          `
+    ora #sprite_rockford_blinking1
+    sta rockford_sprite
+    inc ticks_since_last_direction_key_pressed
+    rts
 
 keys_pressed_last_tick
     !byte 0
@@ -1897,43 +1893,43 @@ next_key
 
 ; *************************************************************************************
 increment_status_bar_number
-    lda regular_status_bar,y                                                            ; 2898: b9 00 32    ..2
-    clc                                                                                 ; 289b: 18          .
-    adc #1                                                                              ; 289c: 69 01       i.
-    cmp #$3c                                                                            ; 289e: c9 3c       .<
-    bmi finished_change                                                                 ; 28a0: 30 1a       0.
-    lda #sprite_0                                                                       ; 28a2: a9 32       .2
-    sta regular_status_bar,y                                                            ; 28a4: 99 00 32    ..2
-    dey                                                                                 ; 28a7: 88          .
-    bpl increment_status_bar_number                                                     ; 28a8: 10 ee       ..
+    lda regular_status_bar,y
+    clc
+    adc #1
+    cmp #$3c
+    bmi finished_change
+    lda #sprite_0
+    sta regular_status_bar,y
+    dey
+    bpl increment_status_bar_number
 decrement_status_bar_number
-    lda regular_status_bar,y                                                            ; 28aa: b9 00 32    ..2
-    sec                                                                                 ; 28ad: 38          8
-    sbc #1                                                                              ; 28ae: e9 01       ..
-    cmp #sprite_0                                                                       ; 28b0: c9 32       .2
-    bpl finished_change                                                                 ; 28b2: 10 08       ..
-    lda #$3b                                                                            ; 28b4: a9 3b       .;
-    sta regular_status_bar,y                                                            ; 28b6: 99 00 32    ..2
-    dey                                                                                 ; 28b9: 88          .
-    bpl decrement_status_bar_number                                                     ; 28ba: 10 ee       ..
+    lda regular_status_bar,y
+    sec
+    sbc #1
+    cmp #sprite_0
+    bpl finished_change
+    lda #$3b
+    sta regular_status_bar,y
+    dey
+    bpl decrement_status_bar_number
 finished_change
-    sta regular_status_bar,y                                                            ; 28bc: 99 00 32    ..2
-    rts                                                                                 ; 28bf: 60          `
+    sta regular_status_bar,y
+    rts
 
 ; *************************************************************************************
 add_a_to_status_bar_number_at_y
-    sty real_keys_pressed                                                               ; 28c0: 84 7c       .|
-    sta amount_to_increment_status_bar                                                  ; 28c2: 85 72       .r
-    cmp #0                                                                              ; 28c4: c9 00       ..
-    beq finished_add                                                                    ; 28c6: f0 09       ..
+    sty real_keys_pressed
+    sta amount_to_increment_status_bar
+    cmp #0
+    beq finished_add
 increment_number_loop
-    jsr increment_status_bar_number                                                     ; 28c8: 20 98 28     .(
-    ldy real_keys_pressed                                                               ; 28cb: a4 7c       .|
-    dec amount_to_increment_status_bar                                                  ; 28cd: c6 72       .r
-    bne increment_number_loop                                                           ; 28cf: d0 f7       ..
+    jsr increment_status_bar_number
+    ldy real_keys_pressed
+    dec amount_to_increment_status_bar
+    bne increment_number_loop
 finished_add
-    ldy real_keys_pressed                                                               ; 28d1: a4 7c       .|
-    rts                                                                                 ; 28d3: 60          `
+    ldy real_keys_pressed
+    rts
 
 ; *************************************************************************************
 ; Set palette using cave parameter values
@@ -1971,75 +1967,75 @@ set_initial_palette
 
 ; *************************************************************************************
 increment_map_ptr
-    inc ptr_low                                                                         ; 2a00: e6 8c       ..
-    lda ptr_low                                                                         ; 2a02: a5 8c       ..
-    and #$3f                                                                            ; 2a04: 29 3f       )?
-    cmp #$28                                                                            ; 2a06: c9 28       .(
-    bne return6                                                                         ; 2a08: d0 0f       ..
-    lda ptr_low                                                                         ; 2a0a: a5 8c       ..
-    and #$c0                                                                            ; 2a0c: 29 c0       ).
-    clc                                                                                 ; 2a0e: 18          .
-    adc #$40                                                                            ; 2a0f: 69 40       i@
-    sta ptr_low                                                                         ; 2a11: 85 8c       ..
-    bcc skip_increment_high_byte2                                                       ; 2a13: 90 02       ..
-    inc ptr_high                                                                        ; 2a15: e6 8d       ..
+    inc ptr_low
+    lda ptr_low
+    and #$3f
+    cmp #$28
+    bne return6
+    lda ptr_low
+    and #$c0
+    clc
+    adc #$40
+    sta ptr_low
+    bcc skip_increment_high_byte2
+    inc ptr_high
 skip_increment_high_byte2
-    dec x_loop_counter                                                                  ; 2a17: c6 7c       .|
+    dec x_loop_counter
 return6
-    rts                                                                                 ; 2a19: 60          `
+    rts
 
 ; *************************************************************************************
 set_ptr_to_start_of_map
-    lda #<tile_map_row_1                                                                ; 2a1a: a9 40       .@
+    lda #<tile_map_row_1
 set_ptr_high_to_start_of_map_with_offset_a
-    sta ptr_low                                                                         ; 2a1c: 85 8c       ..
+    sta ptr_low
 set_ptr_high_to_start_of_map
-    lda #>tile_map_row_1                                                                ; 2a1e: a9 50       .P
-    sta ptr_high                                                                        ; 2a20: 85 8d       ..
-    lda #20                                                                             ; 2a22: a9 14       ..
-    sta x_loop_counter                                                                  ; 2a24: 85 7c       .|
-    ldy #0                                                                              ; 2a26: a0 00       ..
-    rts                                                                                 ; 2a28: 60          `
+    lda #>tile_map_row_1
+    sta ptr_high
+    lda #20
+    sta x_loop_counter
+    ldy #0
+    rts
 
 ; *************************************************************************************
 palette_block
-    !byte 0                                                                             ; 2a29: 00          .              ; logical colour
-    !byte 0                                                                             ; 2a2a: 00          .              ; physical colour
-    !byte 0                                                                             ; 2a2b: 00          .              ; zero
-    !byte 0                                                                             ; 2a2c: 00          .              ; zero
-    !byte 0                                                                             ; 2a2d: 00          .              ; zero
+    !byte 0                            ; logical colour
+    !byte 0                            ; physical colour
+    !byte 0                            ; zero
+    !byte 0                            ; zero
+    !byte 0                            ; zero
 
 ; *************************************************************************************
 increment_next_ptr
-    inc next_ptr_low                                                                    ; 2a2e: e6 82       ..
-    bne return6                                                                         ; 2a30: d0 e7       ..
-    inc next_ptr_high                                                                   ; 2a32: e6 83       ..
-    rts                                                                                 ; 2a34: 60          `
+    inc next_ptr_low
+    bne return6
+    inc next_ptr_high
+    rts
 
 ; *************************************************************************************
 set_palette_colour_ax
-    sta palette_block+1                                                                 ; 2a35: 8d 2a 2a    .**
-    txa                                                                                 ; 2a38: 8a          .
-    pha                                                                                 ; 2a39: 48          H
-    stx palette_block                                                                   ; 2a3a: 8e 29 2a    .)*
-    tya                                                                                 ; 2a3d: 98          .
-    pha                                                                                 ; 2a3e: 48          H
-    ldx #<(palette_block)                                                               ; 2a3f: a2 29       .)
-    ldy #>(palette_block)                                                               ; 2a41: a0 2a       .*
-    lda #osword_write_palette                                                           ; 2a43: a9 0c       ..
-    jsr osword                                                                          ; 2a45: 20 f1 ff     ..            ; Write palette
-    pla                                                                                 ; 2a48: 68          h
-    tay                                                                                 ; 2a49: a8          .
-    pla                                                                                 ; 2a4a: 68          h
-    tax                                                                                 ; 2a4b: aa          .
-    rts                                                                                 ; 2a4c: 60          `
+    sta palette_block+1
+    txa
+    pha
+    stx palette_block
+    tya
+    pha
+    ldx #<(palette_block)
+    ldy #>(palette_block)
+    lda #osword_write_palette
+    jsr osword                         ; Write palette
+    pla
+    tay
+    pla
+    tax
+    rts
 
 ; *************************************************************************************
 reset_clock
-    ldy #>(initial_clock_value)                                                         ; 2a4d: a0 13       ..
-    ldx #<(initial_clock_value)                                                         ; 2a4f: a2 00       ..
-    lda #osword_write_clock                                                             ; 2a51: a9 02       ..
-    jmp osword                                                                          ; 2a53: 4c f1 ff    L..            ; Write system clock
+    ldy #>(initial_clock_value)
+    ldx #<(initial_clock_value)
+    lda #osword_write_clock
+    jmp osword                         ; Write system clock
 
 ; *************************************************************************************
 ;
@@ -2059,217 +2055,217 @@ reset_clock
 ;     0                                       -
 ;
 animate_flashing_spaces_and_check_for_bonus_life
-    lda countdown_while_switching_palette                                               ; 2a56: a5 59       .Y
-    beq check_for_bonus_life                                                            ; 2a58: f0 1f       ..
-    inc sound6_active_flag                                                              ; 2a5a: e6 4c       .L
-    ldx #3                                                                              ; 2a5c: a2 03       ..
-    lda countdown_while_switching_palette                                               ; 2a5e: a5 59       .Y
-    and #7                                                                              ; 2a60: 29 07       ).
-    ora #4                                                                              ; 2a62: 09 04       ..
-    cmp #4                                                                              ; 2a64: c9 04       ..
-    bne skip_setting_physical_colour_to_three                                           ; 2a66: d0 02       ..
+    lda countdown_while_switching_palette
+    beq check_for_bonus_life
+    inc sound6_active_flag
+    ldx #3
+    lda countdown_while_switching_palette
+    and #7
+    ora #4
+    cmp #4
+    bne skip_setting_physical_colour_to_three
     ; set logical colour three
-    lda #3                                                                              ; 2a68: a9 03       ..
+    lda #3
 skip_setting_physical_colour_to_three
-    jsr set_palette_colour_ax                                                           ; 2a6a: 20 35 2a     5*
-    dec countdown_while_switching_palette                                               ; 2a6d: c6 59       .Y
-    bne check_for_bonus_life                                                            ; 2a6f: d0 08       ..
+    jsr set_palette_colour_ax
+    dec countdown_while_switching_palette
+    bne check_for_bonus_life
     ; restore to spaces
-    lda #0                                                                              ; 2a71: a9 00       ..
-    sta cell_type_to_sprite                                                             ; 2a73: 8d 80 1f    ...
-    jsr set_palette                                                                     ; 2a76: 20 ac 29     .)
+    lda #0
+    sta cell_type_to_sprite
+    jsr set_palette
 
     ; a bonus life is awarded every 500 points
 check_for_bonus_life
-    lda hundreds_digit_of_score_on_status_bar                                           ; 2a79: ad 11 32    ..2
-    cmp #sprite_0                                                                       ; 2a7c: c9 32       .2
-    beq zero_or_five_in_hundreds_column                                                 ; 2a7e: f0 09       ..
-    cmp #sprite_5                                                                       ; 2a80: c9 37       .7
-    beq zero_or_five_in_hundreds_column                                                 ; 2a82: f0 05       ..
+    lda hundreds_digit_of_score_on_status_bar
+    cmp #sprite_0
+    beq zero_or_five_in_hundreds_column
+    cmp #sprite_5
+    beq zero_or_five_in_hundreds_column
     ; a bonus life only becomes possible after the score *doesn't* have a zero or five
     ; in the hundreds column
-    lda #$ff                                                                            ; 2a84: a9 ff       ..
-    sta bonus_life_available_flag                                                       ; 2a86: 85 6f       .o
-    rts                                                                                 ; 2a88: 60          `
+    lda #$ff
+    sta bonus_life_available_flag
+    rts
 
 zero_or_five_in_hundreds_column
-    ldy #17                                                                             ; 2a89: a0 11       ..
+    ldy #17
 check_for_non_zero_in_top_digits
-    lda regular_status_bar,y                                                            ; 2a8b: b9 00 32    ..2
-    cmp #sprite_0                                                                       ; 2a8e: c9 32       .2
-    bne non_zero_digit_found_in_hundreds_column_or_above                                ; 2a90: d0 0a       ..
-    dey                                                                                 ; 2a92: 88          .
-    cpy #13                                                                             ; 2a93: c0 0d       ..
-    bne check_for_non_zero_in_top_digits                                                ; 2a95: d0 f4       ..
+    lda regular_status_bar,y
+    cmp #sprite_0
+    bne non_zero_digit_found_in_hundreds_column_or_above
+    dey
+    cpy #13
+    bne check_for_non_zero_in_top_digits
     ; all the top digits are zero, including the hundreds column, which means we are
     ; not 500 or more, so not eligible for a bonus life
-    lda #0                                                                              ; 2a97: a9 00       ..
-    sta bonus_life_available_flag                                                       ; 2a99: 85 6f       .o
-    rts                                                                                 ; 2a9b: 60          `
+    lda #0
+    sta bonus_life_available_flag
+    rts
 
 non_zero_digit_found_in_hundreds_column_or_above
-    lda bonus_life_available_flag                                                       ; 2a9c: a5 6f       .o
-    beq return7                                                                         ; 2a9e: f0 14       ..
+    lda bonus_life_available_flag
+    beq return7
     ; award bonus life
-    lda #0                                                                              ; 2aa0: a9 00       ..
-    sta bonus_life_available_flag                                                       ; 2aa2: 85 6f       .o
+    lda #0
+    sta bonus_life_available_flag
     ; set sprite for space to pathway
-    lda #sprite_pathway                                                                 ; 2aa4: a9 1f       ..
-    sta cell_type_to_sprite                                                             ; 2aa6: 8d 80 1f    ...
+    lda #sprite_pathway
+    sta cell_type_to_sprite
     ; start animating colour three
-    lda #7                                                                              ; 2aa9: a9 07       ..
-    sta countdown_while_switching_palette                                               ; 2aab: 85 59       .Y
+    lda #7
+    sta countdown_while_switching_palette
     ; add one to the MEN count
-    inc men_number_on_regular_status_bar                                                ; 2aad: ee 1e 32    ..2
+    inc men_number_on_regular_status_bar
     ; show bonus life text (very briefly)
-    lda #<bonus_life_text                                                               ; 2ab0: a9 64       .d
-    sta status_text_address_low                                                         ; 2ab2: 85 69       .i
+    lda #<bonus_life_text
+    sta status_text_address_low
 return7
-    rts                                                                                 ; 2ab4: 60          `
+    rts
 
 ; *************************************************************************************
 draw_big_rockford
-    lda #>big_rockford_destination_screen_address                                       ; 2ab5: a9 58       .X
-    sta ptr_high                                                                        ; 2ab7: 85 8d       ..
-    ldy #<big_rockford_destination_screen_address                                       ; 2ab9: a0 00       ..
-    sty ptr_low                                                                         ; 2abb: 84 8c       ..
-    lda #>big_rockford_sprite                                                           ; 2abd: a9 34       .4
-    sta next_ptr_high                                                                   ; 2abf: 85 83       ..
-    sty next_ptr_low                                                                    ; 2ac1: 84 82       ..
+    lda #>big_rockford_destination_screen_address
+    sta ptr_high
+    ldy #<big_rockford_destination_screen_address
+    sty ptr_low
+    lda #>big_rockford_sprite
+    sta next_ptr_high
+    sty next_ptr_low
 draw_big_rockford_loop
-    ldx #1                                                                              ; 2ac3: a2 01       ..
-    jsr get_next_ptr_byte                                                               ; 2ac5: 20 eb 2a     .*
-    ldy #6                                                                              ; 2ac8: a0 06       ..
+    ldx #1
+    jsr get_next_ptr_byte
+    ldy #6
 check_if_byte_is_an_rle_byte_loop
-    cmp rle_bytes_table,y                                                               ; 2aca: d9 f8 2a    ..*
-    beq get_repeat_count                                                                ; 2acd: f0 05       ..
-    dey                                                                                 ; 2acf: 88          .
-    bne check_if_byte_is_an_rle_byte_loop                                               ; 2ad0: d0 f8       ..
-    beq copy_x_bytes_in_rle_loop                                                        ; 2ad2: f0 08       ..             ; ALWAYS branch
+    cmp rle_bytes_table,y
+    beq get_repeat_count
+    dey
+    bne check_if_byte_is_an_rle_byte_loop
+    beq copy_x_bytes_in_rle_loop       ; ALWAYS branch
 
 ; *************************************************************************************
 get_repeat_count
-    ldy #0                                                                              ; 2ad4: a0 00       ..
-    pha                                                                                 ; 2ad6: 48          H
-    jsr get_next_ptr_byte                                                               ; 2ad7: 20 eb 2a     .*
-    tax                                                                                 ; 2ada: aa          .
-    pla                                                                                 ; 2adb: 68          h
+    ldy #0
+    pha
+    jsr get_next_ptr_byte
+    tax
+    pla
 copy_x_bytes_in_rle_loop
-    sta (ptr_low),y                                                                     ; 2adc: 91 8c       ..
-    inc ptr_low                                                                         ; 2ade: e6 8c       ..
-    bne skip_inc_high                                                                   ; 2ae0: d0 04       ..
-    inc ptr_high                                                                        ; 2ae2: e6 8d       ..
-    bmi return8                                                                         ; 2ae4: 30 0d       0.
+    sta (ptr_low),y
+    inc ptr_low
+    bne skip_inc_high
+    inc ptr_high
+    bmi return8
 skip_inc_high
-    dex                                                                                 ; 2ae6: ca          .
-    bne copy_x_bytes_in_rle_loop                                                        ; 2ae7: d0 f3       ..
-    beq draw_big_rockford_loop                                                          ; 2ae9: f0 d8       ..             ; ALWAYS branch
+    dex
+    bne copy_x_bytes_in_rle_loop
+    beq draw_big_rockford_loop         ; ALWAYS branch
 
 ; *************************************************************************************
 get_next_ptr_byte
-    lda (next_ptr_low),y                                                                ; 2aeb: b1 82       ..
-    inc next_ptr_low                                                                    ; 2aed: e6 82       ..
-    bne return8                                                                         ; 2aef: d0 02       ..
-    inc next_ptr_high                                                                   ; 2af1: e6 83       ..
+    lda (next_ptr_low),y
+    inc next_ptr_low
+    bne return8
+    inc next_ptr_high
 return8
-    rts                                                                                 ; 2af3: 60          `
+    rts
 
 rle_bytes_table
-    !byte $85, $48, $10, $ec, $ff, $0f,   0                                             ; 2af8: 85 48 10... .H.
+    !byte $85, $48, $10, $ec, $ff, $0f,   0
 
 ; *************************************************************************************
 map_address_to_map_xy_position
-    lda map_address_high                                                                ; 2b00: a5 8d       ..
-    and #7                                                                              ; 2b02: 29 07       ).
-    sta map_y                                                                           ; 2b04: 85 8b       ..
-    lda map_address_low                                                                 ; 2b06: a5 8c       ..
-    asl                                                                                 ; 2b08: 0a          .
-    rol map_y                                                                           ; 2b09: 26 8b       &.
-    asl                                                                                 ; 2b0b: 0a          .
-    rol map_y                                                                           ; 2b0c: 26 8b       &.
-    lda map_address_low                                                                 ; 2b0e: a5 8c       ..
-    and #$3f                                                                            ; 2b10: 29 3f       )?
-    sta map_x                                                                           ; 2b12: 85 8a       ..
-    rts                                                                                 ; 2b14: 60          `
+    lda map_address_high
+    and #7
+    sta map_y
+    lda map_address_low
+    asl
+    rol map_y
+    asl
+    rol map_y
+    lda map_address_low
+    and #$3f
+    sta map_x
+    rts
 
 ; *************************************************************************************
 map_xy_position_to_map_address
-    lda #0                                                                              ; 2b15: a9 00       ..
-    sta map_address_low                                                                 ; 2b17: 85 8c       ..
-    lda map_y                                                                           ; 2b19: a5 8b       ..
-    lsr                                                                                 ; 2b1b: 4a          J
-    ror map_address_low                                                                 ; 2b1c: 66 8c       f.
-    lsr                                                                                 ; 2b1e: 4a          J
-    ror map_address_low                                                                 ; 2b1f: 66 8c       f.
+    lda #0
+    sta map_address_low
+    lda map_y
+    lsr
+    ror map_address_low
+    lsr
+    ror map_address_low
     ora #>tile_map_row_0
-    sta map_address_high                                                                ; 2b23: 85 8d       ..
-    lda map_x                                                                           ; 2b25: a5 8a       ..
-    ora map_address_low                                                                 ; 2b27: 05 8c       ..
-    sta map_address_low                                                                 ; 2b29: 85 8c       ..
-    rts                                                                                 ; 2b2b: 60          `
+    sta map_address_high
+    lda map_x
+    ora map_address_low
+    sta map_address_low
+    rts
 
 ; *************************************************************************************
 ; Scrolls the map by setting the tile_map_ptr and visible_top_left_map_x and y
 update_map_scroll_position
-    lda map_rockford_current_position_addr_low                                          ; 2b2c: a5 70       .p
-    sta map_address_low                                                                 ; 2b2e: 85 8c       ..
-    lda map_rockford_current_position_addr_high                                         ; 2b30: a5 71       .q
-    sta map_address_high                                                                ; 2b32: 85 8d       ..
-    jsr map_address_to_map_xy_position                                                  ; 2b34: 20 00 2b     .+
-    sec                                                                                 ; 2b37: 38          8
-    sbc visible_top_left_map_x                                                          ; 2b38: e5 7e       .~
-    ldx visible_top_left_map_x                                                          ; 2b3a: a6 7e       .~
-    cmp #17                                                                             ; 2b3c: c9 11       ..
-    bmi check_for_need_to_scroll_left                                                   ; 2b3e: 30 05       0.
-    cpx #20                                                                             ; 2b40: e0 14       ..
-    bpl check_for_need_to_scroll_down                                                   ; 2b42: 10 0a       ..
-    inx                                                                                 ; 2b44: e8          .
+    lda map_rockford_current_position_addr_low
+    sta map_address_low
+    lda map_rockford_current_position_addr_high
+    sta map_address_high
+    jsr map_address_to_map_xy_position
+    sec
+    sbc visible_top_left_map_x
+    ldx visible_top_left_map_x
+    cmp #17
+    bmi check_for_need_to_scroll_left
+    cpx #20
+    bpl check_for_need_to_scroll_down
+    inx
 check_for_need_to_scroll_left
-    cmp #3                                                                              ; 2b45: c9 03       ..
-    bpl check_for_need_to_scroll_down                                                   ; 2b47: 10 05       ..
-    cpx #1                                                                              ; 2b49: e0 01       ..
-    bmi check_for_need_to_scroll_down                                                   ; 2b4b: 30 01       0.
-    dex                                                                                 ; 2b4d: ca          .
+    cmp #3
+    bpl check_for_need_to_scroll_down
+    cpx #1
+    bmi check_for_need_to_scroll_down
+    dex
 check_for_need_to_scroll_down
-    ldy visible_top_left_map_y                                                          ; 2b4e: a4 7f       ..
-    lda map_y                                                                           ; 2b50: a5 8b       ..
-    sec                                                                                 ; 2b52: 38          8
-    sbc visible_top_left_map_y                                                          ; 2b53: e5 7f       ..
-    cmp #9                                                                              ; 2b55: c9 09       ..
-    bmi check_for_need_to_scroll_up                                                     ; 2b57: 30 05       0.
-    cpy #$0a                                                                            ; 2b59: c0 0a       ..
-    bpl check_for_bonus_stages                                                          ; 2b5b: 10 0a       ..
-    iny                                                                                 ; 2b5d: c8          .
+    ldy visible_top_left_map_y
+    lda map_y
+    sec
+    sbc visible_top_left_map_y
+    cmp #9
+    bmi check_for_need_to_scroll_up
+    cpy #$0a
+    bpl check_for_bonus_stages
+    iny
 check_for_need_to_scroll_up
-    cmp #3                                                                              ; 2b5e: c9 03       ..
-    bpl check_for_bonus_stages                                                          ; 2b60: 10 05       ..
-    cpy #1                                                                              ; 2b62: c0 01       ..
-    bmi check_for_bonus_stages                                                          ; 2b64: 30 01       0.
-    dey                                                                                 ; 2b66: 88          .
+    cmp #3
+    bpl check_for_bonus_stages
+    cpy #1
+    bmi check_for_bonus_stages
+    dey
 check_for_bonus_stages
     lda param_intermission
     beq skip_bonus_stage
     ; bonus stage is always situated in top left corner
-    lda #0                                                                              ; 2b6d: a9 00       ..
-    tax                                                                                 ; 2b6f: aa          .
-    tay                                                                                 ; 2b70: a8          .
+    lda #0
+    tax
+    tay
 skip_bonus_stage
-    stx visible_top_left_map_x                                                          ; 2b71: 86 7e       .~
-    stx map_x                                                                           ; 2b73: 86 8a       ..
-    sty visible_top_left_map_y                                                          ; 2b75: 84 7f       ..
-    sty map_y                                                                           ; 2b77: 84 8b       ..
-    jsr map_xy_position_to_map_address                                                  ; 2b79: 20 15 2b     .+
-    lda map_address_low                                                                 ; 2b7c: a5 8c       ..
-    sta tile_map_ptr_low                                                                ; 2b7e: 85 85       ..
-    lda map_address_high                                                                ; 2b80: a5 8d       ..
-    sta tile_map_ptr_high                                                               ; 2b82: 85 86       ..
-    rts                                                                                 ; 2b84: 60          `
+    stx visible_top_left_map_x
+    stx map_x
+    sty visible_top_left_map_y
+    sty map_y
+    jsr map_xy_position_to_map_address
+    lda map_address_low
+    sta tile_map_ptr_low
+    lda map_address_high
+    sta tile_map_ptr_high
+    rts
 
 ; *************************************************************************************
 wait_for_13_centiseconds_and_read_keys
-    lda #$0d                                                                            ; 2b90: a9 0d       ..
+    lda #$0d
 wait_for_a_centiseconds_and_read_keys
-    sta wait_delay_centiseconds                                                         ; 2b92: 85 84       ..
+    sta wait_delay_centiseconds
 wait_for_centiseconds_and_read_keys
     ; look for *new* keypresses, i.e. keys that are not already down from the previous game update
     jsr invert_keys_to_test
@@ -2346,127 +2342,127 @@ item_allowed
 ; Sound 6 = Got all required diamonds / rockford exploding sound
 ; Sound 7 = amoeba sound
 in_game_sound_data
-    !byte $12,   5,   8,   5                                                            ; 2c00: 12 05 08... ...
-    !byte $12, $f7, $c8,   1                                                            ; 2c04: 12 f7 c8... ...
-    !byte   0, $fe,   4,   1                                                            ; 2c08: 00 fe 04... ...
-    !byte   0, $fb,   4,   1                                                            ; 2c0c: 00 fb 04... ...
-    !byte $10,   2,   5,   7                                                            ; 2c10: 10 02 05... ...
-    !byte $13,   1, $dc,   1                                                            ; 2c14: 13 01 dc... ...
-    !byte $10,   4,   7, $1e                                                            ; 2c18: 10 04 07... ...
-    !byte $11,   3, $ff, $28                                                            ; 2c1c: 11 03 ff... ...
-    !byte $12,   1, $c8,   2                                                            ; 2c20: 12 01 c8... ...
+    !byte $12,   5,   8,   5
+    !byte $12, $f7, $c8,   1
+    !byte   0, $fe,   4,   1
+    !byte   0, $fb,   4,   1
+    !byte $10,   2,   5,   7
+    !byte $13,   1, $dc,   1
+    !byte $10,   4,   7, $1e
+    !byte $11,   3, $ff, $28
+    !byte $12,   1, $c8,   2
 in_game_sound_block
-    !word $13                                                                           ; 2c24: 13 00       ..             ; Channel (2 bytes)
+    !word $13                          ; Channel (2 bytes)
 in_game_sound_amplitude
-    !word 1                                                                             ; 2c26: 01 00       ..             ; Amplitude (2 bytes)
+    !word 1                            ; Amplitude (2 bytes)
 in_game_sound_pitch
-    !word $8f                                                                           ; 2c28: 8f 00       ..             ; Pitch (2 bytes)
+    !word $8f                          ; Pitch (2 bytes)
 in_game_sound_duration
-    !word 1                                                                             ; 2c2a: 01 00       ..             ; Duration (2 bytes)
+    !word 1                            ; Duration (2 bytes)
 
 ; *************************************************************************************
 ; If X is negative, then play sound (X AND 127) with pitch Y.
 ; If X is non-negative, play sound X with default pitch.
 play_sound_x_pitch_y
-    txa                                                                                 ; 2c2c: 8a          .
-    bmi skip_using_default_pitch1                                                       ; 2c2d: 30 02       0.
-    ldy #0                                                                              ; 2c2f: a0 00       ..
+    txa
+    bmi skip_using_default_pitch1
+    ldy #0
 skip_using_default_pitch1
-    and #$7f                                                                            ; 2c31: 29 7f       ).
-    tax                                                                                 ; 2c33: aa          .
-    cpx #6                                                                              ; 2c34: e0 06       ..
-    bne play_raw_sound_x_pitch_y                                                        ; 2c36: d0 05       ..
+    and #$7f
+    tax
+    cpx #6
+    bne play_raw_sound_x_pitch_y
     ; sound 6 also plays sound 7
-    jsr play_raw_sound_x_pitch_y                                                        ; 2c38: 20 3d 2c     =,
-    ldx #7                                                                              ; 2c3b: a2 07       ..
+    jsr play_raw_sound_x_pitch_y
+    ldx #7
 play_raw_sound_x_pitch_y
-    txa                                                                                 ; 2c3d: 8a          .
-    asl                                                                                 ; 2c3e: 0a          .
-    asl                                                                                 ; 2c3f: 0a          .
-    tax                                                                                 ; 2c40: aa          .
-    lda #0                                                                              ; 2c41: a9 00       ..
-    sta in_game_sound_amplitude+1                                                       ; 2c43: 8d 27 2c    .',
-    lda in_game_sound_data,x                                                            ; 2c46: bd 00 2c    ..,
-    sta in_game_sound_block                                                             ; 2c49: 8d 24 2c    .$,
-    lda in_game_sound_data+1,x                                                          ; 2c4c: bd 01 2c    ..,
-    sta in_game_sound_amplitude                                                         ; 2c4f: 8d 26 2c    .&,
-    bpl skip_negative_amplitude                                                         ; 2c52: 10 05       ..
-    lda #$ff                                                                            ; 2c54: a9 ff       ..
-    sta in_game_sound_amplitude+1                                                       ; 2c56: 8d 27 2c    .',
+    txa
+    asl
+    asl
+    tax
+    lda #0
+    sta in_game_sound_amplitude+1
+    lda in_game_sound_data,x
+    sta in_game_sound_block
+    lda in_game_sound_data+1,x
+    sta in_game_sound_amplitude
+    bpl skip_negative_amplitude
+    lda #$ff
+    sta in_game_sound_amplitude+1
 skip_negative_amplitude
-    tya                                                                                 ; 2c59: 98          .
-    bne skip_using_default_pitch2                                                       ; 2c5a: d0 03       ..
+    tya
+    bne skip_using_default_pitch2
     ; use default pitch
-    lda in_game_sound_data+2,x                                                          ; 2c5c: bd 02 2c    ..,
+    lda in_game_sound_data+2,x
 skip_using_default_pitch2
-    sta in_game_sound_pitch                                                             ; 2c5f: 8d 28 2c    .(,
-    lda in_game_sound_data+3,x                                                          ; 2c62: bd 03 2c    ..,
-    sta in_game_sound_duration                                                          ; 2c65: 8d 2a 2c    .*,
-    ldy #>(in_game_sound_block)                                                         ; 2c68: a0 2c       .,
-    ldx #<(in_game_sound_block)                                                         ; 2c6a: a2 24       .$
-    lda #osword_sound                                                                   ; 2c6c: a9 07       ..
-    jmp osword                                                                          ; 2c6e: 4c f1 ff    L..            ; SOUND command
+    sta in_game_sound_pitch
+    lda in_game_sound_data+3,x
+    sta in_game_sound_duration
+    ldy #>(in_game_sound_block)
+    ldx #<(in_game_sound_block)
+    lda #osword_sound
+    jmp osword                         ; SOUND command
 
 ; *************************************************************************************
 update_sounds
-    lda sound2_active_flag                                                              ; 2c80: a5 48       .H
-    eor #$41                                                                            ; 2c82: 49 41       IA
-    sta sound2_active_flag                                                              ; 2c84: 85 48       .H
-    lda time_remaining                                                                  ; 2c86: a5 6d       .m
-    cmp #$0b                                                                            ; 2c88: c9 0b       ..
-    bcs skip_playing_countdown_sounds                                                   ; 2c8a: b0 14       ..
-    lda sub_second_ticks                                                                ; 2c8c: a5 5c       .\
-    cmp #$0b                                                                            ; 2c8e: c9 0b       ..
-    bne skip_playing_countdown_sounds                                                   ; 2c90: d0 0e       ..
+    lda sound2_active_flag
+    eor #$41
+    sta sound2_active_flag
+    lda time_remaining
+    cmp #$0b
+    bcs skip_playing_countdown_sounds
+    lda sub_second_ticks
+    cmp #$0b
+    bne skip_playing_countdown_sounds
     ; play rising pitch as time up is approaching
-    lda #$dc                                                                            ; 2c92: a9 dc       ..
-    sbc time_remaining                                                                  ; 2c94: e5 6d       .m
-    sbc time_remaining                                                                  ; 2c96: e5 6d       .m
-    sbc time_remaining                                                                  ; 2c98: e5 6d       .m
-    tay                                                                                 ; 2c9a: a8          .
-    ldx #$88                                                                            ; 2c9b: a2 88       ..
-    jsr play_sound_x_pitch_y                                                            ; 2c9d: 20 2c 2c     ,,
+    lda #$dc
+    sbc time_remaining
+    sbc time_remaining
+    sbc time_remaining
+    tay
+    ldx #$88
+    jsr play_sound_x_pitch_y
 skip_playing_countdown_sounds
-    jsr get_next_random_byte                                                            ; 2ca0: 20 4a 22     J"
-    and #$0c                                                                            ; 2ca3: 29 0c       ).
-    sta in_game_sound_data+2                                                            ; 2ca5: 8d 02 2c    ..,
-    ldx #5                                                                              ; 2ca8: a2 05       ..
-    jsr play_sound_if_needed                                                            ; 2caa: 20 e8 2c     .,
-    lda tick_counter                                                                    ; 2cad: a5 5a       .Z
-    lsr                                                                                 ; 2caf: 4a          J
-    bcc skip_sound_0                                                                    ; 2cb0: 90 05       ..
-    ldx #0                                                                              ; 2cb2: a2 00       ..
-    jsr play_sound_if_needed                                                            ; 2cb4: 20 e8 2c     .,
+    jsr get_next_random_byte
+    and #$0c
+    sta in_game_sound_data+2
+    ldx #5
+    jsr play_sound_if_needed
+    lda tick_counter
+    lsr
+    bcc skip_sound_0
+    ldx #0
+    jsr play_sound_if_needed
 skip_sound_0
-    ldx #1                                                                              ; 2cb7: a2 01       ..
-    jsr play_sound_if_needed                                                            ; 2cb9: 20 e8 2c     .,
-    ldx #6                                                                              ; 2cbc: a2 06       ..
-    jsr play_sound_if_needed                                                            ; 2cbe: 20 e8 2c     .,
-    lda sound6_active_flag                                                              ; 2cc1: a5 4c       .L
-    bne return10                                                                        ; 2cc3: d0 2a       .*
-    ldx #4                                                                              ; 2cc5: a2 04       ..
-    jsr play_sound_if_needed                                                            ; 2cc7: 20 e8 2c     .,
-    lda sound4_active_flag                                                              ; 2cca: a5 4a       .J
-    bne return10                                                                        ; 2ccc: d0 21       .!
-    ldy #$19                                                                            ; 2cce: a0 19       ..
-    ldx #$fb                                                                            ; 2cd0: a2 fb       ..
-    lda #osbyte_read_adc_or_get_buffer_status                                           ; 2cd2: a9 80       ..
-    jsr osbyte                                                                          ; 2cd4: 20 f4 ff     ..            ; Read number of spaces remaining in sound channel 0 (X=251)
-    cpx #$0b                                                                            ; 2cd7: e0 0b       ..             ; X is the number of spaces remaining in sound channel 0
-    bmi return10                                                                        ; 2cd9: 30 14       0.
-    lda sound4_active_flag                                                              ; 2cdb: a5 4a       .J
-    ora sound6_active_flag                                                              ; 2cdd: 05 4c       .L
-    bne return10                                                                        ; 2cdf: d0 0e       ..
-    ldx #2                                                                              ; 2ce1: a2 02       ..
-    jsr play_sound_if_needed                                                            ; 2ce3: 20 e8 2c     .,
-    ldx #3                                                                              ; 2ce6: a2 03       ..
+    ldx #1
+    jsr play_sound_if_needed
+    ldx #6
+    jsr play_sound_if_needed
+    lda sound6_active_flag
+    bne return10
+    ldx #4
+    jsr play_sound_if_needed
+    lda sound4_active_flag
+    bne return10
+    ldy #$19
+    ldx #$fb
+    lda #osbyte_read_adc_or_get_buffer_status
+    jsr osbyte                          ; Read number of spaces remaining in sound channel 0 (X=251)
+    cpx #$0b                            ; X is the number of spaces remaining in sound channel 0
+    bmi return10
+    lda sound4_active_flag
+    ora sound6_active_flag
+    bne return10
+    ldx #2
+    jsr play_sound_if_needed
+    ldx #3
 play_sound_if_needed
-    lda sound0_active_flag,x                                                            ; 2ce8: b5 46       .F
-    beq return10                                                                        ; 2cea: f0 03       ..
-    jmp play_sound_x_pitch_y                                                            ; 2cec: 4c 2c 2c    L,,
+    lda sound0_active_flag,x
+    beq return10
+    jmp play_sound_x_pitch_y
 
 return10
-    rts                                                                                 ; 2cef: 60          `
+    rts
 
 invert_keys_to_test
     lda keys_to_process         ; get which keys were down on the previous tick of the game
@@ -2481,36 +2477,36 @@ play_one_life
     ; Load cave parameters and map from file
     jsr load_cave_file
     ; Set colour palette using parameters
-    jsr set_palette                                                                     ; 2e00: 20 00 29     .)
+    jsr set_palette
 
     ; a bonus life only becomes possible after the score *doesn't* have a zero or five
     ; in the hundreds column
-    lda #0                                                                              ; 2e03: a9 00       ..
-    sta bonus_life_available_flag                                                       ; 2e05: 85 6f       .o
-    sta cell_type_to_sprite                                                             ; 2e07: 8d 80 1f    ...
-    ldx #<players_and_men_status_bar                                                    ; 2e0a: a2 14       ..
-    lda cave_number                                                                     ; 2e0c: a5 87       ..
-    cmp #16                                                                             ; 2e0e: c9 10       ..
-    bmi skip_bonus_life_text                                                            ; 2e10: 30 02       0.
-    ldx #<bonus_life_text                                                               ; 2e12: a2 64       .d
+    lda #0
+    sta bonus_life_available_flag
+    sta cell_type_to_sprite
+    ldx #<players_and_men_status_bar
+    lda cave_number
+    cmp #16
+    bmi skip_bonus_life_text
+    ldx #<bonus_life_text
 skip_bonus_life_text
-    stx status_text_address_low                                                         ; 2e14: 86 69       .i
+    stx status_text_address_low
     ; check if we are in demo mode
-    lda demo_mode_tick_count                                                            ; 2e16: a5 65       .e
-    bmi skip_setting_demo_mode_text                                                     ; 2e18: 30 04       0.
-    lda #<demonstration_mode_text                                                       ; 2e1a: a9 a0       ..
-    sta status_text_address_low                                                         ; 2e1c: 85 69       .i
+    lda demo_mode_tick_count
+    bmi skip_setting_demo_mode_text
+    lda #<demonstration_mode_text
+    sta status_text_address_low
     ; initialise variables $50-$5f
 skip_setting_demo_mode_text
-    ldx #$0f                                                                            ; 2e1e: a2 0f       ..
+    ldx #$0f
 initialise_variables_loop
-    lda initial_values_of_variables_from_0x50,x                                         ; 2e20: bd 60 1e    .`.
-    cmp #99                                                                             ; 2e23: c9 63       .c
-    beq skip_setting_variable                                                           ; 2e25: f0 02       ..
-    sta magic_wall_state,x                                                              ; 2e27: 95 50       .P
+    lda initial_values_of_variables_from_0x50,x
+    cmp #99
+    beq skip_setting_variable
+    sta magic_wall_state,x
 skip_setting_variable
-    dex                                                                                 ; 2e29: ca          .
-    bpl initialise_variables_loop                                                       ; 2e2a: 10 f4       ..
+    dex
+    bpl initialise_variables_loop
 
     ; Populate the cave map from loaded data
     jsr populate_cave_from_file
@@ -2518,174 +2514,174 @@ skip_setting_variable
     jsr populate_cave_tiles_pseudo_random
 
     ; map complete: draw cave borders
-    jsr set_ptr_to_start_of_map                                                         ; 2e3c: 20 1a 2a     .*
+    jsr set_ptr_to_start_of_map
     ; loop over all rows, plotting side borders from the cave file
-    ldx #22                                                                             ; 2e3f: a2 16       ..
+    ldx #22
 write_left_and_right_borders_loop
-    ldy #39                                                                             ; 2e41: a0 27       .'
+    ldy #39
 hide_cells_loop
-    lda (ptr_low),y                                                                     ; 2e48: b1 8c       ..
-    ora #$80                                                                            ; 2e4a: 09 80       ..
-    sta (ptr_low),y                                                                     ; 2e4c: 91 8c       ..
-    dey                                                                                 ; 2e4e: 88          .
-    bne hide_cells_loop                                                                 ; 2e4f: d0 f7       ..
     lda (ptr_low),y
     ora #$80
-    sta (ptr_low),y                                                                     ; 2e53: 91 8c       ..
-    lda #$40                                                                            ; 2e55: a9 40       .@
-    jsr add_a_to_ptr                                                                    ; 2e57: 20 40 22     @"
-    dex                                                                                 ; 2e5a: ca          .
-    bne write_left_and_right_borders_loop                                               ; 2e5b: d0 e4       ..
+    sta (ptr_low),y
+    dey
+    bne hide_cells_loop
+    lda (ptr_low),y
+    ora #$80
+    sta (ptr_low),y
+    lda #$40
+    jsr add_a_to_ptr
+    dex
+    bne write_left_and_right_borders_loop
     ; write the top and bottom borders using param_border_tile (steelwall if zero)
     lda param_border_tile
     ora #$80
-    ldx #39                                                                             ; 2e5f: a2 27       .'
+    ldx #39
 write_top_and_bottom_borders_loop
-    sta tile_map_row_0,x                                                                ; 2e61: 9d 00 50    ..P
-    sta tile_map_row_21,x                                                               ; 2e64: 9d 40 55    .@U
-    dex                                                                                 ; 2e67: ca          .
-    bpl write_top_and_bottom_borders_loop                                               ; 2e68: 10 f7       ..
-    jsr initialise_stage                                                                ; 2e6a: 20 50 2f     P/
-    jsr play_screen_dissolve_effect                                                     ; 2e6d: 20 bf 2e     ..
-    jsr start_gameplay                                                                  ; 2e70: 20 00 27     .'
-    lda neighbour_cell_contents                                                         ; 2e73: a5 64       .d
-    cmp #8                                                                              ; 2e75: c9 08       ..
-    beq play_screen_dissolve_to_solid                                                   ; 2e77: f0 44       .D
-    dec men_number_on_regular_status_bar                                                ; 2e79: ce 1e 32    ..2
-    lda men_number_on_regular_status_bar                                                ; 2e7c: ad 1e 32    ..2
-    cmp #sprite_0                                                                       ; 2e7f: c9 32       .2
-    bne play_screen_dissolve_to_solid                                                   ; 2e81: d0 3a       .:
-    lda player_number_on_regular_status_bar                                             ; 2e83: ad 1b 32    ..2
-    sta player_number_on_game_over_text                                                 ; 2e86: 8d 9e 32    ..2
-    lda #<game_over_text                                                                ; 2e89: a9 8c       ..
-    sta status_text_address_low                                                         ; 2e8b: 85 69       .i
-    ldx #<highscore_high_status_bar                                                     ; 2e8d: a2 50       .P
-    lda player_number_on_regular_status_bar                                             ; 2e8f: ad 1b 32    ..2
-    cmp #sprite_1                                                                       ; 2e92: c9 33       .3
-    beq got_pointer_to_score                                                            ; 2e94: f0 02       ..
-    ldx #<highscore_for_player_2                                                        ; 2e96: a2 5e       .^
+    sta tile_map_row_0,x
+    sta tile_map_row_21,x
+    dex
+    bpl write_top_and_bottom_borders_loop
+    jsr initialise_stage
+    jsr play_screen_dissolve_effect
+    jsr start_gameplay
+    lda neighbour_cell_contents
+    cmp #8
+    beq play_screen_dissolve_to_solid
+    dec men_number_on_regular_status_bar
+    lda men_number_on_regular_status_bar
+    cmp #sprite_0
+    bne play_screen_dissolve_to_solid
+    lda player_number_on_regular_status_bar
+    sta player_number_on_game_over_text
+    lda #<game_over_text
+    sta status_text_address_low
+    ldx #<highscore_high_status_bar
+    lda player_number_on_regular_status_bar
+    cmp #sprite_1
+    beq got_pointer_to_score
+    ldx #<highscore_for_player_2
 got_pointer_to_score
-    stx which_status_bar_address1_low                                                   ; 2e98: 8e aa 2e    ...
-    stx which_status_bar_address2_low                                                   ; 2e9b: 8e b8 2e    ...
-    ldx #0                                                                              ; 2e9e: a2 00       ..
-    ldy #0                                                                              ; 2ea0: a0 00       ..
+    stx which_status_bar_address1_low
+    stx which_status_bar_address2_low
+    ldx #0
+    ldy #0
 compare_highscores_loop
-    lda score_on_regular_status_bar,x                                                   ; 2ea2: bd 0e 32    ..2
-    cpy #0                                                                              ; 2ea5: c0 00       ..
-    bne store_in_status_bar                                                             ; 2ea7: d0 0e       ..
+    lda score_on_regular_status_bar,x
+    cpy #0
+    bne store_in_status_bar
 compare
 which_status_bar_address1_low = compare+1
-    cmp highscore_high_status_bar,x                                                     ; 2ea9: dd 50 32    .P2
-    bmi play_screen_dissolve_to_solid                                                   ; 2eac: 30 0f       0.
-    bne store_in_status_bar                                                             ; 2eae: d0 07       ..
+    cmp highscore_high_status_bar,x
+    bmi play_screen_dissolve_to_solid
+    bne store_in_status_bar
 goto_next_digit
-    inx                                                                                 ; 2eb0: e8          .
-    cpx #6                                                                              ; 2eb1: e0 06       ..
-    bne compare_highscores_loop                                                         ; 2eb3: d0 ed       ..
-    beq play_screen_dissolve_to_solid                                                   ; 2eb5: f0 06       ..             ; ALWAYS branch
+    inx
+    cpx #6
+    bne compare_highscores_loop
+    beq play_screen_dissolve_to_solid   ; ALWAYS branch
 
 store_in_status_bar
 which_status_bar_address2_low = store_in_status_bar+1
-    sta highscore_high_status_bar,x                                                     ; 2eb7: 9d 50 32    .P2
-    iny                                                                                 ; 2eba: c8          .
-    bne goto_next_digit                                                                 ; 2ebb: d0 f3       ..
+    sta highscore_high_status_bar,x
+    iny
+    bne goto_next_digit
 
 play_screen_dissolve_to_solid
-    lda #$80                                                                            ; 2ebd: a9 80       ..
+    lda #$80
 play_screen_dissolve_effect
-    sta dissolve_to_solid_flag                                                          ; 2ebf: 85 72       .r
-    lda #$21                                                                            ; 2ec1: a9 21       .!
-    sta tick_counter                                                                    ; 2ec3: 85 5a       .Z
-    lda cave_number                                                                     ; 2ec5: a5 87       ..
-    sta cell_current                                                                    ; 2ec7: 85 77       .w
+    sta dissolve_to_solid_flag
+    lda #$21
+    sta tick_counter
+    lda cave_number
+    sta cell_current
 screen_dissolve_loop
-    jsr reveal_or_hide_more_cells                                                       ; 2ec9: 20 b3 22     ."
-    jsr draw_grid_of_sprites                                                            ; 2ecc: 20 00 23     .#
-    jsr draw_status_bar                                                                 ; 2ecf: 20 25 23     %#
-    lda tick_counter                                                                    ; 2ed2: a5 5a       .Z
-    asl                                                                                 ; 2ed4: 0a          .
-    and #$0f                                                                            ; 2ed5: 29 0f       ).
-    ora #$e0                                                                            ; 2ed7: 09 e0       ..
-    sta sprite_titanium_addressA                                                        ; 2ed9: 8d 07 20    ..
-    sta sprite_titanium_addressB                                                        ; 2edc: 8d 60 20    .`
-    dec tick_counter                                                                    ; 2edf: c6 5a       .Z
-    bpl screen_dissolve_loop                                                            ; 2ee1: 10 e6       ..
-    rts                                                                                 ; 2ee3: 60          `
+    jsr reveal_or_hide_more_cells
+    jsr draw_grid_of_sprites
+    jsr draw_status_bar
+    lda tick_counter
+    asl
+    and #$0f
+    ora #$e0
+    sta sprite_titanium_addressA
+    sta sprite_titanium_addressB
+    dec tick_counter
+    bpl screen_dissolve_loop
+    rts
 
 ; *************************************************************************************
 got_diamond_so_update_status_bar
-    ldy #8                                                                              ; 2f00: a0 08       ..
-    jsr increment_status_bar_number                                                     ; 2f02: 20 98 28     .(
-    lda total_diamonds_on_status_bar_high_digit                                         ; 2f05: ad 03 32    ..2
-    sec                                                                                 ; 2f08: 38          8
-    sbc #sprite_0                                                                       ; 2f09: e9 32       .2
-    ldy #$12                                                                            ; 2f0b: a0 12       ..
-    jsr add_a_to_status_bar_number_at_y                                                 ; 2f0d: 20 c0 28     .(
-    lda total_diamonds_on_status_bar_low_digit                                          ; 2f10: ad 04 32    ..2
-    sec                                                                                 ; 2f13: 38          8
-    sbc #sprite_0                                                                       ; 2f14: e9 32       .2
-    iny                                                                                 ; 2f16: c8          .
-    jsr add_a_to_status_bar_number_at_y                                                 ; 2f17: 20 c0 28     .(
-    dec diamonds_required                                                               ; 2f1a: c6 6c       .l
-    bne return12                                                                        ; 2f1c: d0 29       .)
+    ldy #8
+    jsr increment_status_bar_number
+    lda total_diamonds_on_status_bar_high_digit
+    sec
+    sbc #sprite_0
+    ldy #$12
+    jsr add_a_to_status_bar_number_at_y
+    lda total_diamonds_on_status_bar_low_digit
+    sec
+    sbc #sprite_0
+    iny
+    jsr add_a_to_status_bar_number_at_y
+    dec diamonds_required
+    bne return12
     ;got all the diamonds
-    lda #7                                                                              ; 2f1e: a9 07       ..
-    ldx #0                                                                              ; 2f20: a2 00       ..
-    jsr set_palette_colour_ax                                                           ; 2f22: 20 35 2a     5*
-    lda #sprite_diamond1                                                                ; 2f25: a9 03       ..
-    sta regular_status_bar                                                              ; 2f27: 8d 00 32    ..2
-    sta regular_status_bar+1                                                            ; 2f2a: 8d 01 32    ..2
+    lda #7
+    ldx #0
+    jsr set_palette_colour_ax
+    lda #sprite_diamond1
+    sta regular_status_bar
+    sta regular_status_bar+1
     ; open the exit
-    ldy #0                                                                              ; 2f2d: a0 00       ..
-    lda #map_active_exit                                                                ; 2f2f: a9 18       ..
-    sta (map_rockford_end_position_addr_low),y                                          ; 2f31: 91 6a       .j
+    ldy #0
+    lda #map_active_exit
+    sta (map_rockford_end_position_addr_low),y
     ; set total diamonds to zero
-    lda #sprite_0                                                                       ; 2f33: a9 32       .2
-    sta total_diamonds_on_status_bar_high_digit                                         ; 2f35: 8d 03 32    ..2
-    sta total_diamonds_on_status_bar_low_digit                                          ; 2f38: 8d 04 32    ..2
+    lda #sprite_0
+    sta total_diamonds_on_status_bar_high_digit
+    sta total_diamonds_on_status_bar_low_digit
     ; show score per diamond on status bar
-    lda param_diamond_extra_value                                                       ; 2f3d: bd 14 4b    ..K
-    ldy #4                                                                              ; 2f40: a0 04       ..
-    jsr add_a_to_status_bar_number_at_y                                                 ; 2f42: 20 c0 28     .(
+    lda param_diamond_extra_value
+    ldy #4
+    jsr add_a_to_status_bar_number_at_y
     ; play sound 6
-    inc sound6_active_flag                                                              ; 2f45: e6 4c       .L
+    inc sound6_active_flag
 return12
-    rts                                                                                 ; 2f47: 60          `
+    rts
 
 ; *************************************************************************************
 initialise_stage
-    lda #20                                                                             ; 2f50: a9 14       ..
-    sta visible_top_left_map_x                                                          ; 2f52: 85 7e       .~
-    lsr                                                                                 ; 2f54: 4a          J
-    sta visible_top_left_map_y                                                          ; 2f55: 85 7f       ..
-    ldy #$0d                                                                            ; 2f57: a0 0d       ..
+    lda #20
+    sta visible_top_left_map_x
+    lsr
+    sta visible_top_left_map_y
+    ldy #$0d
 empty_status_bar_loop
-    lda zeroed_status_bar,y                                                             ; 2f59: b9 f0 32    ..2
-    sta regular_status_bar,y                                                            ; 2f5c: 99 00 32    ..2
-    dey                                                                                 ; 2f5f: 88          .
-    bpl empty_status_bar_loop                                                           ; 2f60: 10 f7       ..
+    lda zeroed_status_bar,y
+    sta regular_status_bar,y
+    dey
+    bpl empty_status_bar_loop
 
     ; set and show initial diamond score amount on status bar
-    lda param_diamond_value                                                             ; 2f64: bd 00 4b    ..K
-    ldy #4                                                                              ; 2f67: a0 04       ..
-    jsr add_a_to_status_bar_number_at_y                                                 ; 2f69: 20 c0 28     .(
+    lda param_diamond_value
+    ldy #4
+    jsr add_a_to_status_bar_number_at_y
 
     ; show cave letter on status bar
-    lda cave_number                                                                     ; 2f6c: 8a          .
-    clc                                                                                 ; 2f6d: 18          .
-    adc #'A'                                                                            ; 2f6e: 69 41       iA
-    sta cave_letter_on_regular_status_bar                                               ; 2f70: 8d 25 32    .%2
+    lda cave_number
+    clc
+    adc #'A'
+    sta cave_letter_on_regular_status_bar
 
     ; show difficulty level on status bar
-    lda difficulty_level                                                                ; 2f73: a5 89       ..
-    clc                                                                                 ; 2f75: 18          .
-    adc #sprite_0                                                                       ; 2f76: 69 32       i2
-    sta difficulty_level_on_regular_status_bar                                          ; 2f78: 8d 27 32    .'2
+    lda difficulty_level
+    clc
+    adc #sprite_0
+    sta difficulty_level_on_regular_status_bar
 
     ; set the delay between amoeba growth
-    lda param_amoeba_magic_wall_time                                                    ; 2f7b: bd 54 4c    .TL
-    sta amoeba_growth_interval                                                          ; 2f7e: 85 55       .U
-    sta magic_wall_timer                                                                ; 2f80: 85 51       .Q
+    lda param_amoeba_magic_wall_time
+    sta amoeba_growth_interval
+    sta magic_wall_timer
 
     ; set the number of bombs available
     lda param_bombs
@@ -2705,83 +2701,83 @@ dont_allow_rock_push_up
     sta random_seed2
 
     ; put the end tile on the map
-    lda param_rockford_end                                                              ; 2f82: bd 18 4c    ..L
-    sta map_y                                                                           ; 2f85: 85 8b       ..
-    lda param_rockford_end+1                                                            ; 2f87: bd 2c 4c    .,L
-    sta map_x                                                                           ; 2f8a: 85 8a       ..
-    jsr map_xy_position_to_map_address                                                  ; 2f8c: 20 15 2b     .+
-    ldy #0                                                                              ; 2f8f: a0 00       ..
-    lda #3                                                                              ; 2f91: a9 03       ..
-    sta (map_address_low),y                                                             ; 2f93: 91 8c       ..
-    lda map_address_low                                                                 ; 2f95: a5 8c       ..
-    sta map_rockford_end_position_addr_low                                              ; 2f97: 85 6a       .j
-    lda map_address_high                                                                ; 2f99: a5 8d       ..
-    sta map_rockford_end_position_addr_high                                             ; 2f9b: 85 6b       .k
+    lda param_rockford_end
+    sta map_y
+    lda param_rockford_end+1
+    sta map_x
+    jsr map_xy_position_to_map_address
+    ldy #0
+    lda #3
+    sta (map_address_low),y
+    lda map_address_low
+    sta map_rockford_end_position_addr_low
+    lda map_address_high
+    sta map_rockford_end_position_addr_high
 
     ; put the start tile on the map
-    lda param_rockford_start                                                            ; 2f9d: bd f0 4b    ..K
-    sta map_y                                                                           ; 2fa0: 85 8b       ..
-    lda param_rockford_start+1                                                          ; 2fa2: bd 04 4c    ..L
-    sta map_x                                                                           ; 2fa5: 85 8a       ..
-    jsr map_xy_position_to_map_address                                                  ; 2fa7: 20 15 2b     .+
-    ldy #0                                                                              ; 2faa: a0 00       ..
-    lda #8                                                                              ; 2fac: a9 08       ..
-    sta (map_address_low),y                                                             ; 2fae: 91 8c       ..
-    lda map_address_low                                                                 ; 2fb0: a5 8c       ..
-    sta map_rockford_current_position_addr_low                                          ; 2fb2: 85 70       .p
-    lda map_address_high                                                                ; 2fb4: a5 8d       ..
-    sta map_rockford_current_position_addr_high                                         ; 2fb6: 85 71       .q
+    lda param_rockford_start
+    sta map_y
+    lda param_rockford_start+1
+    sta map_x
+    jsr map_xy_position_to_map_address
+    ldy #0
+    lda #8
+    sta (map_address_low),y
+    lda map_address_low
+    sta map_rockford_current_position_addr_low
+    lda map_address_high
+    sta map_rockford_current_position_addr_high
 
     ; set and show diamonds required on status bar
     ldx difficulty_level
     dex
-    lda param_diamonds_required,x                                                       ; 2fc6: bd 28 4b    .(K
-    sta diamonds_required                                                               ; 2fc9: 85 6c       .l
-    ldy #1                                                                              ; 2fcb: a0 01       ..
-    jsr add_a_to_status_bar_number_at_y                                                 ; 2fcd: 20 c0 28     .(
+    lda param_diamonds_required,x
+    sta diamonds_required
+    ldy #1
+    jsr add_a_to_status_bar_number_at_y
 
     ; set and show time remaining on status bar
-    lda param_cave_time,x                                                               ; 2fd0: bd 3c 4b    .<K
-    sta time_remaining                                                                  ; 2fd3: 85 6d       .m
-    ldy #$0c                                                                            ; 2fd5: a0 0c       ..
-    jsr add_a_to_status_bar_number_at_y                                                 ; 2fd7: 20 c0 28     .(
+    lda param_cave_time,x
+    sta time_remaining
+    ldy #$0c
+    jsr add_a_to_status_bar_number_at_y
 
     ; return zero
-    lda #0                                                                              ; 2fda: a9 00       ..
-    rts                                                                                 ; 2fdc: 60          `
+    lda #0
+    rts
 
 ; *************************************************************************************
 update_amoeba_timing
-    lda number_of_amoeba_cells_found                                                    ; 3000: a5 56       .V
-    beq check_for_amoeba_timeout                                                        ; 3002: f0 14       ..
-    sta sound0_active_flag                                                              ; 3004: 85 46       .F
-    ldy current_amoeba_cell_type                                                        ; 3006: a4 60       .`
-    bne found_amoeba                                                                    ; 3008: d0 06       ..
-    inc sound7_active_flag                                                              ; 300a: e6 4d       .M
-    ldx #(map_unprocessed | map_anim_state1) | map_wall                                 ; 300c: a2 92       ..
-    bne amoeba_replacement_found                                                        ; 300e: d0 06       ..             ; ALWAYS branch
+    lda number_of_amoeba_cells_found
+    beq check_for_amoeba_timeout
+    sta sound0_active_flag
+    ldy current_amoeba_cell_type
+    bne found_amoeba
+    inc sound7_active_flag
+    ldx #(map_unprocessed | map_anim_state1) | map_wall
+    bne amoeba_replacement_found        ; ALWAYS branch
 
 found_amoeba
-    adc #$38                                                                            ; 3010: 69 38       i8
-    bcc check_for_amoeba_timeout                                                        ; 3012: 90 04       ..
+    adc #$38
+    bcc check_for_amoeba_timeout
     ; towards the end of the level time the amoeba turns into rock
-    ldx #map_unprocessed | map_rock                                                     ; 3014: a2 85       ..
+    ldx #map_unprocessed | map_rock
 amoeba_replacement_found
-    stx amoeba_replacement                                                              ; 3016: 86 54       .T
+    stx amoeba_replacement
 check_for_amoeba_timeout
-    lda time_remaining                                                                  ; 3018: a5 6d       .m
-    cmp #50                                                                             ; 301a: c9 32       .2
-    bne return13                                                                        ; 301c: d0 0d       ..
-    lda sub_second_ticks                                                                ; 301e: a5 5c       .\
-    cmp #7                                                                              ; 3020: c9 07       ..
-    bne return13                                                                        ; 3022: d0 07       ..
-    lda #1                                                                              ; 3024: a9 01       ..
-    sta amoeba_growth_interval                                                          ; 3026: 85 55       .U
+    lda time_remaining
+    cmp #50
+    bne return13
+    lda sub_second_ticks
+    cmp #7
+    bne return13
+    lda #1
+    sta amoeba_growth_interval
     ; Set A=0 and zero the amoeba counter
-    lsr                                                                                 ; 3028: 4a          J
-    sta amoeba_counter                                                                  ; 3029: 85 57       .W
+    lsr
+    sta amoeba_counter
 return13
-    rts                                                                                 ; 302b: 60          `
+    rts
 
 ; *************************************************************************************
 ;
@@ -2791,370 +2787,370 @@ return13
 ; *************************************************************************************
     ; check for pause key
 update_with_gameplay_not_active
-    lda keys_to_process                                                                 ; 3040: a5 62       .b
-    and #2                                                                              ; 3042: 29 02       ).
-    beq check_if_end_position_reached                                                   ; 3044: f0 26       .&
+    lda keys_to_process
+    and #2
+    beq check_if_end_position_reached
     ; pause mode. show pause message.
-    lda #<pause_message                                                                 ; 3046: a9 c8       ..
-    sta status_text_address_low                                                         ; 3048: 85 69       .i
-    lda #0                                                                              ; 304a: a9 00       ..
-    sta pause_counter                                                                   ; 304c: 85 4e       .N
+    lda #<pause_message
+    sta status_text_address_low
+    lda #0
+    sta pause_counter
 update_while_initially_pressing_pause_loop
-    jsr update_during_pause_mode                                                        ; 304e: 20 dd 30     .0
-    bne update_while_initially_pressing_pause_loop                                      ; 3051: d0 fb       ..
+    jsr update_during_pause_mode
+    bne update_while_initially_pressing_pause_loop
 pause_loop
-    inc pause_counter                                                                   ; 3053: e6 4e       .N
-    ldx #<pause_message                                                                 ; 3055: a2 c8       ..
+    inc pause_counter
+    ldx #<pause_message
     ; toggle between showing pause message and regular status bar every 16 ticks
-    lda pause_counter                                                                   ; 3057: a5 4e       .N
-    and #$10                                                                            ; 3059: 29 10       ).
-    beq skip_showing_players_and_men                                                    ; 305b: f0 02       ..
-    ldx #<players_and_men_status_bar                                                    ; 305d: a2 14       ..
+    lda pause_counter
+    and #$10
+    beq skip_showing_players_and_men
+    ldx #<players_and_men_status_bar
 skip_showing_players_and_men
-    stx status_text_address_low                                                         ; 305f: 86 69       .i
-    jsr update_during_pause_or_out_of_time                                              ; 3061: 20 cf 30     .0
-    beq pause_loop                                                                      ; 3064: f0 ed       ..
+    stx status_text_address_low
+    jsr update_during_pause_or_out_of_time
+    beq pause_loop
 update_while_finally_pressing_unpause_loop
-    jsr update_during_pause_mode                                                        ; 3066: 20 dd 30     .0
-    bne update_while_finally_pressing_unpause_loop                                      ; 3069: d0 fb       ..
-    rts                                                                                 ; 306b: 60          `
+    jsr update_during_pause_mode
+    bne update_while_finally_pressing_unpause_loop
+    rts
 
 check_if_end_position_reached
-    lda neighbour_cell_contents                                                         ; 306c: a5 64       .d
+    lda neighbour_cell_contents
     ; check if end position has been reached
-    cmp #map_rockford_appearing_or_end_position                                         ; 306e: c9 08       ..
-    beq rockford_reached_end_position                                                   ; 3070: f0 12       ..
+    cmp #map_rockford_appearing_or_end_position
+    beq rockford_reached_end_position
     ; show out of time message for a while, then return
-    lda #$0e                                                                            ; 3072: a9 0e       ..
-    sta out_of_time_message_countdown                                                   ; 3074: 85 74       .t
-    lda #<out_of_time_message                                                           ; 3076: a9 b4       ..
-    sta status_text_address_low                                                         ; 3078: 85 69       .i
+    lda #$0e
+    sta out_of_time_message_countdown
+    lda #<out_of_time_message
+    sta status_text_address_low
 out_of_time_loop
-    jsr update_during_pause_or_out_of_time                                              ; 307a: 20 cf 30     .0
-    bne return14                                                                        ; 307d: d0 5d       .]
-    dec out_of_time_message_countdown                                                   ; 307f: c6 74       .t
-    bne out_of_time_loop                                                                ; 3081: d0 f7       ..
-    rts                                                                                 ; 3083: 60          `
+    jsr update_during_pause_or_out_of_time
+    bne return14
+    dec out_of_time_message_countdown
+    bne out_of_time_loop
+    rts
 
     ; clear rockford's final position, and set rockford on end position
 rockford_reached_end_position
-    ldy #0                                                                              ; 3084: a0 00       ..
-    lda (map_rockford_current_position_addr_low),y                                      ; 3086: b1 70       .p
-    and #$7f                                                                            ; 3088: 29 7f       ).
-    tax                                                                                 ; 308a: aa          .
-    tya                                                                                 ; 308b: 98          .
-    sta (map_rockford_current_position_addr_low),y                                      ; 308c: 91 70       .p
-    txa                                                                                 ; 308e: 8a          .
-    sta (map_rockford_end_position_addr_low),y                                          ; 308f: 91 6a       .j
-    jsr draw_grid_of_sprites                                                            ; 3091: 20 00 23     .#
-    lda time_remaining                                                                  ; 3094: a5 6d       .m
-    beq skip_bonus                                                                      ; 3096: f0 33       .3
+    ldy #0
+    lda (map_rockford_current_position_addr_low),y
+    and #$7f
+    tax
+    tya
+    sta (map_rockford_current_position_addr_low),y
+    txa
+    sta (map_rockford_end_position_addr_low),y
+    jsr draw_grid_of_sprites
+    lda time_remaining
+    beq skip_bonus
 count_up_bonus_at_end_of_stage_loop
-    ldy #$13                                                                            ; 3098: a0 13       ..
-    jsr increment_status_bar_number                                                     ; 309a: 20 98 28     .(
-    ldy #$0c                                                                            ; 309d: a0 0c       ..
-    jsr decrement_status_bar_number                                                     ; 309f: 20 aa 28     .(
-    ldx #5                                                                              ; 30a2: a2 05       ..
-    stx sound5_active_flag                                                              ; 30a4: 86 4b       .K
-    lda #0                                                                              ; 30a6: a9 00       ..
-    sta sound6_active_flag                                                              ; 30a8: 85 4c       .L
-    sta status_text_address_low                                                         ; 30aa: 85 69       .i
-    lda time_remaining                                                                  ; 30ac: a5 6d       .m
-    and #$1c                                                                            ; 30ae: 29 1c       ).
-    tay                                                                                 ; 30b0: a8          .
-    iny                                                                                 ; 30b1: c8          .
-    ldx #$88                                                                            ; 30b2: a2 88       ..
-    jsr play_sound_x_pitch_y                                                            ; 30b4: 20 2c 2c     ,,
-    jsr animate_flashing_spaces_and_check_for_bonus_life                                ; 30b7: 20 56 2a     V*
-    jsr draw_grid_of_sprites                                                            ; 30ba: 20 00 23     .#
-    jsr draw_status_bar                                                                 ; 30bd: 20 25 23     %#
-    lda #2                                                                              ; 30c0: a9 02       ..
-    sta wait_delay_centiseconds                                                         ; 30c2: 85 84       ..
-    jsr wait_for_centiseconds_and_read_keys                                             ; 30c4: 20 94 2b     .+
-    dec time_remaining                                                                  ; 30c7: c6 6d       .m
-    bne count_up_bonus_at_end_of_stage_loop                                             ; 30c9: d0 cd       ..
+    ldy #$13
+    jsr increment_status_bar_number
+    ldy #$0c
+    jsr decrement_status_bar_number
+    ldx #5
+    stx sound5_active_flag
+    lda #0
+    sta sound6_active_flag
+    sta status_text_address_low
+    lda time_remaining
+    and #$1c
+    tay
+    iny
+    ldx #$88
+    jsr play_sound_x_pitch_y
+    jsr animate_flashing_spaces_and_check_for_bonus_life
+    jsr draw_grid_of_sprites
+    jsr draw_status_bar
+    lda #2
+    sta wait_delay_centiseconds
+    jsr wait_for_centiseconds_and_read_keys
+    dec time_remaining
+    bne count_up_bonus_at_end_of_stage_loop
 skip_bonus
-    lda #<regular_status_bar                                                            ; 30cb: a9 00       ..
-    sta status_text_address_low                                                         ; 30cd: 85 69       .i
+    lda #<regular_status_bar
+    sta status_text_address_low
 update_during_pause_or_out_of_time
-    jsr draw_grid_of_sprites                                                            ; 30cf: 20 00 23     .#
-    jsr draw_status_bar                                                                 ; 30d2: 20 25 23     %#
-    jsr wait_for_13_centiseconds_and_read_keys                                          ; 30d5: 20 90 2b     .+
-    lda keys_to_process                                                                 ; 30d8: a5 62       .b
-    and #2                                                                              ; 30da: 29 02       ).
+    jsr draw_grid_of_sprites
+    jsr draw_status_bar
+    jsr wait_for_13_centiseconds_and_read_keys
+    lda keys_to_process
+    and #2
 return14
-    rts                                                                                 ; 30dc: 60          `
+    rts
 
 ; *************************************************************************************
 update_during_pause_mode
-    jsr draw_status_bar                                                                 ; 30dd: 20 25 23     %#
-    lda #0                                                                              ; 30e0: a9 00       ..
-    sta wait_delay_centiseconds                                                         ; 30e2: 85 84       ..
-    jsr wait_for_centiseconds_and_read_keys                                             ; 30e4: 20 94 2b     .+
+    jsr draw_status_bar
+    lda #0
+    sta wait_delay_centiseconds
+    jsr wait_for_centiseconds_and_read_keys
     ; check for pause key
-    lda keys_to_process                                                                 ; 30e7: a5 62       .b
-    and #2                                                                              ; 30e9: 29 02       ).
-    rts                                                                                 ; 30eb: 60          `
+    lda keys_to_process
+    and #2
+    rts
 
 ; *************************************************************************************
 show_menu
 
-    jsr draw_big_rockford                                                               ; 3a00: 20 b5 2a     .*
-    jsr reset_tune                                                                      ; 3a03: 20 00 57     .W
-    jsr reset_clock                                                                     ; 3a06: 20 4d 2a     M*
+    jsr draw_big_rockford
+    jsr reset_tune
+    jsr reset_clock
     ; show last score line
-    jsr reset_grid_of_sprites                                                           ; 3a09: 20 92 22     ."
-    lda #<score_last_status_bar                                                         ; 3a0c: a9 dc       ..
-    sta status_text_address_low                                                         ; 3a0e: 85 69       .i
-    lda #>screen_addr_row_28                                                            ; 3a10: a9 7b       .{
-    ldy #<screen_addr_row_28                                                            ; 3a12: a0 00       ..
-    jsr draw_single_row_of_sprites                                                      ; 3a14: 20 29 23     )#
+    jsr reset_grid_of_sprites
+    lda #<score_last_status_bar
+    sta status_text_address_low
+    lda #>screen_addr_row_28
+    ldy #<screen_addr_row_28
+    jsr draw_single_row_of_sprites
     ; show highscore line
-    jsr reset_grid_of_sprites                                                           ; 3a17: 20 92 22     ."
-    lda #<highscore_high_status_bar                                                     ; 3a1a: a9 50       .P
-    sta status_text_address_low                                                         ; 3a1c: 85 69       .i
-    lda #>screen_addr_row_30                                                            ; 3a1e: a9 7d       .}
-    ldy #<screen_addr_row_30                                                            ; 3a20: a0 80       ..
-    jsr draw_single_row_of_sprites                                                      ; 3a22: 20 29 23     )#
-    jsr reset_grid_of_sprites                                                           ; 3a25: 20 92 22     ."
+    jsr reset_grid_of_sprites
+    lda #<highscore_high_status_bar
+    sta status_text_address_low
+    lda #>screen_addr_row_30
+    ldy #<screen_addr_row_30
+    jsr draw_single_row_of_sprites
+    jsr reset_grid_of_sprites
     ; set cave letter and difficulty level number
-    ldx #0                                                                              ; 3a28: a2 00       ..
-    ldy #1                                                                              ; 3a2a: a0 01       ..
+    ldx #0
+    ldy #1
 handle_menu_loop
-    lda #0                                                                              ; 3a2c: a9 00       ..
-    sta timeout_until_demo_mode                                                         ; 3a2e: 85 6a       .j
-    stx cave_number                                                                     ; 3a30: 86 87       ..
-    sty difficulty_level                                                                ; 3a32: 84 89       ..
-    txa                                                                                 ; 3a34: 8a          .
-    clc                                                                                 ; 3a35: 18          .
-    adc #'A'                                                                            ; 3a36: 69 41       iA
-    sta cave_letter                                                                     ; 3a38: 8d 89 32    ..2
-    tya                                                                                 ; 3a3b: 98          .
-    clc                                                                                 ; 3a3c: 18          .
-    adc #sprite_0                                                                       ; 3a3d: 69 32       i2
-    sta number_of_players_status_bar_difficulty_level                                   ; 3a3f: 8d 8b 32    ..2
-    jsr set_initial_palette                                                             ; 3a42: 20 ac 29     .)
+    lda #0
+    sta timeout_until_demo_mode
+    stx cave_number
+    sty difficulty_level
+    txa
+    clc
+    adc #'A'
+    sta cave_letter
+    tya
+    clc
+    adc #sprite_0
+    sta number_of_players_status_bar_difficulty_level
+    jsr set_initial_palette
 waiting_for_demo_loop
-    lda #<number_of_players_status_bar                                                  ; 3a45: a9 78       .x
-    sta status_text_address_low                                                         ; 3a47: 85 69       .i
-    jsr draw_status_bar                                                                 ; 3a49: 20 25 23     %#
-    jsr update_tune                                                                     ; 3a4c: 20 13 57     .W
-    lda #9                                                                              ; 3a4f: a9 09       ..
-    jsr wait_for_a_centiseconds_and_read_keys                                           ; 3a51: 20 92 2b     .+
-    jsr update_tune                                                                     ; 3a54: 20 13 57     .W
-    lda #5                                                                              ; 3a57: a9 05       ..
-    jsr wait_for_a_centiseconds_and_read_keys                                           ; 3a59: 20 92 2b     .+
-    ldx cave_number                                                                     ; 3a5c: a6 87       ..
-    ldy difficulty_level                                                                ; 3a5e: a4 89       ..
-    lda #opcode_inx                                                                     ; 3a60: a9 e8       ..
-    sta self_modify_move_left_or_right                                                  ; 3a62: 8d 9e 3a    ..:
-    lda keys_to_process                                                                 ; 3a65: a5 62       .b
-    asl                                                                                 ; 3a67: 0a          .
-    bcs self_modify_move_left_or_right                                                  ; 3a68: b0 34       .4
-    asl                                                                                 ; 3a6a: 0a          .
-    bcs menu_move_left_to_change_cave                                                   ; 3a6b: b0 2c       .,
-    asl                                                                                 ; 3a6d: 0a          .
-    bcs increase_difficulty_level                                                       ; 3a6e: b0 3f       .?
-    asl                                                                                 ; 3a70: 0a          .
-    bcs decrease_difficulty_level                                                       ; 3a71: b0 44       .D
-    asl                                                                                 ; 3a73: 0a          .
+    lda #<number_of_players_status_bar
+    sta status_text_address_low
+    jsr draw_status_bar
+    jsr update_tune
+    lda #9
+    jsr wait_for_a_centiseconds_and_read_keys
+    jsr update_tune
+    lda #5
+    jsr wait_for_a_centiseconds_and_read_keys
+    ldx cave_number
+    ldy difficulty_level
+    lda #opcode_inx
+    sta self_modify_move_left_or_right
+    lda keys_to_process
+    asl
+    bcs self_modify_move_left_or_right
+    asl
+    bcs menu_move_left_to_change_cave
+    asl
+    bcs increase_difficulty_level
+    asl
+    bcs decrease_difficulty_level
+    asl
     bcs toggle_one_or_two_players  ;enter key toggles the number of players
-    asl                                                                                 ; 3a76: 0a          .
+    asl
     bcs return15  ;"b" key returns and displays scrolling credits
-    asl                                                                                 ; 3a79: 0a          .
+    asl
     bcs show_rockford_again_and_play_game  ;space key starts game
     asl
     bcs return_to_version_selection  ;escape key returns to version selection screen
-    dec timeout_until_demo_mode                                                         ; 3a7c: c6 6a       .j
-    bne waiting_for_demo_loop                                                           ; 3a7e: d0 c5       ..
+    dec timeout_until_demo_mode
+    bne waiting_for_demo_loop
 
     ; demo mode
-    ldx #5                                                                              ; 3a80: a2 05       ..
-    lda #sprite_0                                                                       ; 3a82: a9 32       .2
+    ldx #5
+    lda #sprite_0
 zero_score_on_status_bar_loop
-    sta score_on_regular_status_bar,x                                                   ; 3a84: 9d 0e 32    ..2
-    dex                                                                                 ; 3a87: ca          .
-    bpl zero_score_on_status_bar_loop                                                   ; 3a88: 10 fa       ..
-    ldx #0                                                                              ; 3a8a: a2 00       ..
-    stx cave_number                                                                     ; 3a8c: 86 87       ..
-    stx demo_mode_tick_count                                                            ; 3a8e: 86 65       .e
-    inx                                                                                 ; 3a90: e8          .
-    stx difficulty_level                                                                ; 3a91: 86 89       ..
-    jsr play_one_life                                                                   ; 3a93: 20 00 2e     ..
-    jmp show_menu                                                                       ; 3a96: 4c 00 3a    L.:
+    sta score_on_regular_status_bar,x
+    dex
+    bpl zero_score_on_status_bar_loop
+    ldx #0
+    stx cave_number
+    stx demo_mode_tick_count
+    inx
+    stx difficulty_level
+    jsr play_one_life
+    jmp show_menu
 
 menu_move_left_to_change_cave
-    lda #opcode_dex                                                                     ; 3a99: a9 ca       ..
-    sta self_modify_move_left_or_right                                                  ; 3a9b: 8d 9e 3a    ..:
+    lda #opcode_dex
+    sta self_modify_move_left_or_right
 self_modify_move_left_or_right
-    inx                                                                                 ; 3a9e: e8          .
-    txa                                                                                 ; 3a9f: 8a          .
-    and #$0f                                                                            ; 3aa0: 29 0f       ).
-    tax                                                                                 ; 3aa2: aa          .
+    inx
+    txa
+    and #$0f
+    tax
 store_new_difficulty_level_selected
-    sty difficulty_level                                                                ; 3aa3: 84 89       ..
-    lda number_of_difficulty_levels_available_in_menu_for_each_cave,x                   ; 3aa5: bd 68 4c    .hL
-    cmp difficulty_level                                                                ; 3aa8: c5 89       ..
-    bcc self_modify_move_left_or_right                                                  ; 3aaa: 90 f2       ..
-    jmp handle_menu_loop                                                                ; 3aac: 4c 2c 3a    L,:
+    sty difficulty_level
+    lda number_of_difficulty_levels_available_in_menu_for_each_cave,x
+    cmp difficulty_level
+    bcc self_modify_move_left_or_right
+    jmp handle_menu_loop
 
 increase_difficulty_level
-    iny                                                                                 ; 3aaf: c8          .
-    cpy #6                                                                              ; 3ab0: c0 06       ..
-    bne store_new_difficulty_level_selected                                             ; 3ab2: d0 ef       ..
-    dey                                                                                 ; 3ab4: 88          .
-    bne store_new_difficulty_level_selected                                             ; 3ab5: d0 ec       ..
+    iny
+    cpy #6
+    bne store_new_difficulty_level_selected
+    dey
+    bne store_new_difficulty_level_selected
 decrease_difficulty_level
-    dey                                                                                 ; 3ab7: 88          .
-    bne dont_go_below_one                                                               ; 3ab8: d0 01       ..
-    iny                                                                                 ; 3aba: c8          .
+    dey
+    bne dont_go_below_one
+    iny
 dont_go_below_one
-    jmp handle_menu_loop                                                                ; 3abb: 4c 2c 3a    L,:
+    jmp handle_menu_loop
 
 toggle_one_or_two_players
-    lda number_of_players_status_bar                                                    ; 3abe: ad 78 32    .x2
-    eor #sprite_1 XOR sprite_2                                                          ; 3ac1: 49 07       I.
-    sta number_of_players_status_bar                                                    ; 3ac3: 8d 78 32    .x2
-    lda plural_for_player                                                               ; 3ac6: ad 80 32    ..2
-    eor #'S'                                                                            ; 3ac9: 49 53       IS
-    sta plural_for_player                                                               ; 3acb: 8d 80 32    ..2
-    jmp handle_menu_loop                                                                ; 3ace: 4c 2c 3a    L,:
+    lda number_of_players_status_bar
+    eor #sprite_1 XOR sprite_2
+    sta number_of_players_status_bar
+    lda plural_for_player
+    eor #'S'
+    sta plural_for_player
+    jmp handle_menu_loop
 
 show_rockford_again_and_play_game
-    jsr draw_big_rockford                                                               ; 3ad1: 20 b5 2a     .*
-    jsr reset_grid_of_sprites                                                           ; 3ad4: 20 92 22     ."
-    lda #$ff                                                                            ; 3ad7: a9 ff       ..
-    sta demo_mode_tick_count                                                            ; 3ad9: 85 65       .e
+    jsr draw_big_rockford
+    jsr reset_grid_of_sprites
+    lda #$ff
+    sta demo_mode_tick_count
     jsr load_spriteset
-    jsr initialise_and_play_game                                                        ; 3adb: 20 00 3b     .;
-    jmp show_menu                                                                       ; 3ade: 4c 00 3a    L.:
+    jsr initialise_and_play_game
+    jmp show_menu
 
 return15
-    rts                                                                                 ; 3ae1: 60          `
+    rts
 
 return_to_version_selection
     jmp select_version_to_play
 
 ; *************************************************************************************
 initialise_and_play_game
-    ldx #19                                                                             ; 3b00: a2 13       ..
+    ldx #19
 copy_status_bar_loop
-    lda default_status_bar,x                                                            ; 3b02: bd 68 50    .hP
-    sta players_and_men_status_bar,x                                                    ; 3b05: 9d 14 32    ..2
-    sta inactive_players_and_men_status_bar,x                                           ; 3b08: 9d 3c 32    .<2
-    dex                                                                                 ; 3b0b: ca          .
-    bpl copy_status_bar_loop                                                            ; 3b0c: 10 f4       ..
-    lda #sprite_2                                                                       ; 3b0e: a9 34       .4
-    sta player_number_on_inactive_players_and_men_status_bar                            ; 3b10: 8d 43 32    .C2
-    cmp number_of_players_status_bar                                                    ; 3b13: cd 78 32    .x2
-    beq set_cave_letter_on_status_bar                                                   ; 3b16: f0 05       ..
-    lda #sprite_0                                                                       ; 3b18: a9 32       .2
-    sta number_of_men_on_inactive_players_and_men_status_bar                            ; 3b1a: 8d 46 32    .F2
+    lda default_status_bar,x
+    sta players_and_men_status_bar,x
+    sta inactive_players_and_men_status_bar,x
+    dex
+    bpl copy_status_bar_loop
+    lda #sprite_2
+    sta player_number_on_inactive_players_and_men_status_bar
+    cmp number_of_players_status_bar
+    beq set_cave_letter_on_status_bar
+    lda #sprite_0
+    sta number_of_men_on_inactive_players_and_men_status_bar
 set_cave_letter_on_status_bar
-    lda cave_letter                                                                     ; 3b1d: ad 89 32    ..2
-    sta cave_letter_on_regular_status_bar                                               ; 3b20: 8d 25 32    .%2
-    sta cave_letter_on_inactive_players_and_men_status_bar                              ; 3b23: 8d 4d 32    .M2
+    lda cave_letter
+    sta cave_letter_on_regular_status_bar
+    sta cave_letter_on_inactive_players_and_men_status_bar
     ; copy difficulty level to other status bars
-    ldx number_of_players_status_bar_difficulty_level                                   ; 3b26: ae 8b 32    ..2
-    stx difficulty_level_on_regular_status_bar                                          ; 3b29: 8e 27 32    .'2
-    stx difficulty_level_on_inactive_players_and_men_status_bar                         ; 3b2c: 8e 4f 32    .O2
-    jsr set_cave_number_and_difficulty_level_from_status_bar                            ; 3b2f: 20 c1 3b     .;
+    ldx number_of_players_status_bar_difficulty_level
+    stx difficulty_level_on_regular_status_bar
+    stx difficulty_level_on_inactive_players_and_men_status_bar
+    jsr set_cave_number_and_difficulty_level_from_status_bar
     ; zero scores on status bars
-    lda #sprite_0                                                                       ; 3b32: a9 32       .2
-    ldx #5                                                                              ; 3b34: a2 05       ..
+    lda #sprite_0
+    ldx #5
 zero_score_loop
-    sta score_on_regular_status_bar,x                                                   ; 3b36: 9d 0e 32    ..2
-    sta score_on_inactive_players_regular_status_bar,x                                  ; 3b39: 9d 36 32    .62
-    dex                                                                                 ; 3b3c: ca          .
-    bpl zero_score_loop                                                                 ; 3b3d: 10 f7       ..
+    sta score_on_regular_status_bar,x
+    sta score_on_inactive_players_regular_status_bar,x
+    dex
+    bpl zero_score_loop
     ; add current stage to menu availablility
 play_next_life
-    ldx cave_number                                                                     ; 3b3f: a6 87       ..
-    lda difficulty_level                                                                ; 3b41: a5 89       ..
-    cmp number_of_difficulty_levels_available_in_menu_for_each_cave,x                   ; 3b43: dd 68 4c    .hL
-    bmi skip_adding_new_difficulty_level_to_menu                                        ; 3b46: 30 03       0.
+    ldx cave_number
+    lda difficulty_level
+    cmp number_of_difficulty_levels_available_in_menu_for_each_cave,x
+    bmi skip_adding_new_difficulty_level_to_menu
     ; add new difficulty level to menu
-    sta number_of_difficulty_levels_available_in_menu_for_each_cave,x                   ; 3b48: 9d 68 4c    .hL
+    sta number_of_difficulty_levels_available_in_menu_for_each_cave,x
 skip_adding_new_difficulty_level_to_menu
-    jsr play_one_life                                                                   ; 3b4b: 20 00 2e     ..
+    jsr play_one_life
     ; save results after life
     ; first find the position of the score to copy from the status bar (which depends
     ; on the player number)
-    ldy #5                                                                              ; 3b4e: a0 05       ..
+    ldy #5
     ; check if player one or two
-    lda player_number_on_regular_status_bar                                             ; 3b50: ad 1b 32    ..2
-    lsr                                                                                 ; 3b53: 4a          J
-    bcs copy_score                                                                      ; 3b54: b0 02       ..
+    lda player_number_on_regular_status_bar
+    lsr
+    bcs copy_score
     ; copy score from player two
-    ldy #19                                                                             ; 3b56: a0 13       ..
+    ldy #19
 copy_score
-    ldx #5                                                                              ; 3b58: a2 05       ..
+    ldx #5
 copy_score_to_last_score_loop
-    lda score_on_regular_status_bar,x                                                   ; 3b5a: bd 0e 32    ..2
-    sta score_last_status_bar,y                                                         ; 3b5d: 99 dc 32    ..2
-    dey                                                                                 ; 3b60: 88          .
-    dex                                                                                 ; 3b61: ca          .
-    bpl copy_score_to_last_score_loop                                                   ; 3b62: 10 f6       ..
-    lda neighbour_cell_contents                                                         ; 3b64: a5 64       .d
-    cmp #8                                                                              ; 3b66: c9 08       ..
-    beq calculate_next_cave_number_and_difficulty_level                                 ; 3b68: f0 37       .7
-    lda cave_number                                                                     ; 3b6a: a5 87       ..
-    cmp #16                                                                             ; 3b6c: c9 10       ..
-    bpl calculate_next_cave_number_and_difficulty_level                                 ; 3b6e: 10 31       .1
+    lda score_on_regular_status_bar,x
+    sta score_last_status_bar,y
+    dey
+    dex
+    bpl copy_score_to_last_score_loop
+    lda neighbour_cell_contents
+    cmp #8
+    beq calculate_next_cave_number_and_difficulty_level
+    lda cave_number
+    cmp #16
+    bpl calculate_next_cave_number_and_difficulty_level
     ; check for zero men left for the current player
-    lda #sprite_0                                                                       ; 3b70: a9 32       .2
-    cmp men_number_on_regular_status_bar                                                ; 3b72: cd 1e 32    ..2
-    bne swap_status_bars_with_inactive_player_versions                                  ; 3b75: d0 05       ..
+    lda #sprite_0
+    cmp men_number_on_regular_status_bar
+    bne swap_status_bars_with_inactive_player_versions
     ; check for zero men left for other player
-    cmp number_of_men_on_inactive_players_and_men_status_bar                            ; 3b77: cd 46 32    .F2
-    beq return16                                                                        ; 3b7a: f0 50       .P
+    cmp number_of_men_on_inactive_players_and_men_status_bar
+    beq return16
 swap_status_bars_with_inactive_player_versions
-    ldx #39                                                                             ; 3b7c: a2 27       .'
+    ldx #39
 swap_loop
-    lda regular_status_bar,x                                                            ; 3b7e: bd 00 32    ..2
-    ldy inactive_players_regular_status_bar,x                                           ; 3b81: bc 28 32    .(2
-    sta inactive_players_regular_status_bar,x                                           ; 3b84: 9d 28 32    .(2
-    tya                                                                                 ; 3b87: 98          .
-    sta regular_status_bar,x                                                            ; 3b88: 9d 00 32    ..2
-    dex                                                                                 ; 3b8b: ca          .
-    bpl swap_loop                                                                       ; 3b8c: 10 f0       ..
-    lda men_number_on_regular_status_bar                                                ; 3b8e: ad 1e 32    ..2
-    cmp #sprite_0                                                                       ; 3b91: c9 32       .2
-    beq swap_status_bars_with_inactive_player_versions                                  ; 3b93: f0 e7       ..
-    lda cave_letter_on_regular_status_bar                                               ; 3b95: ad 25 32    .%2
-    ldx difficulty_level_on_regular_status_bar                                          ; 3b98: ae 27 32    .'2
-    jsr set_cave_number_and_difficulty_level_from_status_bar                            ; 3b9b: 20 c1 3b     .;
-    jmp play_next_life                                                                  ; 3b9e: 4c 3f 3b    L?;
+    lda regular_status_bar,x
+    ldy inactive_players_regular_status_bar,x
+    sta inactive_players_regular_status_bar,x
+    tya
+    sta regular_status_bar,x
+    dex
+    bpl swap_loop
+    lda men_number_on_regular_status_bar
+    cmp #sprite_0
+    beq swap_status_bars_with_inactive_player_versions
+    lda cave_letter_on_regular_status_bar
+    ldx difficulty_level_on_regular_status_bar
+    jsr set_cave_number_and_difficulty_level_from_status_bar
+    jmp play_next_life
 
 calculate_next_cave_number_and_difficulty_level
-    ldx cave_number                                                                     ; 3ba1: a6 87       ..
-    ldy difficulty_level                                                                ; 3ba3: a4 89       ..
-    lda cave_play_order,x                                                               ; 3ba5: bd 40 4c    .@L
-    sta cave_number                                                                     ; 3ba8: 85 87       ..
-    bne store_cave_number_and_difficulty_level                                          ; 3baa: d0 07       ..
-    iny                                                                                 ; 3bac: c8          .
-    cpy #6                                                                              ; 3bad: c0 06       ..
-    bne store_cave_number_and_difficulty_level                                          ; 3baf: d0 02       ..
-    ldy #1                                                                              ; 3bb1: a0 01       ..
+    ldx cave_number
+    ldy difficulty_level
+    lda cave_play_order,x
+    sta cave_number
+    bne store_cave_number_and_difficulty_level
+    iny
+    cpy #6
+    bne store_cave_number_and_difficulty_level
+    ldy #1
 store_cave_number_and_difficulty_level
-    sty difficulty_level                                                                ; 3bb3: 84 89       ..
-    sta cave_number                                                                     ; 3bb5: 85 87       ..
-    cmp #$10                                                                            ; 3bb7: c9 10       ..
-    bmi play_next_life                                                                  ; 3bb9: 30 84       0.
+    sty difficulty_level
+    sta cave_number
+    cmp #$10
+    bmi play_next_life
     ; bonus life awarded on bonus level
-    inc men_number_on_regular_status_bar                                                ; 3bbb: ee 1e 32    ..2
-    jmp play_next_life                                                                  ; 3bbe: 4c 3f 3b    L?;
+    inc men_number_on_regular_status_bar
+    jmp play_next_life
 
 set_cave_number_and_difficulty_level_from_status_bar
-    sec                                                                                 ; 3bc1: 38          8
-    sbc #'A'                                                                            ; 3bc2: e9 41       .A
-    sta cave_number                                                                     ; 3bc4: 85 87       ..
-    txa                                                                                 ; 3bc6: 8a          .
-    sec                                                                                 ; 3bc7: 38          8
-    sbc #sprite_0                                                                       ; 3bc8: e9 32       .2
-    sta difficulty_level                                                                ; 3bca: 85 89       ..
+    sec
+    sbc #'A'
+    sta cave_number
+    txa
+    sec
+    sbc #sprite_0
+    sta difficulty_level
 return16
-    rts                                                                                 ; 3bcc: 60          `
+    rts
 
 ; ****************************************************************************************************
 ; Populate the cave with tiles using the pseudo-random method
@@ -3530,95 +3526,95 @@ load_row_counter
 
 ; *************************************************************************************
 reset_tune
-    lda #osbyte_flush_buffer_class                                                      ; 5700: a9 0f       ..
-    ldx #0                                                                              ; 5702: a2 00       ..
-    jsr osbyte                                                                          ; 5704: 20 f4 ff     ..            ; Flush all buffers (X=0)
-    ldx #5                                                                              ; 5707: a2 05       ..
+    lda #osbyte_flush_buffer_class
+    ldx #0
+    jsr osbyte                         ; Flush all buffers (X=0)
+    ldx #5
 reset_tune_loop
-    lda tune_start_position_per_channel,x                                               ; 5709: bd e8 56    ..V
-    sta tune_position_per_channel,x                                                     ; 570c: 9d d0 56    ..V
-    dex                                                                                 ; 570f: ca          .
-    bpl reset_tune_loop                                                                 ; 5710: 10 f7       ..
-    rts                                                                                 ; 5712: 60          `
+    lda tune_start_position_per_channel,x
+    sta tune_position_per_channel,x
+    dex
+    bpl reset_tune_loop
+    rts
 
 ; *************************************************************************************
 update_tune
-    lda #0                                                                              ; 5713: a9 00       ..
-    sta sound_channel                                                                   ; 5715: 85 8e       ..
+    lda #0
+    sta sound_channel
 update_channels_loop
-    lda #$fa                                                                            ; 5717: a9 fa       ..
-    sec                                                                                 ; 5719: 38          8
-    sbc sound_channel                                                                   ; 571a: e5 8e       ..
-    tax                                                                                 ; 571c: aa          .
-    ldy #$ff                                                                            ; 571d: a0 ff       ..
-    lda #osbyte_read_adc_or_get_buffer_status                                           ; 571f: a9 80       ..
-    jsr osbyte                                                                          ; 5721: 20 f4 ff     ..            ; Read buffer status or ADC channel
-    txa                                                                                 ; 5724: 8a          .
-    beq move_to_next_tune_channel                                                       ; 5725: f0 66       .f
-    ldx sound_channel                                                                   ; 5727: a6 8e       ..
-    txa                                                                                 ; 5729: 8a          .
-    asl                                                                                 ; 572a: 0a          .
-    asl                                                                                 ; 572b: 0a          .
-    asl                                                                                 ; 572c: 0a          .
-    sta offset_to_sound                                                                 ; 572d: 85 8f       ..
-    lda tune_position_per_channel,x                                                     ; 572f: bd d0 56    ..V
-    tay                                                                                 ; 5732: a8          .
-    cpx #0                                                                              ; 5733: e0 00       ..
-    bne skip_end_of_tune_check                                                          ; 5735: d0 04       ..
-    cpy #$41                                                                            ; 5737: c0 41       .A
-    beq reset_tune                                                                      ; 5739: f0 c5       ..
+    lda #$fa
+    sec
+    sbc sound_channel
+    tax
+    ldy #$ff
+    lda #osbyte_read_adc_or_get_buffer_status
+    jsr osbyte                         ; Read buffer status or ADC channel
+    txa
+    beq move_to_next_tune_channel
+    ldx sound_channel
+    txa
+    asl
+    asl
+    asl
+    sta offset_to_sound
+    lda tune_position_per_channel,x
+    tay
+    cpx #0
+    bne skip_end_of_tune_check
+    cpy #$41
+    beq reset_tune
 skip_end_of_tune_check
-    lda tune_pitches_and_commands,y                                                     ; 573b: b9 00 56    ..V
-    cmp #200                                                                            ; 573e: c9 c8       ..
-    bcc note_found                                                                      ; 5740: 90 1a       ..
-    tay                                                                                 ; 5742: a8          .
-    lda tune_note_repeat_per_channel,x                                                  ; 5743: bd d3 56    ..V
-    bne skip_reset_note_repeat                                                          ; 5746: d0 06       ..
-    lda command_note_repeat_counts-200,y                                                ; 5748: b9 1a 56    ..V
-    sta tune_note_repeat_per_channel,x                                                  ; 574b: 9d d3 56    ..V
+    lda tune_pitches_and_commands,y
+    cmp #200
+    bcc note_found
+    tay
+    lda tune_note_repeat_per_channel,x
+    bne skip_reset_note_repeat
+    lda command_note_repeat_counts-200,y
+    sta tune_note_repeat_per_channel,x
 skip_reset_note_repeat
-    lda command_pitch-200,y                                                             ; 574e: b9 0e 56    ..V
-    pha                                                                                 ; 5751: 48          H
-    lda command_note_durations - 200,y                                                  ; 5752: b9 14 56    ..V
-    tay                                                                                 ; 5755: a8          .
-    pla                                                                                 ; 5756: 68          h
-    dec tune_note_repeat_per_channel,x                                                  ; 5757: de d3 56    ..V
-    bpl c576e                                                                           ; 575a: 10 12       ..
+    lda command_pitch-200,y
+    pha
+    lda command_note_durations - 200,y
+    tay
+    pla
+    dec tune_note_repeat_per_channel,x
+    bpl inc_tune
 note_found
-    pha                                                                                 ; 575c: 48          H
-    and #3                                                                              ; 575d: 29 03       ).
-    tay                                                                                 ; 575f: a8          .
-    lda #0                                                                              ; 5760: a9 00       ..
-    sta tune_note_repeat_per_channel,x                                                  ; 5762: 9d d3 56    ..V
-    lda tune_note_durations_table,y                                                     ; 5765: b9 ee 56    ..V
-    tay                                                                                 ; 5768: a8          .
-    pla                                                                                 ; 5769: 68          h
-    and #$fc                                                                            ; 576a: 29 fc       ).
-    ora #1                                                                              ; 576c: 09 01       ..
-c576e
-    pha                                                                                 ; 576e: 48          H
-    lda tune_note_repeat_per_channel,x                                                  ; 576f: bd d3 56    ..V
-    bne skip_increment_tune_position                                                    ; 5772: d0 03       ..
-    inc tune_position_per_channel,x                                                     ; 5774: fe d0 56    ..V
+    pha
+    and #3
+    tay
+    lda #0
+    sta tune_note_repeat_per_channel,x
+    lda tune_note_durations_table,y
+    tay
+    pla
+    and #$fc
+    ora #1
+inc_tune
+    pha
+    lda tune_note_repeat_per_channel,x
+    bne skip_increment_tune_position
+    inc tune_position_per_channel,x
 skip_increment_tune_position
-    pla                                                                                 ; 5777: 68          h
-    ldx offset_to_sound                                                                 ; 5778: a6 8f       ..
-    sta sound1_pitch,x                                                                  ; 577a: 9d bc 56    ..V
-    tya                                                                                 ; 577d: 98          .
-    sta sound1_duration,x                                                               ; 577e: 9d be 56    ..V
-    txa                                                                                 ; 5781: 8a          .
-    clc                                                                                 ; 5782: 18          .
-    adc #<sound1                                                                        ; 5783: 69 b8       i.
-    tax                                                                                 ; 5785: aa          .
-    ldy #>sound1                                                                        ; 5786: a0 56       .V
-    lda #osword_sound                                                                   ; 5788: a9 07       ..
-    jsr osword                                                                          ; 578a: 20 f1 ff     ..            ; SOUND command
+    pla
+    ldx offset_to_sound
+    sta sound1_pitch,x
+    tya
+    sta sound1_duration,x
+    txa
+    clc
+    adc #<sound1
+    tax
+    ldy #>sound1
+    lda #osword_sound
+    jsr osword                         ; SOUND command
 move_to_next_tune_channel
-    inc sound_channel                                                                   ; 578d: e6 8e       ..
-    ldx sound_channel                                                                   ; 578f: a6 8e       ..
-    cpx #3                                                                              ; 5791: e0 03       ..
-    bne update_channels_loop                                                            ; 5793: d0 82       ..
-    rts                                                                                 ; 5795: 60          `
+    inc sound_channel
+    ldx sound_channel
+    cpx #3
+    bne update_channels_loop
+    rts
 
 ; *************************************************************************************
 !source "vars1.asm"
