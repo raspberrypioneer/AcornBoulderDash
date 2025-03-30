@@ -38,63 +38,24 @@ handler_table_high
 
 ; *************************************************************************************
 sprite_to_next_sprite
-    !byte sprite_space
-    !byte sprite_boulder1
-    !byte sprite_boulder2
-    !byte sprite_diamond2
-    !byte sprite_diamond3
-    !byte sprite_diamond4
-    !byte sprite_diamond1
-    !byte $60
-    !byte sprite_titanium_wall2
-    !byte $67
-    !byte $61
-    !byte sprite_wall2
-    !byte sprite_explosion1
-    !byte sprite_explosion2
-    !byte sprite_explosion3
-;TODO: part of sprite_to_next_sprite data
-    !byte $0f, $11, $12, $13, $10, $14, $15, $17, $18, $62, $1a, $1b, $1c, $1a, $1d
-    !byte $68, $1f, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2b, $2c, $2d
-    !byte $63, $2f, $30, $31, $65
-
-    !byte sprite_0
-    !byte sprite_0
-    !byte sprite_diamond1
-    !byte sprite_0
-    !byte sprite_0
-    !byte $0a
-    !byte sprite_8
-    !byte sprite_2
-    !byte sprite_2
-    !byte sprite_space
-    !byte sprite_0
-    !byte sprite_0
-    !byte sprite_0
-    !byte sprite_space
-    !byte sprite_7
-    !byte sprite_7
-    !byte sprite_6
-    !byte sprite_4
-    !byte sprite_7
-    !byte sprite_6
-    !text "PLAYER"
-    !byte sprite_space
-    !byte sprite_1
-    !byte sprite_comma
-    !byte sprite_space
-    !byte sprite_3
-    !byte sprite_space
-    !text "MEN"
-    !byte sprite_space
-    !text "A"
-    !byte sprite_slash
-    !byte sprite_1
-    !byte sprite_space
-
-    !byte $5a, $5b, $5c, $5d, $5e, $5f,   7, $0a, $16, $64, $2a, $66, $2e,   9, $1e
-    !byte $69, $6a, $6b, $6c, $6d, $6e, $6f, $70, $71, $72, $73, $74, $75, $76, $77
-    !byte $78, $79, $7a, $7b, $7c, $7d, $7e, $7f
+    !byte 0,0,0
+    !byte sprite_diamond2, sprite_diamond3, sprite_diamond4, sprite_diamond1
+    !byte 0, sprite_earth2, sprite_titanium_wall2, 0, 0
+    !byte sprite_explosion1, sprite_explosion2, sprite_explosion3, 0
+    !byte sprite_magic_wall2, sprite_magic_wall3, sprite_magic_wall4, sprite_magic_wall1
+    !byte sprite_amoeba1, sprite_amoeba2
+    !byte sprite_butterfly2, sprite_butterfly3, sprite_butterfly1
+    !byte sprite_firefly2, sprite_firefly3, sprite_firefly4, sprite_firefly1
+    !byte sprite_earth1, sprite_titanium_wall2
+    !fill 11,0
+    !byte sprite_rockford_moving_left2, sprite_rockford_moving_left3, sprite_rockford_moving_left4, sprite_rockford_moving_left1
+    !byte sprite_rockford_moving_right2, sprite_rockford_moving_right3, sprite_rockford_moving_right4, sprite_rockford_moving_right1
+    !byte sprite_0, sprite_0, sprite_diamond1, sprite_0, sprite_0, sprite_wall1, sprite_8, sprite_2, sprite_2, sprite_space
+    !byte sprite_0, sprite_0, sprite_0, sprite_space, sprite_7, sprite_7, sprite_6, sprite_4, sprite_7, sprite_6
+    !byte 0, 0, 0, 0, 0, 0, sprite_space, sprite_1, sprite_comma, sprite_space, sprite_3, sprite_space
+    !byte 0, 0, 0, sprite_space, 0, sprite_slash, sprite_1, sprite_space, $5a, $5b, $5c, $5d, $5e, $5f, 7, $0a
+    !byte $16, $64, $2a, $66, $2e, 9, $1e, $69, $6a, $6b, $6c, $6d, $6e, $6f, $70, $71
+    !byte $72, $73, $74, $75, $76, $77, $78, $79, $7a, $7b, $7c, $7d, $7e, $7f
 
 ; *************************************************************************************
 ;
@@ -348,10 +309,6 @@ sprite_titanium_addressA
     !byte <sprite_addr_bubble2
 sprite_titanium_addressB
     !byte <sprite_addr_titanium_wall1
-;TODO: These are used but unclear what for
-    !byte $40, $e0, $80, $60,   0, $e0,   0,   0, $20, $40, $60, $80, $a0, $c0, $e0
-    !byte   0, $20, $40, $60, $80, $a0, $c0, $e0,   0, $20, $40, $60, $80, $a0, $c0
-    !byte $e0
 
 ; *************************************************************************************
 sprite_addresses_high
@@ -451,12 +408,7 @@ sprite_addresses_high
     !byte >sprite_addr_bomb2
     !byte >sprite_addr_bomb1
     !byte >sprite_addr_bubble2
-sprite_titanium_addressC
     !byte >sprite_addr_titanium_wall1
-;TODO: These are used but unclear what for
-    !byte $14, $15, $18, $18, $19, $18, $14, $14, $20, $20, $20, $20, $20, $20, $20
-    !byte $21, $21, $21, $21, $21, $21, $21, $21, $22, $22, $22, $22, $22, $22, $22
-    !byte $22
 
 ; *************************************************************************************
 ; Given a direction (0-3), return an offset from the current position ($41) in the map
