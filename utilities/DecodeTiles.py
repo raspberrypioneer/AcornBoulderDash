@@ -26,33 +26,41 @@ NUM_SPRITE_BYTES = 2912 + (5 * NUM_BYTES_PER_TILE) #For BD+1 with additional spr
 #palette = [BLACK, PURPLE, RED, WHITE]
 palette = [BLACK, GREEN, RED, WHITE]
 
-USE_INPUT_SPRITES_FILE = False
-OUTPUT_SPRITES_TO_FILE = False
+#INPUT_SPRITES_FILE = ""
+INPUT_SPRITES_FILE = "input_sprites.csv"
+#INPUT_SPRITES_FILE = "Robo_Tech_sprites.bin"
+
+#OUTPUT_SPRITES_TO_FILE = ""
+OUTPUT_SPRITES_FILE = "Easter_sprites.bin"
 
 #Read bytes for tile sprites
 #This is at the start address in the source code, not need to position to a location - input_source_file.seek(pos)
 base_path = path.dirname(path.abspath(__file__))
 base_path = path.join(base_path, "..")
-if USE_INPUT_SPRITES_FILE:
-    BD_input_sprites_folder = path.join(base_path, "sprites")
+sprites_folder = path.join(base_path, "sprites")
+
+extension = "" if INPUT_SPRITES_FILE == "" else INPUT_SPRITES_FILE.lower().split(".")[1]
+if extension == "csv":
     sprites_bytes = []
     for i in range(32):  #First 32 bytes are the space character, all zeros
         sprites_bytes.append(0)
-    with open(path.join(BD_input_sprites_folder, "input_sprites.csv"), newline="") as csvfile:
+    with open(path.join(sprites_folder, INPUT_SPRITES_FILE), newline="") as csvfile:
         for row in csv.reader(csvfile, skipinitialspace=True, delimiter=","):
             for byte in row:
                 if byte != '':
                     sprites_bytes.append(int(byte))
+elif extension == "bin":
+    input_source_file = open(path.join(sprites_folder, INPUT_SPRITES_FILE), "rb")  #Open the file as binary
+    sprites_bytes = input_source_file.read(NUM_SPRITE_BYTES)
+    input_source_file.close()
 else:
-    BD_code_folder = path.join(base_path, "code_bin")
-    input_source_file = open(path.join(BD_code_folder, "BDSH3"), "rb")  #Open the file as binary
+    input_source_file = open(path.join(base_path, "code_bin", "BDSH3"), "rb")  #Open the file as binary
     sprites_bytes = input_source_file.read(NUM_SPRITE_BYTES)
     input_source_file.close()
 
 #Output to file if required
-if OUTPUT_SPRITES_TO_FILE:
-    output_subfolder = path.join(base_path, "build")
-    output_file_name = path.join(output_subfolder, f"sprites_{datetime.now().strftime('%Y%m%d_%H%M')}.bin")
+if OUTPUT_SPRITES_FILE != "":
+    output_file_name = path.join(sprites_folder, OUTPUT_SPRITES_FILE)
     output_file = open(output_file_name, "wb")
     for byte in sprites_bytes:
         output_file.write(byte.to_bytes(1, byteorder='big'))

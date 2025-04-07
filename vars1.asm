@@ -40,7 +40,7 @@ handler_table_high
 sprite_to_next_sprite
     !byte 0,0,0
     !byte sprite_diamond2, sprite_diamond3, sprite_diamond4, sprite_diamond1
-    !byte 0, sprite_earth2, sprite_titanium_wall2, 0, 0
+    !byte 0, sprite_box, sprite_titanium_wall2, 0, 0
     !byte sprite_explosion1, sprite_explosion2, sprite_explosion3, 0
     !byte sprite_magic_wall2, sprite_magic_wall3, sprite_magic_wall4, sprite_magic_wall1
     !byte sprite_amoeba1, sprite_amoeba2
