@@ -217,7 +217,6 @@ sprite_addresses_low
     !byte <sprite_addr_diamond2
     !byte <sprite_addr_diamond3
     !byte <sprite_addr_diamond4
-sprite_titanium_addressA
     !byte <sprite_addr_titanium_wall1
     !byte <sprite_addr_titanium_wall2
     !byte <sprite_addr_box
@@ -307,8 +306,6 @@ sprite_titanium_addressA
     !byte <sprite_addr_bomb2
     !byte <sprite_addr_bomb1
     !byte <sprite_addr_bubble2
-sprite_titanium_addressB
-    !byte <sprite_addr_titanium_wall1
 
 ; *************************************************************************************
 sprite_addresses_high
@@ -408,7 +405,6 @@ sprite_addresses_high
     !byte >sprite_addr_bomb2
     !byte >sprite_addr_bomb1
     !byte >sprite_addr_bubble2
-    !byte >sprite_addr_titanium_wall1
 
 ; *************************************************************************************
 ; Given a direction (0-3), return an offset from the current position ($41) in the map
@@ -862,10 +858,12 @@ sprites2_text
 
 sprites3_text
     !fill 3, sprite_space    
-    !text "EASTER"
+    !text "FOR"
     !byte sprite_space
-    !text "EGGS"
-    !fill 6,sprite_space
+    !text "THE"
+    !byte sprite_space
+    !text "BIRDS"
+    !fill 4,sprite_space
 
 sprites4_text
     !fill 3, sprite_space    
@@ -884,9 +882,9 @@ sprites5_text
 
 sprites6_text
     !fill 3, sprite_space    
-    !text "COMING"
+    !text "SPRING"
     !byte sprite_space
-    !text "SOON"
+    !text "TIME"
     !fill 6,sprite_space
 
 bd_sprites_files
@@ -894,13 +892,13 @@ bd_sprites_files
     !byte 0,0
     !scr "BUBBOB"
     !byte 0,0
-    !scr "EASTER"
+    !scr "BIRDSP"
     !byte 0,0
     !scr "PACMAN"
     !byte 0,0
     !scr "ROBOTS"
     !byte 0,0
-    !scr "ORISPR"  ;TODO: Need new set
+    !scr "SPRING"
     !byte 0,0
     !fill 12,0
 

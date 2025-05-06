@@ -77,9 +77,10 @@ if __name__ == '__main__':
     os.chdir(path.join(base_path, "sprites"))
     os.system('copy /b Original_sprites.bin "' + build_folder + '\\ORISPR" >nul')
     os.system('copy /b Bubble_Bobble_sprites.bin "' + build_folder + '\\BUBBOB" >nul')
-    os.system('copy /b Easter_sprites.bin "' + build_folder + '\\EASTER" >nul')
+    os.system('copy /b Bird_sprites.bin "' + build_folder + '\\BIRDSP" >nul')
     os.system('copy /b Pacman_sprites.bin "' + build_folder + '\\PACMAN" >nul')
     os.system('copy /b Robo_Tech_sprites.bin "' + build_folder + '\\ROBOTS" >nul')
+    os.system('copy /b Spring_sprites.bin "' + build_folder + '\\SPRING" >nul')
 
     #Build SSD usiing files prepared above
     os.chdir(build_folder)

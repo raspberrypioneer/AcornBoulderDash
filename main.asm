@@ -157,8 +157,8 @@
 ; Constants
 opcode_dex                               = 202
 opcode_inx                               = 232
-opcode_lda_abs_y                         = 185
-opcode_ldy_abs                           = 172
+opcode_lda_abs_y                         = 185  ;LDA oper,Y
+opcode_ldy_abs                           = 172  ;LDY oper
 osbyte_flush_buffer_class                = 15
 osbyte_inkey                             = 129
 osbyte_read_adc_or_get_buffer_status     = 128
@@ -753,7 +753,7 @@ draw_grid_of_sprites
     lda #>screen_addr_row_6
     sta screen_addr1_high
     ldy #<screen_addr_row_6
-    lda #opcode_lda_abs_y
+    lda #opcode_lda_abs_y  ;LDA oper,Y
     sta load_instruction
     lda #<grid_of_currently_displayed_sprites
     sta grid_compare_address_low
@@ -781,7 +781,7 @@ instruction_for_self_modification
 status_text_address_high = instruction_for_self_modification+1
     lda #>regular_status_bar
     sta tile_map_ptr_high
-    lda #opcode_ldy_abs
+    lda #opcode_ldy_abs  ;LDY oper
     sta load_instruction
     ldx #20                             ; X is the cell counter (20 for a single row)
     lda status_text_address_low
@@ -795,8 +795,10 @@ grid_draw_row_loop
     lda (tile_map_ptr_low),y
     tay
     bpl load_instruction
-    ; Y=9 corresponds to the titanium wall sprite used while revealing the grid
-    ldy #9
+    ; Set titanium wall sprite used while revealing the grid
+    ; The procedure reveal_or_hide_more_cells sets the tile with 'ora dissolve_to_solid_flag' which is 0 or 128
+    ; and when the tile is considered in 'bpl load_instruction', values 128 and above become the titanium wall
+    ldy #map_titanium_wall
     ; this next instruction is either:
     ;     'ldy cell_type_to_sprite' which in this context is equivalent to a no-op,
     ; which is used during preprocessing OR
@@ -2220,19 +2222,19 @@ update_map_scroll_position
     sta map_address_low
     lda map_rockford_current_position_addr_high
     sta map_address_high
-    jsr map_address_to_map_xy_position
+    jsr map_address_to_map_xy_position  ;determine Rockford's row and column position on map, returned in map_rows/cols
     sec
-    sbc visible_top_left_map_x
+    sbc visible_top_left_map_x  ;subtract visible top left x from calculated column position, result in A
     ldx visible_top_left_map_x
-    cmp #17
+    cmp #16  ;how many tiles are visible on the left, going right
     bmi check_for_need_to_scroll_left
-    cpx #20
+    cpx #20  ;how many tiles are visible on the left, going right to stop going right
     bpl check_for_need_to_scroll_down
     inx
 check_for_need_to_scroll_left
-    cmp #3
+    cmp #4  ;how many tiles are visible on the left, going left
     bpl check_for_need_to_scroll_down
-    cpx #1
+    cpx #1  ;how many tiles are visible on the left, going left to stop going left
     bmi check_for_need_to_scroll_down
     dex
 check_for_need_to_scroll_down
@@ -2240,15 +2242,15 @@ check_for_need_to_scroll_down
     lda map_y
     sec
     sbc visible_top_left_map_y
-    cmp #9
+    cmp #8  ;how many tiles are visible above, going down
     bmi check_for_need_to_scroll_up
-    cpy #$0a
+    cpy #$0a  ;how many tiles are visible above, going down to stop going down
     bpl check_for_bonus_stages
     iny
 check_for_need_to_scroll_up
-    cmp #3
+    cmp #4  ;how many tiles are visible above, going up
     bpl check_for_bonus_stages
-    cpy #1
+    cpy #1  ;how many tiles are visible above, going up to stop going up
     bmi check_for_bonus_stages
     dey
 check_for_bonus_stages
@@ -2551,8 +2553,11 @@ write_top_and_bottom_borders_loop
     dex
     bpl write_top_and_bottom_borders_loop
     jsr initialise_stage
+
+    lda #0
     jsr play_screen_dissolve_effect
     jsr start_gameplay
+
     lda neighbour_cell_contents
     cmp #8
     beq play_screen_dissolve_to_solid
@@ -2607,12 +2612,6 @@ screen_dissolve_loop
     jsr reveal_or_hide_more_cells
     jsr draw_grid_of_sprites
     jsr draw_status_bar
-    lda tick_counter
-    asl
-    and #$0f
-    ora #$e0
-    sta sprite_titanium_addressA
-    sta sprite_titanium_addressB
     dec tick_counter
     bpl screen_dissolve_loop
     rts
@@ -2751,8 +2750,6 @@ dont_allow_rock_push_up
     ldy #$0c
     jsr add_a_to_status_bar_number_at_y
 
-    ; return zero
-    lda #0
     rts
 
 ; *************************************************************************************

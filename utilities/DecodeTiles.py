@@ -31,7 +31,7 @@ INPUT_SPRITES_FILE = "input_sprites.csv"
 #INPUT_SPRITES_FILE = "Robo_Tech_sprites.bin"
 
 #OUTPUT_SPRITES_TO_FILE = ""
-OUTPUT_SPRITES_FILE = "Easter_sprites.bin"
+OUTPUT_SPRITES_FILE = "Bird_sprites.bin"
 
 #Read bytes for tile sprites
 #This is at the start address in the source code, not need to position to a location - input_source_file.seek(pos)
